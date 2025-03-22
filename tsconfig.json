@@ -2,10 +2,14 @@
   "compilerOptions": {
     "target": "ES2018",
     "module": "commonjs",
+    "outDir": "./dist",
+    "rootDir": "./functions",
     "lib": [
-      "es2018"
+      "es2018",
+      "dom"
     ],
     "declaration": true,
+    "esModuleInterop": true,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -23,6 +27,7 @@
       "./node_modules/@types"
     ]
   },
+  "include": ["functions/**/*"],
   "exclude": [
     "node_modules",
     "cdk.out"
