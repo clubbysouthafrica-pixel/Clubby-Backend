@@ -9,6 +9,7 @@ interface MSC_JWTConstructProps {  }
 
 export class MSC_JWTConstruct extends Construct {
     public readonly get_jwt_token: MSC_Lambda;
+    public readonly token_parameter: StringParameter;
     constructor(scope: Construct, id: string) {
         super(scope, id);
 
@@ -19,6 +20,7 @@ export class MSC_JWTConstruct extends Construct {
             tier: ParameterTier.STANDARD,
             dataType: ParameterDataType.TEXT,
         });
+        this.token_parameter = token_parameter;
 
         const token_generator = new MSC_Lambda(this, `${id}-TokenGenerator`, {
             code: "generate_jwt_token",

@@ -3,7 +3,7 @@ import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 const ssmClient = new SSMClient({ region: process.env.REGION });
 
 const allowedOrigins = [
-  "*"
+  "https://localhost:3000"
 ];
 
 const createResponse = (statusCode: number, data: object, origin: string) => {
@@ -26,13 +26,11 @@ const createResponse = (statusCode: number, data: object, origin: string) => {
 
 export const handler = async (event: any) => {
   console.log(`EVENT @ ${new Date()}: `, event);
+  const origin = event.headers.origin;
+  console.log(`Called by origin: ${origin}`)
   
   try {
-    // const origin = event.headers.origin;
-    const origin = "TEST"
-
     const body = JSON.parse(event.body);
-    console.log('body: ', body)
 
     if (body.userId !== process.env.USER_ID || body.token !== process.env.TOKEN ) {
         return createResponse(404, { message: "Invalid credentials." }, origin);

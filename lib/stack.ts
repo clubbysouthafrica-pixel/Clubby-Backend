@@ -11,6 +11,7 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_APIGateway(this, `${stack_id}-Main`, {
       get_jwt_token_lambda: jwt_construct.get_jwt_token,
+      token_parameter: jwt_construct.token_parameter,
     });
   }
 }

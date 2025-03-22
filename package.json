@@ -11,6 +11,7 @@
     "deploy": "cdk deploy"
   },
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.147",
     "@types/jest": "^29.5.12",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "20.14.9",
@@ -23,6 +24,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-ssm": "^3.772.0",
+    "aws-lambda": "^1.0.7",
     "constructs": "10.0.0",
     "dotenv": "16.4.7",
     "jsonwebtoken": "^9.0.2",
