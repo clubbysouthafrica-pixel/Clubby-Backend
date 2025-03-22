@@ -8,6 +8,7 @@ import { MSC_Lambda } from "../msc_service_constructs";
 interface MSC_JWTConstructProps {  }
 
 export class MSC_JWTConstruct extends Construct {
+    public readonly get_jwt_token: MSC_Lambda;
     constructor(scope: Construct, id: string) {
         super(scope, id);
 
@@ -29,6 +30,19 @@ export class MSC_JWTConstruct extends Construct {
             },
             permissions: {
                 [token_parameter.parameterArn]: ["ssm:PutParameter"]
+            }
+        })
+
+        this.get_jwt_token = new MSC_Lambda(this, `${id}-GetToken`, {
+            code: "get_jwt_token",
+            envVariables: {
+                JWT_SECRET: "myclubsoftware_secret",
+                USER_ID: "myclubsoftware_342129",
+                TOKEN: "mf508mf959mfn44",
+                SSM_TOKEN_NAME: token_parameter.parameterName,
+            },
+            permissions: {
+                [token_parameter.parameterArn]: ["ssm:GetParameter"]
             }
         })
 

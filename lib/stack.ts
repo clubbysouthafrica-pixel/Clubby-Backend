@@ -7,8 +7,10 @@ export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
     super(scope, stack_id, props);
 
-    new MSC_APIGateway(this, `${stack_id}-Main`, {});
+    const jwt_construct = new MSC_JWTConstruct(this, `${stack_id}-JWT`)
 
-    new MSC_JWTConstruct(this, `${stack_id}-TokenGenerator`)
+    new MSC_APIGateway(this, `${stack_id}-Main`, {
+      get_jwt_token_lambda: jwt_construct.get_jwt_token,
+    });
   }
 }
