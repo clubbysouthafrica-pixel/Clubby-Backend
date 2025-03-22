@@ -46,7 +46,7 @@ export class MSC_Lambda extends Function {
             handler: `${props.code}.handler`,
             code: Code.fromAsset(`./dist/${props.code}`),
             timeout: props.timeout ? Duration.seconds(props.timeout) : Duration.seconds(10),
-            memorySize: props.memory ?? undefined,
+            memorySize: props.memory ?? 1024,
             environment: {
                 ...props.envVariables,
             },
