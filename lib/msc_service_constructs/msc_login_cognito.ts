@@ -30,12 +30,12 @@ export class MSC_Cognito extends UserPool {
       preventUserExistenceErrors: true,
     });
 
-    // new cdk.CfnOutput(this, 'UserPoolId', {
-    //   value: this.userPoolId,
-    // });
+    new cdk.CfnOutput(this, 'UserPoolId', {
+      value: this.userPoolId,
+    });
 
-    // new cdk.CfnOutput(this, 'UserPoolClientId', {
-    //   value: this.userPoolClient.userPoolClientId,
-    // });
+    new cdk.CfnOutput(this, 'UserPoolClientId', {
+      value: this.userPoolClient.userPoolClientId,
+    });
   }
 }
