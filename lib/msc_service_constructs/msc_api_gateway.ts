@@ -32,9 +32,9 @@ export class MSC_APIGateway extends RestApi {
             }
         })
 
-        const authorizer = new TokenAuthorizer(this, `${id}-TokenAuthorizer`, {
-            handler: lambda_authorizer,
-        });
+        // const authorizer = new TokenAuthorizer(this, `${id}-TokenAuthorizer`, {
+        //     handler: lambda_authorizer,
+        // });
 
         const methodOptions: MethodOptions = {
             authorizationType: undefined,
