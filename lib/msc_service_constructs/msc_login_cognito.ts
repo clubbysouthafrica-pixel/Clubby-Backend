@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { UserPool, UserPoolClient, AccountRecovery, } from 'aws-cdk-lib/aws-cognito';
+import { UserPool, UserPoolClient, AccountRecovery } from 'aws-cdk-lib/aws-cognito';
 import { Construct } from 'constructs';
 
 export class MSC_Cognito extends UserPool {
