@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { UserPool, UserPoolClient, AccountRecovery } from 'aws-cdk-lib/aws-cognito';
+import { UserPool, UserPoolClient, AccountRecovery, UserPoolClientIdentityProvider } from 'aws-cdk-lib/aws-cognito';
 import { Construct } from 'constructs';
 
 export class MSC_Cognito extends UserPool {
@@ -24,9 +24,12 @@ export class MSC_Cognito extends UserPool {
     this.userPoolClient = new UserPoolClient(this, `${id}-UserPoolClient`, {
       userPool: this,
       userPoolClientName: `${id}-UserPoolClient`,
+      generateSecret: false, // Important for frontend clients
       authFlows: {
         userPassword: true,
+        adminUserPassword: true,
       },
+      supportedIdentityProviders: [UserPoolClientIdentityProvider.COGNITO],
       preventUserExistenceErrors: true,
     });
 
