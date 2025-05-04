@@ -35,8 +35,8 @@ export const handler = async (event: any) => {
   try {
     const body = JSON.parse(event.body);
 
-    if (body?.username == null || body?.password == null || body?.email == null ) {
-      return createResponse(400, { message: 'Bad request' }, origin);
+    if (body?.username == null || body?.password == null) {
+      return createResponse(400, { message: 'Username and password required.' }, origin);
     }
 
     const command = new SignUpCommand({
@@ -44,7 +44,7 @@ export const handler = async (event: any) => {
       Username: body.username,
       Password: body.password,
       UserAttributes: [
-        { Name: 'email', Value: body.email },
+        { Name: 'email', Value: body.username },
       ],
     });
 
@@ -52,8 +52,10 @@ export const handler = async (event: any) => {
     console.log('Signup successful:', response);
 
     return createResponse(200, { message: "Success" }, origin);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Signup error:', error);
-    return createResponse(500, { message: error }, origin);
+    const message = error?.message || "Internal Server Error";
+    const statusCode = error?.$metadata?.httpStatusCode || 500;
+    return createResponse(statusCode, { message }, origin);
   }
 };

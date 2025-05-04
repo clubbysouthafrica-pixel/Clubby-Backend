@@ -8,10 +8,11 @@ export class MSC_Stack extends cdk.Stack {
     super(scope, stack_id, props);
 
 
-    const signin_signup_construct = new MSC_LoginConstruct(this, `${stack_id}-Login`)
+    const login_construct = new MSC_LoginConstruct(this, `${stack_id}-Login`)
     const jwt_construct = new MSC_JWTConstruct(this, `${stack_id}-JWT`)
 
     new MSC_APIGateway(this, `${stack_id}-Main`, {
+      sign_up_lambda: login_construct.sign_up,
       get_jwt_token_lambda: jwt_construct.get_jwt_token,
       token_parameter: jwt_construct.token_parameter,
     });
