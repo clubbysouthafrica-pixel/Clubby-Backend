@@ -13,6 +13,9 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_APIGateway(this, `${stack_id}-Main`, {
       sign_up_lambda: login_construct.sign_up,
+      verify_sign_up_lambda: login_construct.verify_sign_up,
+      sign_in_lambda: login_construct.sign_in,
+      refresh_token_lambda: login_construct.refresh_token,
       get_jwt_token_lambda: jwt_construct.get_jwt_token,
       token_parameter: jwt_construct.token_parameter,
     });

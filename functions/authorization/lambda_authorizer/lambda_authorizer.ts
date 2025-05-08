@@ -9,7 +9,7 @@ export const handler = async (event: any) => {
     const token = event.authorizationToken;
     console.log('TOKEN: ', token)
     if (!token) {
-        return generatePolicy("user", "Deny", event.methodArn);
+        return generatePolicy("user", "Deny");
     }
 
     try {
@@ -23,17 +23,17 @@ export const handler = async (event: any) => {
         console.log('Stored token: ', storedToken)
 
         if (token === storedToken) {
-            return generatePolicy("user", "Allow", event.methodArn);
+            return generatePolicy("user", "Allow");
         } else {
-            return generatePolicy("user", "Deny", event.methodArn);
+            return generatePolicy("user", "Deny");
         }
     } catch (error) {
         console.error("Error fetching token:", error);
-        return generatePolicy("user", "Deny", event.methodArn);
+        return generatePolicy("user", "Deny");
     }
 };
 
-const generatePolicy = (principalId: string, effect: "Allow" | "Deny", resource: string): APIGatewayAuthorizerResult => {
+const generatePolicy = (principalId: string, effect: "Allow" | "Deny"): APIGatewayAuthorizerResult => {
     return {
         principalId,
         policyDocument: {
@@ -42,7 +42,7 @@ const generatePolicy = (principalId: string, effect: "Allow" | "Deny", resource:
                 {
                     Action: "execute-api:Invoke",
                     Effect: effect,
-                    Resource: resource,
+                    Resource: "*",
                 },
             ],
         },

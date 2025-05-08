@@ -23,7 +23,7 @@ export class MSC_JWTConstruct extends Construct {
         this.token_parameter = token_parameter;
 
         const token_generator = new MSC_Lambda(this, `${id}-TokenGenerator`, {
-            code: "generate_jwt_token",
+            code: "authorization/generate_jwt_token",
             envVariables: {
                 JWT_SECRET: "myclubsoftware_secret",
                 USER_ID: "myclubsoftware_342129",
@@ -36,7 +36,7 @@ export class MSC_JWTConstruct extends Construct {
         })
 
         this.get_jwt_token = new MSC_Lambda(this, `${id}-GetToken`, {
-            code: "get_jwt_token",
+            code: "authorization/get_jwt_token",
             envVariables: {
                 JWT_SECRET: "myclubsoftware_secret",
                 USER_ID: "myclubsoftware_342129",
