@@ -6,7 +6,7 @@ import {
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 
 const allowedOrigins = [
-  "https://localhost:3000"
+  "http://localhost:5173"
 ];
 
 const createResponse = (statusCode: number, data: object, origin: string) => {
@@ -19,8 +19,9 @@ const createResponse = (statusCode: number, data: object, origin: string) => {
     body: JSON.stringify(data),
     headers: {
       "Access-Control-Allow-Origin": allowOrigin,
-      "Access-Control-Allow-Methods": "GET,POST",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Methods": "OPTIONS,POST",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Requested-With",
+      "Access-Control-Allow-Credentials": "true"
     },
   };
   console.log(`RESPONSE @ ${new Date()}: `, response);

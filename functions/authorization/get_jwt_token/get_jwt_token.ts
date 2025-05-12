@@ -3,7 +3,7 @@ import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 const ssmClient = new SSMClient({ region: process.env.REGION });
 
 const allowedOrigins = [
-  "https://localhost:3000"
+  "http://localhost:5173"
 ];
 
 const createResponse = (statusCode: number, data: object, origin: string) => {

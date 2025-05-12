@@ -6,22 +6,23 @@ import {
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 
 const allowedOrigins = [
-  "https://localhost:3000"
+  "http://localhost:5173"
 ];
 
 const createResponse = (statusCode: number, data: object, origin: string) => {
   const allowOrigin = allowedOrigins.includes(origin)
-      ? origin
-      : allowedOrigins[0];
-  
+    ? origin
+    : allowedOrigins[0];
+
   const response = {
-      statusCode: statusCode,
-      body: JSON.stringify(data),
-      headers: {
-          "Access-Control-Allow-Origin": allowOrigin,
-          "Access-Control-Allow-Methods": "GET,POST",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      },
+    statusCode: statusCode,
+    body: JSON.stringify(data),
+    headers: {
+      "Access-Control-Allow-Origin": allowOrigin,
+      "Access-Control-Allow-Methods": "OPTIONS,POST",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Requested-With",
+      "Access-Control-Allow-Credentials": "true"
+    },
   };
   console.log(`RESPONSE @ ${new Date()}: `, response);
   return response;
@@ -31,7 +32,7 @@ export const handler = async (event: any) => {
   console.log(`EVENT @ ${new Date()}: `, event);
   const origin = event.headers.origin;
   console.log(`Called by origin: ${origin}`)
-  
+
   try {
     const body = JSON.parse(event.body);
 
@@ -52,11 +53,11 @@ export const handler = async (event: any) => {
     console.log('Signup successful:', response);
 
     return createResponse(
-      200, 
-      { 
+      200,
+      {
         message: "Sign up successful. Please check your email for a verification code.",
-        deliveryDetails: response.CodeDeliveryDetails 
-      }, 
+        deliveryDetails: response.CodeDeliveryDetails
+      },
       origin
     );
   } catch (error: any) {
