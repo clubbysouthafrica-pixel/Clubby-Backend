@@ -65,10 +65,36 @@ export class MSC_LoginConstruct extends Construct {
             }
         });
 
+        const forgot_password = new MSC_Lambda(this, `${id}-ForgotPassword`, {
+            code: "login/forgot_password",
+            envVariables: {
+                USER_POOL_CLIENT_ID: user_pool.userPoolClient.userPoolClientId,
+            },
+            permissions: {
+                [user_pool.userPoolArn]: [
+                    "cognito-idp:AdminConfirmForgotPassword"
+                ]
+            }
+        });
+
+        const reset_password = new MSC_Lambda(this, `${id}-ResetPassword`, {
+            code: "login/reset_password",
+            envVariables: {
+                USER_POOL_CLIENT_ID: user_pool.userPoolClient.userPoolClientId,
+            },
+            permissions: {
+                [user_pool.userPoolArn]: [
+                    "cognito-idp:AdminResetUserPassword"
+                ]
+            }
+        });
+
         const sign_up_resource = props.api_gateway.root.addResource("signUp");
         const verify_sign_up_resource = props.api_gateway.root.addResource("verifySignUp");
         const sign_in_resource = props.api_gateway.root.addResource("signIn");
         const refresh_token_resource = props.api_gateway.root.addResource("refreshToken");
+        const forgot_password_resource = props.api_gateway.root.addResource("forgotPassword");
+        const reset_password_resource = props.api_gateway.root.addResource("resetPassword");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -78,5 +104,7 @@ export class MSC_LoginConstruct extends Construct {
         addCorsEnabledPostMethod(verify_sign_up_resource, verify_sign_up, methodOptions);
         addCorsEnabledPostMethod(sign_in_resource, sign_in, methodOptions);
         addCorsEnabledPostMethod(refresh_token_resource, refresh_token, methodOptions);
+        addCorsEnabledPostMethod(forgot_password_resource, forgot_password, methodOptions);
+        addCorsEnabledPostMethod(reset_password_resource, reset_password, methodOptions);
     }
 }
