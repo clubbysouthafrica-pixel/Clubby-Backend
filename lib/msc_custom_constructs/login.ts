@@ -1,6 +1,6 @@
 import { Construct } from "constructs";
 import { MSC_Cognito, MSC_Lambda, MSC_APIGateway } from "../msc_service_constructs";
-import { addCorsEnabledPostMethod } from "../msc_custom_functions/cors_utils";
+import { addCorsEnabledPostMethod } from "../msc_custom_functions";
 import { MethodOptions } from "aws-cdk-lib/aws-apigateway";
 
 interface MSC_LoginConstructProps {
