@@ -9,7 +9,6 @@ export class MSC_Stack extends cdk.Stack {
 
     const main_api_gateway = new MSC_APIGateway(this, `${stack_id}-Main`);
 
-
     new MSC_LoginConstruct(this, `${stack_id}-Login`, { api_gateway: main_api_gateway });
     new MSC_JWTConstruct(this, `${stack_id}-JWT`, { api_gateway: main_api_gateway });
   }
