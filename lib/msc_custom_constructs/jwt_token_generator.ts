@@ -1,16 +1,19 @@
 import { Rule, Schedule } from "aws-cdk-lib/aws-events";
 import { LambdaFunction } from "aws-cdk-lib/aws-events-targets";
 import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
-import { ParameterDataType, ParameterTier, ParameterType, StringParameter } from "aws-cdk-lib/aws-ssm";
+import { ParameterDataType, ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
-import { MSC_Lambda } from "../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway } from "../msc_service_constructs";
+import { addCorsEnabledPostMethod } from "../msc_custom_functions/cors_utils";
+import { MethodOptions } from "aws-cdk-lib/aws-apigateway";
 
-interface MSC_JWTConstructProps {  }
+interface MSC_JWTConstructProps { 
+    api_gateway: MSC_APIGateway
+ }
 
 export class MSC_JWTConstruct extends Construct {
-    public readonly get_jwt_token: MSC_Lambda;
-    public readonly token_parameter: StringParameter;
-    constructor(scope: Construct, id: string) {
+    // public readonly token_parameter: StringParameter;
+    constructor(scope: Construct, id: string, props: MSC_JWTConstructProps) {
         super(scope, id);
 
         const token_parameter = new StringParameter(this, `${id}-Token-Parameter`, {
@@ -20,7 +23,7 @@ export class MSC_JWTConstruct extends Construct {
             tier: ParameterTier.STANDARD,
             dataType: ParameterDataType.TEXT,
         });
-        this.token_parameter = token_parameter;
+        // this.token_parameter = token_parameter;
 
         const token_generator = new MSC_Lambda(this, `${id}-TokenGenerator`, {
             code: "authorization/generate_jwt_token",
@@ -35,7 +38,18 @@ export class MSC_JWTConstruct extends Construct {
             }
         })
 
-        this.get_jwt_token = new MSC_Lambda(this, `${id}-GetToken`, {
+        const rule = new Rule(this, `${id}-Schedule`, {
+            schedule: Schedule.cron({ minute: '0', hour: '0' }),
+        });
+        rule.addTarget(new LambdaFunction(token_generator));
+
+        token_generator.addPermission('EventBridgeInvoke', {
+            principal: new ServicePrincipal('events.amazonaws.com'),
+            sourceArn: rule.ruleArn,
+        });
+
+        // ------ Creating the Get Auth token endpoint ------
+        const get_jwt_token = new MSC_Lambda(this, `${id}-GetToken`, {
             code: "authorization/get_jwt_token",
             envVariables: {
                 JWT_SECRET: "myclubsoftware_secret",
@@ -46,16 +60,11 @@ export class MSC_JWTConstruct extends Construct {
             permissions: {
                 [token_parameter.parameterArn]: ["ssm:GetParameter"]
             }
-        })
-
-        const rule = new Rule(this, `${id}-Schedule`, {
-            schedule: Schedule.cron({ minute: '0', hour: '0' }),
         });
-        rule.addTarget(new LambdaFunction(token_generator));
-
-        token_generator.addPermission('EventBridgeInvoke', {
-            principal: new ServicePrincipal('events.amazonaws.com'),
-            sourceArn: rule.ruleArn,
-        });
+        const get_jwt_token_resource = props.api_gateway.root.addResource("getMSCToken")
+        const methodOptions: MethodOptions = {
+            methodResponses: [],
+        }
+        addCorsEnabledPostMethod(get_jwt_token_resource, get_jwt_token, methodOptions);
     }
 }

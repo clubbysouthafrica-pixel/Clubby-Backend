@@ -7,17 +7,10 @@ export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
     super(scope, stack_id, props);
 
+    const main_api_gateway = new MSC_APIGateway(this, `${stack_id}-Main`);
 
-    const login_construct = new MSC_LoginConstruct(this, `${stack_id}-Login`)
-    const jwt_construct = new MSC_JWTConstruct(this, `${stack_id}-JWT`)
 
-    new MSC_APIGateway(this, `${stack_id}-Main`, {
-      sign_up_lambda: login_construct.sign_up,
-      verify_sign_up_lambda: login_construct.verify_sign_up,
-      sign_in_lambda: login_construct.sign_in,
-      refresh_token_lambda: login_construct.refresh_token,
-      get_jwt_token_lambda: jwt_construct.get_jwt_token,
-      token_parameter: jwt_construct.token_parameter,
-    });
+    new MSC_LoginConstruct(this, `${stack_id}-Login`, { api_gateway: main_api_gateway });
+    new MSC_JWTConstruct(this, `${stack_id}-JWT`, { api_gateway: main_api_gateway });
   }
 }
