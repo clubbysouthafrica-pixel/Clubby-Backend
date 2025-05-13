@@ -20,7 +20,7 @@ const createResponse = (statusCode: number, data: object, origin: string) => {
     headers: {
       "Access-Control-Allow-Origin": allowOrigin,
       "Access-Control-Allow-Methods": "OPTIONS,POST",
-      "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Requested-With",
+      "Access-Control-Allow-Headers": "Content-Type,X-Requested-With",
       "Access-Control-Allow-Credentials": "true"
     },
   };
