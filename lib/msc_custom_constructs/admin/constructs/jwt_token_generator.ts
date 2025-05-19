@@ -3,8 +3,8 @@ import { LambdaFunction } from "aws-cdk-lib/aws-events-targets";
 import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { ParameterDataType, ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway } from "../msc_service_constructs";
-import { addCorsEnabledPostMethod } from "../msc_custom_functions";
+import { MSC_Lambda, MSC_APIGateway } from "../../../msc_service_constructs";
+import { addCorsEnabledPostMethod } from "../../../msc_custom_functions";
 import { MethodOptions } from "aws-cdk-lib/aws-apigateway";
 
 interface MSC_JWTConstructProps { 

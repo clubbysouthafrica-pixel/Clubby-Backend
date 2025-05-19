@@ -12,25 +12,5 @@ export class MSC_APIGateway extends RestApi {
         super(scope, `${id}-APIGateway`, {
             restApiName: `${id}-APIGateway`,
         });
-
-        // const lambda_authorizer = new MSC_Lambda(this, `${id}-Authorizer`, {
-        //     code: "authorization/lambda_authorizer",
-        //     envVariables: {
-        //         SSM_TOKEN_NAME: props.token_parameter.parameterName,
-        //     },
-        //     permissions: {
-        //         [props.token_parameter.parameterArn]: ["ssm:GetParameter"]
-        //     }
-        // })
-
-        // const authorizer = new TokenAuthorizer(this, `${id}-TokenAuthorizer`, {
-        //     handler: lambda_authorizer,
-        // });
-
-        // const methodOptions: MethodOptions = {
-        //     authorizationType: AuthorizationType.CUSTOM,
-        //     authorizer: authorizer,
-        //     methodResponses: [{ statusCode: "200" }],
-        // };
     }
 }

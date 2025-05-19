@@ -1,14 +1,14 @@
 import { Construct } from "constructs";
-import { MSC_Cognito, MSC_Lambda, MSC_APIGateway } from "../msc_service_constructs";
-import { addCorsEnabledPostMethod } from "../msc_custom_functions";
+import { MSC_Cognito, MSC_Lambda, MSC_APIGateway } from "../../../msc_service_constructs";
+import { addCorsEnabledPostMethod } from "../../../msc_custom_functions";
 import { MethodOptions } from "aws-cdk-lib/aws-apigateway";
 
-interface MSC_LoginConstructProps {
+interface MSC_AdminLoginConstructProps {
     api_gateway: MSC_APIGateway
 }
 
-export class MSC_LoginConstruct extends Construct {
-    constructor(scope: Construct, id: string, props: MSC_LoginConstructProps) {
+export class MSC_AdminLoginConstruct extends Construct {
+    constructor(scope: Construct, id: string, props: MSC_AdminLoginConstructProps) {
         super(scope, id);
 
         const user_pool = new MSC_Cognito(this, `${id}`);
@@ -89,12 +89,14 @@ export class MSC_LoginConstruct extends Construct {
             }
         });
 
-        const sign_up_resource = props.api_gateway.root.addResource("signUp");
-        const verify_sign_up_resource = props.api_gateway.root.addResource("verifySignUp");
-        const sign_in_resource = props.api_gateway.root.addResource("signIn");
-        const refresh_token_resource = props.api_gateway.root.addResource("refreshToken");
-        const forgot_password_resource = props.api_gateway.root.addResource("forgotPassword");
-        const reset_password_resource = props.api_gateway.root.addResource("resetPassword");
+        const admin_resource = props.api_gateway.root.addResource("admin");
+
+        const sign_up_resource = admin_resource.addResource("signUp");
+        const verify_sign_up_resource = admin_resource.addResource("verifySignUp");
+        const sign_in_resource = admin_resource.addResource("signIn");
+        const refresh_token_resource = admin_resource.addResource("refreshToken");
+        const forgot_password_resource = admin_resource.addResource("forgotPassword");
+        const reset_password_resource = admin_resource.addResource("resetPassword");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
