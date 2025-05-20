@@ -6,8 +6,13 @@ export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
     super(scope, stack_id, props);
 
-    new MSC_MemberNestedStack(this, `${stack_id}-MemberStack`);
-    new MSC_AdminNestedStack(this, `${stack_id}-AdminStack`);
-    new MSC_TablesConstruct(this, stack_id, {})
+    const tables = new MSC_TablesConstruct(this, stack_id, {})
+
+    new MSC_MemberNestedStack(this, `${stack_id}-MemberStack`, {
+      users_table: tables.users_table,
+      club_users_table: tables.club_users_table,
+    });
+
+    new MSC_AdminNestedStack(this, `${stack_id}-AdminStack`, { users_table: tables.users_table });
   }
 }

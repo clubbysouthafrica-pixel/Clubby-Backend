@@ -2,8 +2,10 @@ import {
   CognitoIdentityProviderClient,
   SignUpCommand
 } from "@aws-sdk/client-cognito-identity-provider";
+import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
+const dynamodbClient = new DynamoDBClient({ region: process.env.REGION }); 
 
 const allowedOrigins = [
   "http://localhost:5173"
@@ -36,11 +38,17 @@ export const handler = async (event: any) => {
   try {
     const body = JSON.parse(event.body);
 
+    if (process.env.ADMIN_TOKEN != null) {
+      if (body?.admin_token == null || body.admin_token !== process.env.ADMIN_TOKEN) {
+        return createResponse(400, { message: 'Not authorized for admin signup.' }, origin);
+      } 
+    }
+
     if (body?.username == null || body?.password == null) {
       return createResponse(400, { message: 'Username and password required.' }, origin);
     }
 
-    const command = new SignUpCommand({
+    const cognitoCommand = new SignUpCommand({
       ClientId: process.env.USER_POOL_CLIENT_ID,
       Username: body.username,
       Password: body.password,
@@ -49,14 +57,24 @@ export const handler = async (event: any) => {
       ],
     });
 
-    const response: any = await cognitoClient.send(command);
-    console.log('Signup successful:', response);
+    const cognitoResponse: any = await cognitoClient.send(cognitoCommand);
+    console.log('Signup successful:', cognitoResponse);
+
+    const dynamodbCommand = new PutItemCommand({
+      TableName: process.env.USERS_TABLE_NAME,
+      Item: {
+        "user_id": { S: body.username},
+        "on_boarded": { BOOL: false}
+      }
+    });
+    const dynamodbResponse = await dynamodbClient.send(dynamodbCommand);
+    console.log('User added to table successfully: ', dynamodbResponse)
 
     return createResponse(
       200,
       {
         message: "Sign up successful. Please check your email for a verification code.",
-        deliveryDetails: response.CodeDeliveryDetails
+        deliveryDetails: cognitoResponse.CodeDeliveryDetails
       },
       origin
     );

@@ -2,9 +2,11 @@ import { Construct } from "constructs";
 import { MSC_Cognito, MSC_Lambda, MSC_APIGateway } from "../../../msc_service_constructs";
 import { addCorsEnabledPostMethod } from "../../../msc_custom_functions";
 import { MethodOptions } from "aws-cdk-lib/aws-apigateway";
+import { MSC_Table } from "../../../msc_service_constructs";
 
 interface MSC_MemberLoginConstructProps {
-    api_gateway: MSC_APIGateway
+    api_gateway: MSC_APIGateway;
+    users_table: MSC_Table;
 }
 
 export class MSC_MemberLoginConstruct extends Construct {
@@ -17,12 +19,16 @@ export class MSC_MemberLoginConstruct extends Construct {
             code: "login/sign_up",
             envVariables: {
                 USER_POOL_CLIENT_ID: user_pool.userPoolClient.userPoolClientId,
+                USERS_TABLE_NAME: props.users_table.tableName
             },
             permissions: {
                 [user_pool.userPoolArn]: [
                     "cognito-idp:SignUp",
                     "cognito-idp:InitiateAuth",
                     "cognito-idp:AdminInitiateAuth"
+                ],
+                [props.users_table.tableArn]: [
+                    "dynamodb:PutItem"
                 ]
             }
         });
