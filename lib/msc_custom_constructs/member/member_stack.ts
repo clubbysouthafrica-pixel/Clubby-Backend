@@ -2,7 +2,7 @@ import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { MSC_APIGateway } from '../../msc_service_constructs';
 import { MSC_JWTConstruct } from '../authorization';
-import { MSC_MemberLoginConstruct } from "./constructs";
+import { MSC_MemberLoginConstruct, MSC_MemberUserConstruct } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs"
 
 export interface MSC_MemberNestedStackProps extends StackProps {
@@ -21,6 +21,10 @@ export class MSC_MemberNestedStack extends Stack {
         });
         
         new MSC_MemberLoginConstruct(this, `${id}-Login`, { 
+            api_gateway: api_gateway, users_table: props.users_table 
+        });
+
+        new MSC_MemberUserConstruct(this, `${id}-User`, {
             api_gateway: api_gateway, users_table: props.users_table 
         });
     }

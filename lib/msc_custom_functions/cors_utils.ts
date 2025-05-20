@@ -1,11 +1,12 @@
 import { LambdaIntegration, MethodOptions, PassthroughBehavior, MockIntegration } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Lambda } from "../msc_service_constructs/msc_lambda";
 
-export function addCorsEnabledPostMethod(
+export function addCorsEnabledMethod(
   resource: any,
   lambda: MSC_Lambda,
   methodOptions: MethodOptions,
-  origin = 'http://localhost:5173'
+  origin = 'http://localhost:5173',
+  method = 'POST'
 ) {
   const integration = new LambdaIntegration(lambda, {
     integrationResponses: ['200', '400', '500'].map((statusCode) => ({
@@ -29,7 +30,7 @@ export function addCorsEnabledPostMethod(
     },
   }));
 
-  resource.addMethod('POST', integration, {
+  resource.addMethod(method, integration, {
     ...methodOptions,
     methodResponses,
   });

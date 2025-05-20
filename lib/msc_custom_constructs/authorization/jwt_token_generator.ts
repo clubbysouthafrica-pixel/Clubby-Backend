@@ -4,7 +4,7 @@ import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { ParameterDataType, ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
 import { MSC_Lambda, MSC_APIGateway } from "../../msc_service_constructs";
-import { addCorsEnabledPostMethod } from "../../msc_custom_functions";
+import { addCorsEnabledMethod } from "../../msc_custom_functions";
 import { MethodOptions } from "aws-cdk-lib/aws-apigateway";
 import { type } from "os";
 
@@ -69,6 +69,6 @@ export class MSC_JWTConstruct extends Construct {
         const methodOptions: MethodOptions = {
             methodResponses: [],
         }
-        addCorsEnabledPostMethod(get_jwt_token_resource, get_jwt_token, methodOptions);
+        addCorsEnabledMethod(get_jwt_token_resource, get_jwt_token, methodOptions);
     }
 }

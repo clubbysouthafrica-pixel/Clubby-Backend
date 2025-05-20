@@ -1,1 +1,1 @@
-export { addCorsEnabledPostMethod, addCorsOptions } from "./cors_utils";
+export { addCorsEnabledMethod, addCorsOptions } from "./cors_utils";

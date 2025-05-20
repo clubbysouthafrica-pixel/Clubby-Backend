@@ -20,11 +20,11 @@ export class MSC_TablesConstruct extends Construct {
         this.users_table = new MSC_Table(this, `${id}-Users`, {
             partitionKey: {"user_type": "STRING"},
             sortKey: {"user_id": "STRING"}
-        })
+        });
 
         this.club_users_table = new MSC_Table(this, `${id}-ClubUsers`, {
             partitionKey: {"user_id": "STRING"},
             sortKey: {"club_account_id": "STRING"}
-        })
+        });
     }
 }

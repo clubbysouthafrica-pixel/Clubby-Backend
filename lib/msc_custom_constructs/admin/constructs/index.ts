@@ -1,1 +1,1 @@
-export { MSC_AdminLoginConstruct } from "./admin_login";
+export { MSC_AdminLoginConstruct } from "./login";
