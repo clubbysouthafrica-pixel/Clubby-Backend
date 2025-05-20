@@ -5,16 +5,17 @@ import { ParameterDataType, ParameterTier, StringParameter } from "aws-cdk-lib/a
 import { Construct } from "constructs";
 import { MSC_Lambda, MSC_APIGateway } from "../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../msc_custom_functions";
-import { MethodOptions } from "aws-cdk-lib/aws-apigateway";
-import { type } from "os";
+import { MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
+import { Duration } from "aws-cdk-lib";
 
-interface MSC_JWTConstructProps { 
+interface MSC_JWTConstructProps {
     api_gateway: MSC_APIGateway;
     user_type: "member" | "admin";
- }
+    auth_required?: boolean;
+}
 
 export class MSC_JWTConstruct extends Construct {
-    // public readonly token_parameter: StringParameter;
+    public readonly token_authorizer: TokenAuthorizer;
     constructor(scope: Construct, id: string, props: MSC_JWTConstructProps) {
         super(scope, id);
 
@@ -25,7 +26,23 @@ export class MSC_JWTConstruct extends Construct {
             tier: ParameterTier.STANDARD,
             dataType: ParameterDataType.TEXT,
         });
-        // this.token_parameter = token_parameter;
+
+        if (props.auth_required) {
+            const lambda_authorizer = new MSC_Lambda(this, `${id}-Authorizer`, {
+                code: "authorization/lambda_authorizer",
+                envVariables: {
+                    SSM_TOKEN_NAME: token_parameter.parameterName
+                },
+                permissions: {
+                    [token_parameter.parameterArn]: ["ssm:GetParameter"]
+                }
+            });
+            this.token_authorizer = new TokenAuthorizer(this, `${id}-Authorizer`, {
+                handler: lambda_authorizer,
+                identitySource: 'method.request.header.Authorization',
+                resultsCacheTtl: Duration.seconds(60)
+            });
+        }
 
         const token_generator = new MSC_Lambda(this, `${id}-TokenGenerator`, {
             code: "authorization/generate_jwt_token",
@@ -50,7 +67,6 @@ export class MSC_JWTConstruct extends Construct {
             sourceArn: rule.ruleArn,
         });
 
-        // ------ Creating the Get Auth token endpoint ------
         const get_jwt_token = new MSC_Lambda(this, `${id}-GetToken`, {
             code: "authorization/get_jwt_token",
             envVariables: {
