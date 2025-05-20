@@ -52,7 +52,10 @@ export const handler = async (event: any) => {
 
         const item = unmarshall(response.Item);
 
-        return createResponse(200, { data: item }, origin);
+        return createResponse(200, { 
+            user_id: item["user_id"],
+            onboarded: item["onboarded"]
+         }, origin);
     } catch (error) {
         console.error("Error:", error);
         return createResponse(500, { message: "Internal Server Error" }, origin);

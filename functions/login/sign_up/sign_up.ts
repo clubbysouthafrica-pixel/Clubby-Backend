@@ -65,11 +65,22 @@ export const handler = async (event: any) => {
       Item: {
         "user_type": { S: process.env.USER_TYPE as string },
         "user_id": { S: body.username },
-        "on_boarded": { BOOL: false }
+        "onboarded": { BOOL: false }
       }
     });
     const dynamodbResponse = await dynamodbClient.send(dynamodbCommand);
     console.log('User added to table successfully: ', dynamodbResponse)
+
+    if (process.env.ADMIN_TOKEN != null) {
+      return createResponse(
+        200,
+        {
+          message: "Sign up successful. Remember to authenticate the admin in Cognito.",
+          deliveryDetails: cognitoResponse.CodeDeliveryDetails
+        },
+        origin
+      );
+    }
 
     return createResponse(
       200,

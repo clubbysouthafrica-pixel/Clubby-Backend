@@ -33,6 +33,6 @@ export class MSC_MemberUserConstruct extends Construct {
             methodResponses: [],
         }
 
-        addCorsEnabledMethod(get_user_resource, get_user, methodOptions, undefined, 'GET');
+        addCorsEnabledMethod(get_user_resource, get_user, methodOptions);
     }
 }
