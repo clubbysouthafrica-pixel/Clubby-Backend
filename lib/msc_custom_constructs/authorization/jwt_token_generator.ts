@@ -19,7 +19,7 @@ export class MSC_JWTConstruct extends Construct {
         super(scope, id);
 
         const token_parameter = new StringParameter(this, `${id}-TokenParameter`, {
-            parameterName: 'jwt-token',
+            parameterName: `jwt_${props.user_type}_token`,
             stringValue: '498jjf0909340k09349k',
             description: 'This is the JWT token parameter.',
             tier: ParameterTier.STANDARD,
