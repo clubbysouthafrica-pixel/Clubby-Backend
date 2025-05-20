@@ -19,7 +19,8 @@ export class MSC_MemberLoginConstruct extends Construct {
             code: "login/sign_up",
             envVariables: {
                 USER_POOL_CLIENT_ID: user_pool.userPoolClient.userPoolClientId,
-                USERS_TABLE_NAME: props.users_table.tableName
+                USERS_TABLE_NAME: props.users_table.tableName,
+                USER_TYPE: "MEMBER"
             },
             permissions: {
                 [user_pool.userPoolArn]: [

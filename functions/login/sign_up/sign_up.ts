@@ -5,7 +5,7 @@ import {
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
-const dynamodbClient = new DynamoDBClient({ region: process.env.REGION }); 
+const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 const allowedOrigins = [
   "http://localhost:5173"
@@ -41,7 +41,7 @@ export const handler = async (event: any) => {
     if (process.env.ADMIN_TOKEN != null) {
       if (body?.admin_token == null || body.admin_token !== process.env.ADMIN_TOKEN) {
         return createResponse(400, { message: 'Not authorized for admin signup.' }, origin);
-      } 
+      }
     }
 
     if (body?.username == null || body?.password == null) {
@@ -63,8 +63,9 @@ export const handler = async (event: any) => {
     const dynamodbCommand = new PutItemCommand({
       TableName: process.env.USERS_TABLE_NAME,
       Item: {
-        "user_id": { S: body.username},
-        "on_boarded": { BOOL: false}
+        "user_type": { S: process.env.USER_TYPE as string },
+        "user_id": { S: body.username },
+        "on_boarded": { BOOL: false }
       }
     });
     const dynamodbResponse = await dynamodbClient.send(dynamodbCommand);

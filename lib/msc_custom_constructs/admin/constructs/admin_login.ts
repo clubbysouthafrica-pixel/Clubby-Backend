@@ -21,6 +21,7 @@ export class MSC_AdminLoginConstruct extends Construct {
             envVariables: {
                 USER_POOL_CLIENT_ID: user_pool.userPoolClient.userPoolClientId,
                 USERS_TABLE_NAME: props.users_table.tableName,
+                USER_TYPE: "ADMIN",
                 ADMIN_TOKEN: "FHJ289489JDJD"
             },
             permissions: {
