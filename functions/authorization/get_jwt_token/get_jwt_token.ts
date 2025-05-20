@@ -32,7 +32,7 @@ export const handler = async (event: any) => {
   try {
     const body = JSON.parse(event.body);
 
-    if (body.userId !== process.env.USER_ID || body.token !== process.env.TOKEN ) {
+    if (body.username !== process.env.LOGIN || body.password !== process.env.PASSWORD ) {
         return createResponse(404, { message: "Invalid credentials." }, origin);
     }
 
