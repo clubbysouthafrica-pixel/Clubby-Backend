@@ -1,4 +1,4 @@
-import { LambdaIntegration, MethodOptions, PassthroughBehavior, MockIntegration } from "aws-cdk-lib/aws-apigateway";
+import { LambdaIntegration, MethodOptions, PassthroughBehavior, MockIntegration, AuthorizationType } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Lambda } from "../msc_service_constructs/msc_lambda";
 
 export function addCorsEnabledMethod(
@@ -13,7 +13,7 @@ export function addCorsEnabledMethod(
       statusCode,
       responseParameters: {
         'method.response.header.Access-Control-Allow-Origin': `'${origin}'`,
-        'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+        'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,Authorization'",
         'method.response.header.Access-Control-Allow-Methods': "'OPTIONS,POST,GET'",
         'method.response.header.Access-Control-Allow-Credentials': "'true'",
       },
@@ -47,7 +47,7 @@ export function addCorsOptions(resource: any, origin = 'http://localhost:5173') 
           statusCode: '200',
           responseParameters: {
             'method.response.header.Access-Control-Allow-Headers':
-              "'Content-Type,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+              "'Content-Type,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,Authorization'",
             'method.response.header.Access-Control-Allow-Origin': `'${origin}'`,
             'method.response.header.Access-Control-Allow-Credentials': "'true'",
             'method.response.header.Access-Control-Allow-Methods': "'OPTIONS,POST,GET'",

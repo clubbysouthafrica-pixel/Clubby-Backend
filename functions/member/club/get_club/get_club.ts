@@ -34,29 +34,31 @@ export const handler = async (event: any) => {
     try {
         const body = JSON.parse(event.body);
 
-        if (body?.user_id == null) {
-            return createResponse(400, { message: "User ID required." }, origin);
+        if (body?.club_name == null || body?.club_account_id == null) {
+            return createResponse(400, { message: "club_name and club_account_id required." }, origin);
         }
 
         const command = new GetItemCommand({
-            TableName: process.env.USERS_TABLE_NAME,
+            TableName: process.env.CLUB_ACCOUNT_TABLE_NAME,
             Key: {
-                user_type: { S: process.env.USER_TYPE as string },
-                user_id: { S: body.user_id }
+                club_name: { S: body.club_name },
+                club_account_id: { S: body.club_account_id }
             }
         });
         const response = await dynamodbClient.send(command);
 
         if (!response.Item) {
-            return createResponse(200, { message: "User not found" }, origin);
+            return createResponse(200, { message: "Club not found." }, origin);
         }
 
         const item = unmarshall(response.Item);
 
-        return createResponse(200, { 
-            user_id: item["user_id"],
-            onboarded: item["onboarded"]
-         }, origin);
+        return createResponse(200, {
+            club_name: item["club_name"],
+            club_account_id: item["club_account_id"],
+            club_type: item["club_type"]
+        }, origin);
+        
     } catch (error) {
         console.error("Error:", error);
         return createResponse(500, { message: "Internal Server Error" }, origin);

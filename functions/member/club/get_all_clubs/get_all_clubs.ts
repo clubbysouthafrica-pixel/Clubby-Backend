@@ -1,4 +1,4 @@
-import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
@@ -32,31 +32,25 @@ export const handler = async (event: any) => {
     console.log(`Called by origin: ${origin}`)
 
     try {
-        const body = JSON.parse(event.body);
-
-        if (body?.user_id == null) {
-            return createResponse(400, { message: "User ID required." }, origin);
-        }
-
-        const command = new GetItemCommand({
-            TableName: process.env.USERS_TABLE_NAME,
-            Key: {
-                user_type: { S: process.env.USER_TYPE as string },
-                user_id: { S: body.user_id }
-            }
+        const command = new ScanCommand({
+            TableName: process.env.CLUB_ACCOUNT_TABLE_NAME,
         });
         const response = await dynamodbClient.send(command);
 
-        if (!response.Item) {
-            return createResponse(200, { message: "User not found" }, origin);
+        let items: any[] = [];
+        if (response.Items) {
+            items = response.Items.map((item) => {
+                const entry = unmarshall(item);
+                return {
+                    club_name: entry.club_name,
+                    club_account_id: entry.club_account_id,
+                    club_type: entry.club_type
+                };
+            });
         }
 
-        const item = unmarshall(response.Item);
+        return createResponse(200, { items }, origin);
 
-        return createResponse(200, { 
-            user_id: item["user_id"],
-            onboarded: item["onboarded"]
-         }, origin);
     } catch (error) {
         console.error("Error:", error);
         return createResponse(500, { message: "Internal Server Error" }, origin);

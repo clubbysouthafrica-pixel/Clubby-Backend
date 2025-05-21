@@ -2,12 +2,17 @@ import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { MSC_APIGateway } from '../../msc_service_constructs';
 import { MSC_JWTConstruct } from '../authorization';
-import { MSC_MemberLoginConstruct, MSC_MemberUserConstruct } from "./constructs";
+import { 
+    MSC_MemberLoginConstruct, 
+    MSC_MemberUserConstruct, 
+    MSC_MemberClubConstruct 
+} from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs"
 
 export interface MSC_MemberNestedStackProps extends StackProps {
     users_table: MSC_Table;
     club_users_table: MSC_Table;
+    club_account_table: MSC_Table;
 }
 
 export class MSC_MemberNestedStack extends Stack {
@@ -16,16 +21,22 @@ export class MSC_MemberNestedStack extends Stack {
 
         const api_gateway = new MSC_APIGateway(this, id);
 
-        const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, { 
+        const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, {
             api_gateway: api_gateway, user_type: "member", auth_required: true
         });
-        
-        new MSC_MemberLoginConstruct(this, `${id}-Login`, { 
-            api_gateway: api_gateway, users_table: props.users_table 
+
+        new MSC_MemberClubConstruct(this, `${id}-Club`, {
+            api_gateway: api_gateway,
+            club_account_table: props.club_account_table,
+            token_authorizer: jwt_construct.token_authorizer,
+        })
+
+        new MSC_MemberLoginConstruct(this, `${id}-Login`, {
+            api_gateway: api_gateway, users_table: props.users_table
         });
 
         new MSC_MemberUserConstruct(this, `${id}-User`, {
-            api_gateway: api_gateway, 
+            api_gateway: api_gateway,
             users_table: props.users_table,
             token_authorizer: jwt_construct.token_authorizer,
         });
