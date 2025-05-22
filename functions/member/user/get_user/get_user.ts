@@ -13,7 +13,7 @@ export const handler = async (event: any) => {
         const body = JSON.parse(event.body);
 
         if (body?.user_id == null) {
-            return createResponse(400, { message: "User ID required." }, origin);
+            return createResponse(400, { message: "user_id required." }, origin);
         }
 
         const command = new GetItemCommand({

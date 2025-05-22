@@ -26,9 +26,23 @@ export class MSC_MemberUserConstruct extends Construct {
             }
         });
 
+        const onboard_user = new MSC_Lambda(this, `${id}-OnboardUser`, {
+            code: "member/user/onboard_user",
+            envVariables: {
+                USERS_TABLE_NAME: props.users_table.tableName,
+                USER_TYPE: "MEMBER"
+            },
+            permissions: {
+                [props.users_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ]
+            }
+        });
+
         const user_resource = props.api_gateway.root.addResource("user");
 
         const get_user_resource = user_resource.addResource("getUser");
+        const onboard_user_resource = user_resource.addResource("onboardUser");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -37,5 +51,6 @@ export class MSC_MemberUserConstruct extends Construct {
         }
 
         addCorsEnabledMethod(get_user_resource, get_user, methodOptions);
+        addCorsEnabledMethod(onboard_user_resource, onboard_user, methodOptions, undefined, "PUT");
     }
 }
