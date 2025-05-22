@@ -71,9 +71,6 @@ export const handler = async (event: any) => {
       return createResponse(200, { message: "Item updated", item: response.Attributes }, origin);
     } catch (error: any) {
       if (error.name === "ConditionalCheckFailedException") {
-        console.log("Item does not exist. You can insert a new item here if needed.");
-
-        // Optional: insert logic (PutItemCommand) can go here if desired
         return createResponse(404, { message: "User does not exist" }, origin);
       }
 
