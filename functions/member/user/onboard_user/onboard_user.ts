@@ -3,6 +3,26 @@ import { createResponse } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
+const isValidDateOfBirth = (dob: string): boolean => {
+  const regex = /^\d{4}\/\d{2}\/\d{2}$/;
+
+  if (!regex.test(dob)) return false;
+
+  const [year, month, day] = dob.split("/").map(Number);
+  const date = new Date(`${year}-${month}-${day}`);
+
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() + 1 === month &&
+    date.getDate() === day
+  );
+};
+
+const isValidEmail = (email: string): boolean => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
 export const handler = async (event: any) => {
   console.log(`EVENT @ ${new Date()}: `, event);
   const origin = event.headers.origin;
@@ -18,6 +38,22 @@ export const handler = async (event: any) => {
       return createResponse(
         400,
         { message: `Missing required fields: ${missingFields.join(", ")}` },
+        origin
+      );
+    }
+
+    if (!isValidEmail(body.email)) {
+      return createResponse(
+        400,
+        { message: "Invalid email format" },
+        origin
+      );
+    }
+
+    if (!isValidDateOfBirth(body.date_of_birth)) {
+      return createResponse(
+        400,
+        { message: "date_of_birth must be in format yyyy/mm/dd" },
         origin
       );
     }
