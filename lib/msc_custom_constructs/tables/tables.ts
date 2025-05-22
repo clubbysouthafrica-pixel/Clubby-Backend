@@ -8,12 +8,13 @@ interface MSC_TablesProps {
 export class MSC_TablesConstruct extends Construct {
     public readonly club_account_table: MSC_Table;
     public readonly users_table: MSC_Table;
-    public readonly club_users_table: MSC_Table;
+    public readonly club_member_table: MSC_Table;
+    public readonly club_admin_table: MSC_Table;
     constructor(scope: Construct, id: string, props: MSC_TablesProps) {
         super(scope, `${id}-Tables`);
 
-        this.club_account_table = new MSC_Table(this, `${id}-ClubAccount`, {
-            partitionKey: {"club_name": "STRING"},
+        this.club_account_table = new MSC_Table(this, `${id}-Clubs`, {
+            partitionKey: {"club_type": "STRING"},
             sortKey: {"club_account_id": "STRING"}
         });
 
@@ -22,7 +23,12 @@ export class MSC_TablesConstruct extends Construct {
             sortKey: {"user_id": "STRING"}
         });
 
-        this.club_users_table = new MSC_Table(this, `${id}-ClubUsers`, {
+        this.club_member_table = new MSC_Table(this, `${id}-ClubMember`, {
+            partitionKey: {"user_id": "STRING"},
+            sortKey: {"club_account_id": "STRING"}
+        });
+
+        this.club_admin_table = new MSC_Table(this, `${id}-ClubAdmin`, {
             partitionKey: {"user_id": "STRING"},
             sortKey: {"club_account_id": "STRING"}
         });

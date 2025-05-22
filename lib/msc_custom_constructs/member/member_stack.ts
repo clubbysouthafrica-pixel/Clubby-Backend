@@ -11,7 +11,7 @@ import { MSC_Table } from "../../msc_service_constructs"
 
 export interface MSC_MemberNestedStackProps extends StackProps {
     users_table: MSC_Table;
-    club_users_table: MSC_Table;
+    club_member_table: MSC_Table;
     club_account_table: MSC_Table;
 }
 

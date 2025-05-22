@@ -10,7 +10,7 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_MemberNestedStack(this, `${stack_id}-MemberStack`, {
       users_table: tables.users_table,
-      club_users_table: tables.club_users_table,
+      club_member_table: tables.club_member_table,
       club_account_table: tables.club_account_table,
     });
 

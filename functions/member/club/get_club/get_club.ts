@@ -34,14 +34,14 @@ export const handler = async (event: any) => {
     try {
         const body = JSON.parse(event.body);
 
-        if (body?.club_name == null || body?.club_account_id == null) {
-            return createResponse(400, { message: "club_name and club_account_id required." }, origin);
+        if (body?.club_type == null || body?.club_account_id == null) {
+            return createResponse(400, { message: "club_type and club_account_id required." }, origin);
         }
 
         const command = new GetItemCommand({
             TableName: process.env.CLUB_ACCOUNT_TABLE_NAME,
             Key: {
-                club_name: { S: body.club_name },
+                club_type: { S: body.club_type },
                 club_account_id: { S: body.club_account_id }
             }
         });
@@ -54,9 +54,9 @@ export const handler = async (event: any) => {
         const item = unmarshall(response.Item);
 
         return createResponse(200, {
-            club_name: item["club_name"],
             club_account_id: item["club_account_id"],
-            club_type: item["club_type"]
+            club_type: item["club_type"],
+            club_name: item["club_name"]
         }, origin);
         
     } catch (error) {

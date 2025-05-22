@@ -5,6 +5,13 @@ export class MSC_APIGateway extends RestApi {
     constructor(scope: Construct, id: string) {
         super(scope, `${id}-APIGateway`, {
             restApiName: `${id}-APIGateway`,
+            defaultCorsPreflightOptions: {
+                allowOrigins: ["http://localhost:5173"],
+                allowCredentials: true,
+                allowHeaders: ["*"],
+                allowMethods: ["POST,GET"],
+                statusCode: 200,
+            }
         });
 
         this.addGatewayResponse('UnauthorizedResponse', {
