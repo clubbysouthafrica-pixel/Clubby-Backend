@@ -23,6 +23,11 @@ const isValidEmail = (email: string): boolean => {
   return regex.test(email);
 };
 
+const isValidPhoneNumber = (phone: string): boolean => {
+  const regex = /^\+\d{10,15}$/; // + followed by 10–15 digits
+  return regex.test(phone);
+};
+
 export const handler = async (event: any) => {
   console.log(`EVENT @ ${new Date()}: `, event);
   const origin = event.headers.origin;
@@ -31,8 +36,24 @@ export const handler = async (event: any) => {
   try {
     const body = JSON.parse(event.body);
 
-    const requiredFields = ["user_id", "first_name", "surname", "date_of_birth", "email"];
+    const requiredFields = ["user_id", "first_name", "surname", "date_of_birth", "email", "phone_number"];
     const missingFields = requiredFields.filter((field) => !body?.[field]);
+
+    const invalidStringFields = requiredFields.filter(
+      field => typeof body[field] !== "string"
+    );
+
+    if (invalidStringFields.length > 0) {
+      return createResponse(
+        400,
+        { message: `These fields must be strings: ${invalidStringFields.join(", ")}` },
+        origin
+      );
+    }
+
+    if (!isValidPhoneNumber(body.phone_number)) {
+      return createResponse(400, { message: "Invalid phone number format. Use format like +27727187281" }, origin);
+    }
 
     if (missingFields.length > 0) {
       return createResponse(
