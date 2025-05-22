@@ -2,31 +2,9 @@ import {
   CognitoIdentityProviderClient,
   ForgotPasswordCommand
 } from "@aws-sdk/client-cognito-identity-provider";
+import { createResponse } from "./helpers";
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
-
-const allowedOrigins = [
-  "http://localhost:5173"
-];
-
-const createResponse = (statusCode: number, data: object, origin: string) => {
-  const allowOrigin = allowedOrigins.includes(origin)
-    ? origin
-    : allowedOrigins[0];
-
-  const response = {
-    statusCode: statusCode,
-    body: JSON.stringify(data),
-    headers: {
-      "Access-Control-Allow-Origin": allowOrigin,
-      "Access-Control-Allow-Methods": "OPTIONS,POST",
-      "Access-Control-Allow-Headers": "Content-Type,X-Requested-With",
-      "Access-Control-Allow-Credentials": "true"
-    },
-  };
-  console.log(`RESPONSE @ ${new Date()}: `, response);
-  return response;
-};
 
 export const handler = async (event: any) => {
   console.log(`EVENT @ ${new Date()}: `, event);

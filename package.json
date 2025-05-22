@@ -7,7 +7,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsc --build",
-    "predeploy": "npm run build && node scripts/copy-helpers.js",
+    "predeploy": "node scripts/copy-helpers.js && npm run build",
     "deploy": "npm run predeploy && cdk deploy --all"
   },
   "devDependencies": {
