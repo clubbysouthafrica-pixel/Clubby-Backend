@@ -11,7 +11,7 @@ export const handler = async (event: any) => {
   try {
     const body = JSON.parse(event.body);
 
-    const requiredFields = ["user_id", "user_type", "first_name", "surname", "date_of_birth", "email"];
+    const requiredFields = ["user_id", "first_name", "surname", "date_of_birth", "email"];
     const missingFields = requiredFields.filter((field) => !body?.[field]);
 
     if (missingFields.length > 0) {
@@ -23,7 +23,7 @@ export const handler = async (event: any) => {
     }
 
     const key = {
-      user_type: { S: body.user_type },
+      user_type: { S: process.env.USER_TYPE as string },
       user_id: { S: body.user_id },
     };
 
