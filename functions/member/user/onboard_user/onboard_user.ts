@@ -11,7 +11,6 @@ export const handler = async (event: any) => {
   try {
     const body = JSON.parse(event.body);
 
-    // Validate required fields
     const requiredFields = ["user_id", "user_type", "first_name", "surname", "date_of_birth", "email"];
     const missingFields = requiredFields.filter((field) => !body?.[field]);
 
@@ -28,7 +27,6 @@ export const handler = async (event: any) => {
       user_id: { S: body.user_id },
     };
 
-    // Fields to update: required + optional
     const updatableFields = [
       "first_name",
       "surname",
