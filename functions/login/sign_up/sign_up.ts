@@ -3,7 +3,7 @@ import {
   SignUpCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { createResponse } from "./helpers";
+import { createResponse } from "./function_helpers";
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });

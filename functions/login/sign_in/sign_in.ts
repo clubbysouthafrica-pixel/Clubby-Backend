@@ -3,7 +3,7 @@ import {
   InitiateAuthCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 import jwt from 'jsonwebtoken';
-import { createResponse } from "./helpers";
+import { createResponse } from "./function_helpers";
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 

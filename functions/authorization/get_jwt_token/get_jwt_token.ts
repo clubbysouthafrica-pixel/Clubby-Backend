@@ -1,5 +1,5 @@
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
-import { createResponse } from "./helpers";
+import { createResponse } from "./function_helpers";
 
 const ssmClient = new SSMClient({ region: process.env.REGION });
 

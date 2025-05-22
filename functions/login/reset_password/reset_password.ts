@@ -2,7 +2,7 @@ import {
   CognitoIdentityProviderClient,
   ConfirmForgotPasswordCommand
 } from "@aws-sdk/client-cognito-identity-provider";
-import { createResponse } from "./helpers";
+import { createResponse } from "./function_helpers";
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 
