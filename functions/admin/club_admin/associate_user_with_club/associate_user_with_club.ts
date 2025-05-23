@@ -15,7 +15,7 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'Not authorized for admin signup.' }, origin);
         }
 
-        if (body?.user_id == null || body?.club_account_id == null || body?.club_type, body?.access) {
+        if (body?.user_id == null || body?.club_account_id == null || body?.club_type == null || body?.access == null) {
             return createResponse(400, { message: "user_id, club_account_id and club_type required." }, origin);
         }
 
@@ -63,7 +63,7 @@ export const handler = async (event: any) => {
         console.log('Admin successfully associated with club: ', clubAdminResponse)
 
         return createResponse(200, { message: "Admin successfully associated with club." }, origin);
-        
+
     } catch (error) {
         console.error("Error:", error);
         return createResponse(500, { message: "Internal Server Error" }, origin);
