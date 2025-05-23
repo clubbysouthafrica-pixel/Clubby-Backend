@@ -24,7 +24,7 @@ export const handler = async (event: any) => {
         }
 
         if (!CLUB_TYPES.includes(body.club_type)) {
-            return createResponse(400, { message: 'Invalid club_type.' }, origin);
+            return createResponse(400, { message: `Invalid club_type. Valid values: ${CLUB_TYPES}.` }, origin);
         }
 
         const club_account_id = generate_club_Id(body.club_name);
