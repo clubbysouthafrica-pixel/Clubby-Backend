@@ -14,6 +14,9 @@ export class MSC_Stack extends cdk.Stack {
       club_account_table: tables.club_account_table,
     });
 
-    new MSC_AdminNestedStack(this, `${stack_id}-AdminStack`, { users_table: tables.users_table });
+    new MSC_AdminNestedStack(this, `${stack_id}-AdminStack`, { 
+      users_table: tables.users_table, 
+      club_account_table: tables.club_account_table 
+    });
   }
 }
