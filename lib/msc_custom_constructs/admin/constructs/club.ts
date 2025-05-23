@@ -29,12 +29,12 @@ export class MSC_AdminClubConstruct extends Construct {
 
         const create_club_resource = club_resource.addResource("createClub");
 
-        const methodOptions: MethodOptions = {
-            methodResponses: [],
-            authorizationType: AuthorizationType.CUSTOM,
-            authorizer: props.token_authorizer
-        }
+        // const methodOptions: MethodOptions = {
+        //     methodResponses: [],
+        //     authorizationType: AuthorizationType.CUSTOM,
+        //     authorizer: props.token_authorizer
+        // }
 
-        addCorsEnabledMethod(create_club_resource, create_club, methodOptions, undefined, "PUT");
+        addCorsEnabledMethod(create_club_resource, create_club, { methodResponses: [] }, undefined, "PUT");
     }
 }
