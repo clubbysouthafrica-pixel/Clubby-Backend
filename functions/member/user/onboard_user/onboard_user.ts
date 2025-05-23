@@ -74,7 +74,7 @@ export const handler = async (event: any) => {
     if (!isValidDateOfBirth(body.date_of_birth)) {
       return createResponse(
         400,
-        { message: "date_of_birth must be in format yyyy/mm/dd" },
+        { message: "Invalid date of birth. Use format yyyy/mm/dd" },
         origin
       );
     }
