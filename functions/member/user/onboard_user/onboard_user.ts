@@ -110,6 +110,10 @@ export const handler = async (event: any) => {
       }
     }
 
+    updateExpressions.push("#onboarded = :onboarded");
+    expressionAttributeNames["#onboarded"] = "onboarded";
+    expressionAttributeValues[":onboarded"] = { BOOL: true };
+
     const UpdateExpression = `SET ${updateExpressions.join(", ")}`;
 
     try {
