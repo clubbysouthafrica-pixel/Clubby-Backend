@@ -89,6 +89,7 @@ export const handler = async (event: any) => {
       "surname",
       "date_of_birth",
       "email",
+      "phone_number",
       "address_line_1",
       "address_line_2",
       "suburb",

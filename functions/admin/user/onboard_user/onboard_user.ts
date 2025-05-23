@@ -93,6 +93,7 @@ export const handler = async (event: any) => {
       "address_line_2",
       "suburb",
       "city",
+      "phone_number",
       "postal_code",
     ];
 

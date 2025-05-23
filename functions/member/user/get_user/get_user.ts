@@ -36,6 +36,7 @@ export const handler = async (event: any) => {
             onboarded: item["onboarded"],
             address_line_1: "address_line_1" in item ? item["address_line_1"] : undefined,
             address_line_2: "address_line_2" in item ? item["address_line_2"] : undefined,
+            phone_number: "phone_number" in item ? item["phone_number"] : undefined,
             city: "city" in item ? item["city"] : undefined,
             date_of_birth: "date_of_birth" in item ? item["date_of_birth"] : undefined,
             email: "email" in item ? item["email"] : undefined,
