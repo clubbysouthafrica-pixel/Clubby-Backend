@@ -16,7 +16,7 @@ export const handler = async (event: any) => {
         }
 
         if (body?.user_id == null || body?.club_account_id == null || body?.club_type == null || body?.access == null) {
-            return createResponse(400, { message: "user_id, club_account_id and club_type required." }, origin);
+            return createResponse(400, { message: "user_id, club_account_id, club_type and access required." }, origin);
         }
 
         if (!CLUB_TYPES.includes(body.club_type)) {
