@@ -1,13 +1,7 @@
-import {
-    CognitoIdentityProviderClient,
-    SignUpCommand
-} from "@aws-sdk/client-cognito-identity-provider";
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { createResponse } from "./function_helpers";
+import { createResponse, CLUB_TYPES } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
-
-const CLUB_TYPES = ["PADDLING", "TENNIS", "GOLF"];
 
 function generate_club_Id(club_name: string): string {
     return `club_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
