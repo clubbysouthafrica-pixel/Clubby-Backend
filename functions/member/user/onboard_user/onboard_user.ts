@@ -127,7 +127,7 @@ export const handler = async (event: any) => {
         ReturnValues: "ALL_NEW",
       }));
 
-      return createResponse(200, { message: "Item updated", item: response.Attributes }, origin);
+      return createResponse(200, { message: "Success" }, origin);
     } catch (error: any) {
       if (error.name === "ConditionalCheckFailedException") {
         return createResponse(404, { message: "User does not exist" }, origin);
