@@ -39,6 +39,14 @@ export const handler = async (event: any) => {
     const requiredFields = ["user_id", "first_name", "surname", "date_of_birth", "email", "phone_number"];
     const missingFields = requiredFields.filter((field) => !body?.[field]);
 
+    if (missingFields.length > 0) {
+      return createResponse(
+        400,
+        { message: `Missing required fields: ${missingFields.join(", ")}` },
+        origin
+      );
+    }
+
     const invalidStringFields = requiredFields.filter(
       field => typeof body[field] !== "string"
     );
@@ -53,14 +61,6 @@ export const handler = async (event: any) => {
 
     if (!isValidPhoneNumber(body.phone_number)) {
       return createResponse(400, { message: "Invalid phone number format. Use format like +27727187281" }, origin);
-    }
-
-    if (missingFields.length > 0) {
-      return createResponse(
-        400,
-        { message: `Missing required fields: ${missingFields.join(", ")}` },
-        origin
-      );
     }
 
     if (!isValidEmail(body.email)) {
