@@ -10,7 +10,7 @@ const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 const CLUB_TYPES = ["PADDLING", "TENNIS", "GOLF"];
 
 function generate_club_Id(club_name: string): string {
-    return `club_${club_name}_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
+    return `club_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
 }
 
 export const handler = async (event: any) => {
@@ -33,12 +33,14 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'Invalid club_type.' }, origin);
         }
 
+        const club_account_id = generate_club_Id(body.club_name);
+
         const dynamodbCommand = new PutItemCommand({
             TableName: process.env.CLUB_ACCOUNT_TABLE_NAME,
             Item: {
                 "club_type": { S: body.club_type },
                 "club_name": { S: body.club_name },
-                "club_account_id": { S: generate_club_Id(body.club_name) }
+                "club_account_id": { S: club_account_id }
             }
         });
 
@@ -48,7 +50,8 @@ export const handler = async (event: any) => {
         return createResponse(
             200,
             {
-                message: "Successfully added club."
+                message: "Successfully added club.",
+                club_account_id: club_account_id
             },
             origin
         );
