@@ -56,6 +56,7 @@ export const handler = async (event: any) => {
             Item: {
                 "user_id": { S: body.user_id },
                 "club_account_id": { S: body.club_account_id },
+                "club_type": { S: clubResponse.Item["club_type"]["S"] as string },
                 "access": { S: body.access }
             }
         });
