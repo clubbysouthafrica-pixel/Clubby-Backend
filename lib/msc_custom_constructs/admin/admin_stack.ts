@@ -1,13 +1,19 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { MSC_APIGateway } from '../../msc_service_constructs';
-import { MSC_AdminLoginConstruct, MSC_AdminUserConstruct, MSC_AdminClubConstruct } from "./constructs";
+import { 
+    MSC_AdminLoginConstruct, 
+    MSC_AdminUserConstruct, 
+    MSC_AdminClubConstruct,
+    MSC_ClubAdminClubConstruct,
+} from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
 
 export interface MSC_AdminNestedStackProps extends StackProps {
     users_table: MSC_Table;
     club_account_table: MSC_Table;
+    club_admin_table: MSC_Table;
 }
 
 export class MSC_AdminNestedStack extends Stack {
@@ -33,5 +39,13 @@ export class MSC_AdminNestedStack extends Stack {
             club_account_table: props.club_account_table,
             token_authorizer: jwt_construct.token_authorizer,
         });
+
+        new MSC_ClubAdminClubConstruct(this, `${id}-ClubAdmin`, {
+            api_gateway: api_gateway,
+            club_account_table: props.club_account_table,
+            token_authorizer: jwt_construct.token_authorizer,
+            users_table: props.users_table,
+            club_admin_table: props.club_admin_table,
+        })
     }
 }
