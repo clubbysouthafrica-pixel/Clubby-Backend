@@ -17,6 +17,7 @@ export class MSC_AdminClubConstruct extends Construct {
             code: "admin/club/create_club",
             envVariables: {
                 CLUB_ACCOUNT_TABLE_NAME: props.club_account_table.tableName,
+                ADMIN_TOKEN: "FHJ289489JDJD"
             },
             permissions: {
                 [props.club_account_table.tableArn]: [
