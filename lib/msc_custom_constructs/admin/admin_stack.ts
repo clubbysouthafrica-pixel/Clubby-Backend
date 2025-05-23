@@ -1,7 +1,7 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { MSC_APIGateway } from '../../msc_service_constructs';
-import { MSC_AdminLoginConstruct } from "./constructs";
+import { MSC_AdminLoginConstruct, MSC_AdminUserConstruct } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
 
@@ -15,9 +15,16 @@ export class MSC_AdminNestedStack extends Stack {
 
         const api_gateway = new MSC_APIGateway(this, id);
 
-        new MSC_JWTConstruct(this, `${id}-Auth`, { api_gateway: api_gateway, user_type: "admin" })
-        new MSC_AdminLoginConstruct(this, `${id}-Login`, { 
-            api_gateway: api_gateway, users_table: props.users_table 
+        const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, { api_gateway: api_gateway, user_type: "admin" })
+
+        new MSC_AdminLoginConstruct(this, `${id}-Login`, {
+            api_gateway: api_gateway, users_table: props.users_table
         });
+
+        new MSC_AdminUserConstruct(this, `${id}-User`, {
+            api_gateway: api_gateway,
+            users_table: props.users_table,
+            token_authorizer: jwt_construct.token_authorizer,
+        })
     }
 }

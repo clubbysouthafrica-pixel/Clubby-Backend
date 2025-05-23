@@ -11,7 +11,6 @@ import { Duration } from "aws-cdk-lib";
 interface MSC_JWTConstructProps {
     api_gateway: MSC_APIGateway;
     user_type: "member" | "admin";
-    auth_required?: boolean;
 }
 
 export class MSC_JWTConstruct extends Construct {
@@ -27,22 +26,20 @@ export class MSC_JWTConstruct extends Construct {
             dataType: ParameterDataType.TEXT,
         });
 
-        if (props.auth_required) {
-            const lambda_authorizer = new MSC_Lambda(this, `${id}-Authorizer`, {
-                code: "authorization/lambda_authorizer",
-                envVariables: {
-                    SSM_TOKEN_NAME: token_parameter.parameterName
-                },
-                permissions: {
-                    [token_parameter.parameterArn]: ["ssm:GetParameter"]
-                }
-            });
-            this.token_authorizer = new TokenAuthorizer(this, `${id}-Authorizer`, {
-                handler: lambda_authorizer,
-                identitySource: 'method.request.header.Authorization',
-                resultsCacheTtl: Duration.seconds(60)
-            });
-        }
+        const lambda_authorizer = new MSC_Lambda(this, `${id}-Authorizer`, {
+            code: "authorization/lambda_authorizer",
+            envVariables: {
+                SSM_TOKEN_NAME: token_parameter.parameterName
+            },
+            permissions: {
+                [token_parameter.parameterArn]: ["ssm:GetParameter"]
+            }
+        });
+        this.token_authorizer = new TokenAuthorizer(this, `${id}-Authorizer`, {
+            handler: lambda_authorizer,
+            identitySource: 'method.request.header.Authorization',
+            resultsCacheTtl: Duration.seconds(60)
+        });
 
         const token_generator = new MSC_Lambda(this, `${id}-TokenGenerator`, {
             code: "authorization/generate_jwt_token",

@@ -22,7 +22,7 @@ export class MSC_MemberNestedStack extends Stack {
         const api_gateway = new MSC_APIGateway(this, id);
 
         const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, {
-            api_gateway: api_gateway, user_type: "member", auth_required: true
+            api_gateway: api_gateway, user_type: "member"
         });
 
         new MSC_MemberClubConstruct(this, `${id}-Club`, {
