@@ -20,11 +20,11 @@ export const handler = async (event: any) => {
         }
 
         if (!CLUB_TYPES.includes(body.club_type)) {
-            return createResponse(400, { message: 'Invalid club_type.' }, origin);
+            return createResponse(400, { message: `Invalid club_type. Valid values: ${CLUB_TYPES}.` }, origin);
         }
 
         if (!ACCESS.includes(body.access)) {
-            return createResponse(400, { message: 'Invalid access.' }, origin);
+            return createResponse(400, { message: `Invalid access. Valid values: ${ACCESS}.` }, origin);
         }
 
         const userCommand = new GetItemCommand({
@@ -36,7 +36,7 @@ export const handler = async (event: any) => {
         });
         const userResponse = await dynamodbClient.send(userCommand);
         if (!userResponse.Item) {
-            return createResponse(200, { message: "User not found" }, origin);
+            return createResponse(200, { message: "User not found." }, origin);
         }
 
         const clubCommand = new GetItemCommand({
@@ -48,7 +48,7 @@ export const handler = async (event: any) => {
         });
         const clubResponse = await dynamodbClient.send(clubCommand);
         if (!clubResponse.Item) {
-            return createResponse(200, { message: "Club not found" }, origin);
+            return createResponse(200, { message: "Club not found." }, origin);
         }
 
         const clubAdminCommand = new PutItemCommand({
