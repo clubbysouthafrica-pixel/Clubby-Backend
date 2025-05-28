@@ -12,7 +12,7 @@ export const handler = async (event: any) => {
     try {
         const body = JSON.parse(event.body);
 
-        if (body?.club_type == null || body?.club_account_id == null) {
+        if (body?.club_account_id == null) {
             return createResponse(400, { message: "club_type and club_account_id required." }, origin);
         }
 

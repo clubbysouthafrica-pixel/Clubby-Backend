@@ -15,12 +15,8 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'Not authorized for admin signup.' }, origin);
         }
 
-        if (body?.user_id == null || body?.club_account_id == null || body?.club_type == null || body?.access == null) {
-            return createResponse(400, { message: "user_id, club_account_id, club_type and access required." }, origin);
-        }
-
-        if (!CLUB_TYPES.includes(body.club_type)) {
-            return createResponse(400, { message: `Invalid club_type. Valid values: ${CLUB_TYPES}.` }, origin);
+        if (body?.user_id == null || body?.club_account_id == null || body?.access == null) {
+            return createResponse(400, { message: "user_id, club_account_id, and access required." }, origin);
         }
 
         if (!ACCESS.includes(body.access)) {
