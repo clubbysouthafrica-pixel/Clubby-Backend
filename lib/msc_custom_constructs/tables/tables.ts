@@ -10,12 +10,12 @@ export class MSC_TablesConstruct extends Construct {
     public readonly users_table: MSC_Table;
     public readonly club_member_table: MSC_Table;
     public readonly club_admin_table: MSC_Table;
+    public readonly club_table: MSC_Table;
     constructor(scope: Construct, id: string, props: MSC_TablesProps) {
         super(scope, `${id}-Tables`);
 
-        this.club_account_table = new MSC_Table(this, `${id}-Clubs`, {
-            partitionKey: {"club_type": "STRING"},
-            sortKey: {"club_account_id": "STRING"}
+        this.club_table = new MSC_Table(this, `${id}-Club`, {
+            partitionKey: {"club_account_id": "STRING"}
         });
 
         this.users_table = new MSC_Table(this, `${id}-Users`, {

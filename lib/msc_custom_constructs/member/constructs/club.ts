@@ -5,7 +5,7 @@ import { AuthorizationType, LambdaIntegration, MethodOptions, MockIntegration, P
 
 interface MSC_MemberClubConstructProps {
     api_gateway: MSC_APIGateway;
-    club_account_table: MSC_Table;
+    club_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
 }
 
@@ -16,10 +16,10 @@ export class MSC_MemberClubConstruct extends Construct {
         const get_club = new MSC_Lambda(this, `${id}-GetClub`, {
             code: "member/club/get_club",
             envVariables: {
-                CLUB_ACCOUNT_TABLE_NAME: props.club_account_table.tableName,
+                CLUB_TABLE_NAME: props.club_table.tableName,
             },
             permissions: {
-                [props.club_account_table.tableArn]: [
+                [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
                 ]
             }
@@ -28,10 +28,10 @@ export class MSC_MemberClubConstruct extends Construct {
         const get_all_clubs = new MSC_Lambda(this, `${id}-GetAllClubs`, {
             code: "member/club/get_all_clubs",
             envVariables: {
-                CLUB_ACCOUNT_TABLE_NAME: props.club_account_table.tableName,
+                CLUB_TABLE_NAME: props.club_table.tableName,
             },
             permissions: {
-                [props.club_account_table.tableArn]: [
+                [props.club_table.tableArn]: [
                     "dynamodb:Scan"
                 ]
             }

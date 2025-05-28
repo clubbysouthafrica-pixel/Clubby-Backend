@@ -17,9 +17,8 @@ export const handler = async (event: any) => {
         }
 
         const command = new GetItemCommand({
-            TableName: process.env.CLUB_ACCOUNT_TABLE_NAME,
+            TableName: process.env.CLUB_TABLE_NAME,
             Key: {
-                club_type: { S: body.club_type },
                 club_account_id: { S: body.club_account_id }
             }
         });

@@ -11,7 +11,7 @@ export const handler = async (event: any) => {
 
     try {
         const command = new ScanCommand({
-            TableName: process.env.CLUB_ACCOUNT_TABLE_NAME,
+            TableName: process.env.CLUB_TABLE_NAME,
         });
         const response = await dynamodbClient.send(command);
 

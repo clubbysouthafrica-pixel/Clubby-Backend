@@ -11,8 +11,8 @@ import { MSC_Table } from "../../msc_service_constructs"
 
 export interface MSC_MemberNestedStackProps extends StackProps {
     users_table: MSC_Table;
+    club_table: MSC_Table;
     club_member_table: MSC_Table;
-    club_account_table: MSC_Table;
 }
 
 export class MSC_MemberNestedStack extends Stack {
@@ -27,7 +27,7 @@ export class MSC_MemberNestedStack extends Stack {
 
         new MSC_MemberClubConstruct(this, `${id}-Club`, {
             api_gateway: api_gateway,
-            club_account_table: props.club_account_table,
+            club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
         })
 

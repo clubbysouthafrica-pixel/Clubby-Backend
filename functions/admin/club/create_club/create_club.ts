@@ -30,7 +30,7 @@ export const handler = async (event: any) => {
         const club_account_id = generate_club_Id(body.club_name);
 
         const dynamodbCommand = new PutItemCommand({
-            TableName: process.env.CLUB_ACCOUNT_TABLE_NAME,
+            TableName: process.env.CLUB_TABLE_NAME,
             Item: {
                 "club_type": { S: body.club_type },
                 "club_name": { S: body.club_name },

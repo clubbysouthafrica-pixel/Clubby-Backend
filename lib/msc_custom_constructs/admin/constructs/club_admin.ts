@@ -5,7 +5,7 @@ import { TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 
 interface MSC_ClubAdminClubConstructProps {
     api_gateway: MSC_APIGateway;
-    club_account_table: MSC_Table;
+    club_table: MSC_Table;
     users_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     club_admin_table: MSC_Table;
@@ -18,13 +18,13 @@ export class MSC_ClubAdminClubConstruct extends Construct {
         const associate_user_with_club = new MSC_Lambda(this, `${id}-CreateClub`, {
             code: "admin/club_admin/associate_user_with_club",
             envVariables: {
-                CLUBS_TABLE_NAME: props.club_account_table.tableName,
+                CLUB_TABLE_NAME: props.club_table.tableName,
                 USERS_TABLE_NAME: props.users_table.tableName,
                 CLUB_ADMIN_ACCOUNT_TABLE_NAME: props.club_admin_table.tableName,
                 ADMIN_TOKEN: "FHJ289489JDJD"
             },
             permissions: {
-                [props.club_account_table.tableArn]: [
+                [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
                 [props.users_table.tableArn]: [
