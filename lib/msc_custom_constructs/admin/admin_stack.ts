@@ -6,7 +6,7 @@ import {
     MSC_AdminUserConstruct, 
     MSC_AdminClubConstruct,
     MSC_ClubAdminClubConstruct,
-    MSC_RegistrationConstruct
+    MSC_AdminRegistrationConstruct
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
@@ -50,7 +50,7 @@ export class MSC_AdminNestedStack extends Stack {
             club_admin_table: props.club_admin_table,
         });
 
-        new MSC_RegistrationConstruct(this, `${id}-Registration`, {
+        new MSC_AdminRegistrationConstruct(this, `${id}-Registration`, {
             api_gateway: api_gateway,
             registration_form_table: props.registration_form_table,
             club_table: props.club_table,

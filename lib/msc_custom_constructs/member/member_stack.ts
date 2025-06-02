@@ -5,7 +5,8 @@ import { MSC_JWTConstruct } from '../authorization';
 import { 
     MSC_MemberLoginConstruct, 
     MSC_MemberUserConstruct, 
-    MSC_MemberClubConstruct 
+    MSC_MemberClubConstruct ,
+    MSC_MemberRegistrationConstruct
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs"
 
@@ -13,6 +14,7 @@ export interface MSC_MemberNestedStackProps extends StackProps {
     users_table: MSC_Table;
     club_table: MSC_Table;
     club_member_table: MSC_Table;
+    registration_form_table: MSC_Table;
 }
 
 export class MSC_MemberNestedStack extends Stack {
@@ -25,11 +27,17 @@ export class MSC_MemberNestedStack extends Stack {
             api_gateway: api_gateway, user_type: "member"
         });
 
+        new MSC_MemberRegistrationConstruct(this, `${id}-Registration`, {
+            api_gateway: api_gateway,
+            registration_form_table: props.registration_form_table,
+            token_authorizer: jwt_construct.token_authorizer
+        });
+
         new MSC_MemberClubConstruct(this, `${id}-Club`, {
             api_gateway: api_gateway,
             club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
-        })
+        });
 
         new MSC_MemberLoginConstruct(this, `${id}-Login`, {
             api_gateway: api_gateway, users_table: props.users_table

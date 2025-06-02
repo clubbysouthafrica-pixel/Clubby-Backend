@@ -3,15 +3,15 @@ import { MSC_Cognito, MSC_Lambda, MSC_APIGateway, MSC_Table } from "../../../msc
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 
-interface MSC_RegistrationConstructProps {
+interface MSC_AdminRegistrationConstructProps {
     api_gateway: MSC_APIGateway;
     registration_form_table: MSC_Table;
     club_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
 }
 
-export class MSC_RegistrationConstruct extends Construct {
-    constructor(scope: Construct, id: string, props: MSC_RegistrationConstructProps) {
+export class MSC_AdminRegistrationConstruct extends Construct {
+    constructor(scope: Construct, id: string, props: MSC_AdminRegistrationConstructProps) {
         super(scope, id);
 
         const add_registration_fields = new MSC_Lambda(this, `${id}-AddRegistrationFields`, {
