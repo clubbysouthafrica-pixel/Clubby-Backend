@@ -74,7 +74,7 @@ export const handler = async (event: any) => {
 
         if (duplicates.length > 0) {
             return createResponse(400, {
-                message: "Duplicate field_name(s) in request.",
+                message: "Duplicate field_name(s) in request. All field_name(s) must be unique.",
                 duplicates: [...new Set(duplicates)],
             }, origin);
         }
