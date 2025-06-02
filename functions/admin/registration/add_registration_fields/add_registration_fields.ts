@@ -99,7 +99,6 @@ export const handler = async (event: any) => {
             if (isStandardField(field)) {
                 item.field_type = { S: 'STANDARD' };
                 item.input_type = { S: field.type };
-                item.value = { S: field.type === 'DROPDOWN' ? (field.options?.[0] || '') : '' };
                 if (field.type === 'DROPDOWN' && field.options) {
                     item.options = { SS: field.options };
                 }
