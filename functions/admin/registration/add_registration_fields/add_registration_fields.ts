@@ -92,17 +92,19 @@ export const handler = async (event: any) => {
 
         for (const field of body.fields) {
             const item: any = {
-                PK: { S: body.club_account_id },
-                SK: { S: field.field_name }
+                club_account_id: { S: body.club_account_id },
+                field_name: { S: field.field_name }
             };
 
             if (isStandardField(field)) {
-                item.type = { S: field.type };
+                item.field_type = { S: 'STANDARD' };
+                item.input_type = { S: field.type };
                 item.value = { S: field.type === 'DROPDOWN' ? (field.options?.[0] || '') : '' };
                 if (field.type === 'DROPDOWN' && field.options) {
                     item.options = { SS: field.options };
                 }
             } else if (isBillingField(field)) {
+                item.field_type = { S: 'BILLING' };
                 item.currency = { S: field.currency };
                 item.amount = { N: field.amount.toString() };
             }
