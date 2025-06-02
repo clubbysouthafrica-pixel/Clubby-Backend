@@ -25,7 +25,7 @@ export const handler = async (event: any) => {
         const response = await dynamodbClient.send(command);
 
         if (!response.Item) {
-            return createResponse(200, { message: "Club not found." }, origin);
+            return createResponse(400, { message: "Club not found." }, origin);
         }
 
         const item = unmarshall(response.Item);
