@@ -30,7 +30,9 @@ export class MSC_MemberNestedStack extends Stack {
         new MSC_MemberRegistrationConstruct(this, `${id}-Registration`, {
             api_gateway: api_gateway,
             registration_form_table: props.registration_form_table,
-            token_authorizer: jwt_construct.token_authorizer
+            token_authorizer: jwt_construct.token_authorizer,
+            club_member_table: props.club_member_table,
+            users_table: props.users_table
         });
 
         new MSC_MemberClubConstruct(this, `${id}-Club`, {

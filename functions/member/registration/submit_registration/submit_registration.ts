@@ -1,11 +1,17 @@
-import { DynamoDBClient, QueryCommand, QueryCommandInput } from "@aws-sdk/client-dynamodb";
+import {
+    DynamoDBClient,
+    GetItemCommand,
+    PutItemCommand,
+    QueryCommand,
+    QueryCommandInput
+} from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { createResponse } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
-export type CurrencyType = 'DOLLAR' | 'RAND' | 'EURO' | 'POUND' | 'NEW ZEALAND DOLLAR' | 'AUSTRALIAN DOLLAR'
+export type CurrencyType = 'DOLLAR' | 'RAND' | 'EURO' | 'POUND' | 'NEW ZEALAND DOLLAR' | 'AUSTRALIAN DOLLAR';
 
 interface StandardField {
     field_type: "STANDARD";
@@ -22,115 +28,154 @@ interface BillingField {
     amount: number;
 }
 
+function validateRequestBody(body: any) {
+    if (!body?.club_account_id || !body?.user_id || !body?.billing_field || !body?.standard_fields) {
+        return 'club_account_id, user_id, billing_field and standard_fields required.';
+    }
+
+    if (typeof body.billing_field !== 'object') {
+        return 'billing_field is required to be an object.';
+    }
+
+    if (!Array.isArray(body.standard_fields) || body.standard_fields.length === 0) {
+        return 'standard_fields is required to be an array containing objects.';
+    }
+
+    const { billing_type, amount } = body.billing_field;
+    if (!billing_type || amount == null) {
+        return 'billing_type and amount is required in each billing_field object.';
+    }
+
+    if (typeof billing_type !== 'string' || typeof amount !== 'number') {
+        return 'Each billing_field object requires billing_type to be STRING and amount to be NUMBER.';
+    }
+
+    for (const field of body.standard_fields) {
+        if (typeof field !== 'object') return 'All standard_field indexes must be objects.';
+        if (!field.name || !field.value || typeof field.name !== 'string' || typeof field.value !== 'string') {
+            return 'All standard_fields must have STRING keys: name and value.';
+        }
+    }
+
+    return null;
+}
+
+function validateBillingField(billingFields: BillingField[], userBillingField: { billing_type: string, amount: number }): boolean {
+    return billingFields.some(
+        (field) =>
+            field.field_name === userBillingField.billing_type &&
+            field.amount === userBillingField.amount
+    );
+}
+
+function validateStandardFields(standardFields: StandardField[], submittedFields: { name: string; value: string }[]): string | null {
+    
+    const requiredFields = standardFields.filter(f => f.required);
+    const fieldNames = submittedFields.map(f => f.name);
+    const allValid = requiredFields.every(req => {
+        if (!fieldNames.includes(req.field_name)) {
+            return false;
+        }
+        return true;
+    });
+
+    if (!allValid) {
+        const missingField = requiredFields.find(req => !fieldNames.includes(req.field_name));
+        return `The following required field is missing: ${missingField?.field_name}.`;
+    }
+
+    const knownFieldNames = standardFields.map(f => f.field_name);
+    for (const field of submittedFields) {
+        if (!knownFieldNames.includes(field.name)) {
+            return `The following provided field does not exist in this club's registration form: ${field.name}.`;
+        }
+    }
+
+    return null;
+}
+
 export const handler = async (event: any) => {
-    console.log(`EVENT @ ${new Date()}: `, event);
     const origin = event.headers.origin;
-    console.log(`Called by origin: ${origin}`)
 
     try {
         const body = JSON.parse(event.body);
-        console.log('BODY: ', body)
+        const validationMessage = validateRequestBody(body);
 
-        if (body?.club_account_id == null || body?.billing_field == null || body?.standard_fields == null) {
-            return createResponse(400, { message: 'club_account_id, billing_field and standard_fields required.' }, origin);
-        }
-
-        if (typeof body.billing_field !== 'object') {
-            return createResponse(400, { message: 'billing_field is required to be an object.' }, origin);
-        }
-        if (!Array.isArray(body.standard_fields)) {
-            return createResponse(400, { message: 'standard_fields is required to be an array.' }, origin);
-        }
-
-        if (body.billing_field.billing_type == null || body.billing_field.amount == null) {
-            return createResponse(400, { message: 'billing_type and amount is required in billing_field object.' }, origin);
-        }
-        if (typeof body.billing_field.billing_type !== 'string' || typeof body.billing_field.amount !== 'number') {
-            return createResponse(400, { message: 'billing_field object required billing_type to be STRING type and amount to be NUMBER type.' }, origin);
-        }
-
-        let invalid_standard_field_array = false;
-        let invalid_standard_field_object = false;
-        body.standard_fields.forEach((field: {name: string, value: string}) => {
-            if (typeof field !== 'object') {
-                invalid_standard_field_array = true
+        const userCommand = new GetItemCommand({
+            TableName: process.env.USERS_TABLE_NAME,
+            Key: {
+                user_type: { S: "MEMBER" },
+                user_id: { S: body.user_id }
             }
-
-            if (field.name == null || field.value == null || typeof field.name !== 'string' || typeof field.value !== 'string') {
-                invalid_standard_field_object = true
-            }
-        })
-        if (invalid_standard_field_array) {
-            return createResponse(400, { message: 'All standard_field indexes are required to be an object.' }, origin);
-        }
-        if (invalid_standard_field_object) {
-            return createResponse(400, { message: 'All standard_fields objects require the following STRING type keys: name and value.' }, origin);
+        });
+        const userResponse = await dynamodbClient.send(userCommand);
+        if (!userResponse.Item) {
+            return createResponse(200, { message: "user_id is invalid." }, origin);
         }
 
-        const params: QueryCommandInput = {
+        if (validationMessage) {
+            return createResponse(400, { message: validationMessage }, origin);
+        }
+
+        const queryParams: QueryCommandInput = {
             TableName: process.env.REGISTRATION_FORM_TABLE_NAME,
             KeyConditionExpression: "club_account_id = :clubId",
             ExpressionAttributeValues: {
-                ":clubId": { S: body.club_account_id },
-            },
+                ":clubId": { S: body.club_account_id }
+            }
         };
 
-        const response = await dynamodbClient.send(new QueryCommand(params));
-
+        const response = await dynamodbClient.send(new QueryCommand(queryParams));
         if (!response.Items || response.Items.length === 0) {
             return createResponse(400, { message: `Registration form does not exist for club: ${body.club_account_id}.` }, origin);
         }
 
-        const BILLING_FIELDS: BillingField[]  = [];
-        const STANDARD_FIELFS: StandardField[] = [];
+        const billingFields: BillingField[] = [];
+        const standardFields: StandardField[] = [];
 
-        response.Items?.forEach((item) => {
-            const set = unmarshall(item) as BillingField | StandardField;
-            if (set.field_type == "BILLING") {
-                BILLING_FIELDS.push(set)
-            } else {
-                STANDARD_FIELFS.push(set)
-            }
+        response.Items.forEach(item => {
+            const field = unmarshall(item) as BillingField | StandardField;
+            if (field.field_type === 'BILLING') billingFields.push(field as BillingField);
+            else standardFields.push(field as StandardField);
         });
 
-        let invalid_billing_field = true
-        BILLING_FIELDS.forEach(billing_field => {
-            if (billing_field.field_name === body.billing_field.type && billing_field.amount === body.billing_field.amount) {
-                invalid_billing_field = false;
-            }
+        if (!validateBillingField(billingFields, body.billing_field)) {
+            return createResponse(400, {
+                message: `Invalid billing field entered. Valid billing types: ${JSON.stringify(billingFields.reduce((acc: Record<string, number>, field: { field_name: string; amount: number }) => {
+                    acc[field.field_name] =  field.amount;
+                    return acc;
+                }, {}))}`
+            }, origin);
+        }
+
+        const standardFieldValidation = validateStandardFields(standardFields, body.standard_fields);
+        if (standardFieldValidation) {
+            return createResponse(400, { message: standardFieldValidation }, origin);
+        }
+
+        const item = {
+            club_account_id: { S: body.club_account_id },
+            user_id: { S: body.user_id },
+            registered: { BOOL: false },
+            outstanding_amount: { N: body.billing_field.amount.toString() },
+            ...body.standard_fields.reduce((acc: Record<string, { S: string }>, field: { name: string; value: string }) => {
+                acc[field.name] = { S: field.value };
+                return acc;
+            }, {})
+        };
+
+        const clubMemberCommand = new PutItemCommand({
+            TableName: process.env.CLUB_MEMBER_TABLE_NAME,
+            Item: item
         });
-        if (invalid_billing_field) {
-            return createResponse(400, { message: `Invalid billing field entered. Valid billing types: ${BILLING_FIELDS}` }, origin);
-        }
 
-        let valid_standard_field = true
-        let invalid_standard_object = {}
-        STANDARD_FIELFS.forEach(standard_field => {
+        const clubMemberResponse = await dynamodbClient.send(clubMemberCommand);
+        console.log('Member registration submitted successfully: ', clubMemberResponse);
 
-            let standard_field_not_found = true
-            if (standard_field.required) {
-                body.standard_fields.forEach((field: {name: string, value: string}) => {
-                    if (field.name === standard_field.field_name) {
-                        standard_field_not_found = false
-                    }
-                })
-            }
-
-            if (standard_field_not_found) {
-                valid_standard_field = false
-                invalid_standard_object = standard_field;
-            }
-        })
-
-        if (!valid_standard_field) {
-            return createResponse(400, { message: `The following standard_fields index is invalid: ${invalid_standard_object}.` }, origin);
-        }
-
-        return createResponse(200, { message: `Success` }, origin);
-
+        return createResponse(200, { message: "Success" }, origin);
 
     } catch (error: any) {
-        console.error('Signup error:', error);
+        console.error('Submit registration error:', error);
         const message = error?.message || "Internal Server Error";
         const statusCode = error?.$metadata?.httpStatusCode || 500;
         return createResponse(statusCode, { message }, origin);
