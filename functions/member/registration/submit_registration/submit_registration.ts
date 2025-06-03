@@ -69,7 +69,7 @@ function validateBillingField(billingFields: BillingField[], userBillingField: {
 }
 
 function validateStandardFields(standardFields: StandardField[], submittedFields: { name: string; value: string }[]): string | null {
-    
+
     const requiredFields = standardFields.filter(f => f.required);
     const fieldNames = submittedFields.map(f => f.name);
     const allValid = requiredFields.every(req => {
@@ -158,6 +158,7 @@ export const handler = async (event: any) => {
             user_id: { S: body.user_id },
             registered: { BOOL: false },
             outstanding_amount: { N: body.billing_field.amount.toString() },
+            billing_type: { S: body.billing_field.billing_type },
             ...body.standard_fields.reduce((acc: Record<string, { S: string }>, field: { name: string; value: string }) => {
                 acc[field.name] = { S: field.value };
                 return acc;
