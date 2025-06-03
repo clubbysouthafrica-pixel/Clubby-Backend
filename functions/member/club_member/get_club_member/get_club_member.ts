@@ -37,7 +37,7 @@ export const handler = async (event: any) => {
         delete item.user_id
         delete item.club_account_id
 
-        return createResponse(200, { item }, origin);
+        return createResponse(200, { ...item }, origin);
         
     } catch (error) {
         console.error("Error:", error);
