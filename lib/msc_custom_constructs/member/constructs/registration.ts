@@ -25,9 +25,22 @@ export class MSC_MemberRegistrationConstruct extends Construct {
             }
         });
 
+        const submit_registration = new MSC_Lambda(this, `${id}-SubmitRegistration`, {
+            code: "member/registration/submit_registration",
+            envVariables: {
+                REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
+            },
+            permissions: {
+                [props.registration_form_table.tableArn]: [
+                    "dynamodb:Query"
+                ]
+            }
+        });
+
         const registration_resource = props.api_gateway.root.addResource("registration");
 
         const get_form_resource = registration_resource.addResource("getForm");
+        const submit_registration_resource = registration_resource.addResource("submitRegistration");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -36,5 +49,6 @@ export class MSC_MemberRegistrationConstruct extends Construct {
         }
 
         addCorsEnabledMethod(get_form_resource, get_form, methodOptions);
+        addCorsEnabledMethod(submit_registration_resource, submit_registration, methodOptions);
     }
 }

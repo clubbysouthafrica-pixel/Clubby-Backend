@@ -4,12 +4,13 @@ import { unmarshall } from "@aws-sdk/util-dynamodb";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
-export type FieldType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
+export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
 export type CurrencyType = 'DOLLAR' | 'RAND' | 'EURO' | 'POUND' | 'NEW ZEALAND DOLLAR' | 'AUSTRALIAN DOLLAR'
 
 export interface StandardField {
     field_name: string;
-    type: FieldType;
+    type: InputType;
+    required: true | false;
     options?: string[];
 }
 
@@ -23,6 +24,7 @@ function isStandardField(obj: any): obj is StandardField {
     const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE'];
     return typeof obj === 'object' &&
         typeof obj.field_name === 'string' &&
+        typeof obj.required === 'boolean' &&
         validTypes.includes(obj.type) &&
         (obj.type !== 'DROPDOWN' || (Array.isArray(obj.options) && obj.options.every((o: any) => typeof o === 'string')));
 }
@@ -64,7 +66,7 @@ export const handler = async (event: any) => {
 
         if (invalidFields.length > 0) {
             return createResponse(400, {
-                message: "Invalid fields detected.",
+                message: "Invalid fields detected. Attributes required for 'STANDARD' field: field_name, type, required. Attributes requird for 'BILLING' field: field_name, currency, amount.",
                 invalidFields
             }, origin);
         }
@@ -75,7 +77,7 @@ export const handler = async (event: any) => {
 
         if (duplicates.length > 0) {
             return createResponse(400, {
-                message: "Duplicate field_name(s) in request. All field_name(s) must be unique.",
+                message: "Duplicate field_name(s) in request. All field_name(s) must be unique for a clubs registration form.",
                 duplicates: [...new Set(duplicates)],
             }, origin);
         }
@@ -100,6 +102,7 @@ export const handler = async (event: any) => {
             if (isStandardField(field)) {
                 item.field_type = { S: 'STANDARD' };
                 item.input_type = { S: field.type };
+                item.required = { BOOL: field.required };
                 if (field.type === 'DROPDOWN' && field.options) {
                     item.options = { SS: field.options };
                 }

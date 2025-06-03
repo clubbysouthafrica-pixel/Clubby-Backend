@@ -4,13 +4,14 @@ import { createResponse } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
-export type FieldType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
+export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
 export type CurrencyType = 'DOLLAR' | 'RAND' | 'EURO' | 'POUND' | 'NEW ZEALAND DOLLAR' | 'AUSTRALIAN DOLLAR'
 
 interface StandardField {
     field_type: string;
     field_name: string;
-    type: FieldType;
+    type: InputType;
+    required: true | false;
     options?: string[];
 }
 
