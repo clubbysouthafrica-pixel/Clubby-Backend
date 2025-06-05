@@ -39,7 +39,8 @@ export class MSC_MemberRegistrationConstruct extends Construct {
                     "dynamodb:Query"
                 ],
                 [props.club_member_table.tableArn]: [
-                    "dynamodb:PutItem"
+                    "dynamodb:PutItem",
+                    "dynamodb:GetItem"
                 ],
                 [props.users_table.tableArn]: [
                     "dynamodb:GetItem"
