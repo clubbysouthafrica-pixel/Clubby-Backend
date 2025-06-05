@@ -60,6 +60,6 @@ export class MSC_MemberRegistrationConstruct extends Construct {
         }
 
         addCorsEnabledMethod(get_form_resource, get_form, methodOptions);
-        addCorsEnabledMethod(submit_registration_resource, submit_registration, methodOptions);
+        addCorsEnabledMethod(submit_registration_resource, submit_registration, methodOptions, undefined, "PUT");
     }
 }
