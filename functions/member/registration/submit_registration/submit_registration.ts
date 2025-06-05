@@ -94,6 +94,38 @@ function validateStandardFields(standardFields: StandardField[], submittedFields
     return null;
 }
 
+async function memberNotExists(user_id: string): Promise<boolean> {
+    const command = new GetItemCommand({
+        TableName: process.env.USERS_TABLE_NAME,
+        Key: {
+            user_type: { S: "MEMBER" },
+            user_id: { S: user_id }
+        }
+    });
+    const response = await dynamodbClient.send(command);
+    if (!response.Item) {
+        return false;
+    }
+
+    return true;
+}
+
+async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
+    const command = new GetItemCommand({
+        TableName: process.env.CLUB_MEMBER_TABLE_NAME,
+        Key: {
+            club_account_id: { S: club_account_id },
+            user_id: { S: user_id }
+        }
+    });
+    const response = await dynamodbClient.send(command);
+    if (!response.Item) {
+        return false;
+    }
+
+    return true;
+}
+
 export const handler = async (event: any) => {
     const origin = event.headers.origin;
 
@@ -101,20 +133,16 @@ export const handler = async (event: any) => {
         const body = JSON.parse(event.body);
         const validationMessage = validateRequestBody(body);
 
-        const userCommand = new GetItemCommand({
-            TableName: process.env.USERS_TABLE_NAME,
-            Key: {
-                user_type: { S: "MEMBER" },
-                user_id: { S: body.user_id }
-            }
-        });
-        const userResponse = await dynamodbClient.send(userCommand);
-        if (!userResponse.Item) {
-            return createResponse(200, { message: "user_id is invalid." }, origin);
-        }
-
         if (validationMessage) {
             return createResponse(400, { message: validationMessage }, origin);
+        }
+
+        if (await memberNotExists(body.user_id)) {
+            return createResponse(400, { message: "user_id is invalid." }, origin);
+        }
+
+        if (await registrationSubmitted(body.club_account_id, body.user_id)) {
+            return createResponse(400, { message: `Registration already submitted for user ${body.user_id} in club: ${body.club_account_id}.` }, origin);
         }
 
         const queryParams: QueryCommandInput = {
