@@ -59,7 +59,7 @@ export class MSC_MemberRegistrationConstruct extends Construct {
             authorizer: props.token_authorizer
         }
 
-        addCorsEnabledMethod(get_form_resource, get_form, methodOptions);
+        addCorsEnabledMethod(get_form_resource, get_form, methodOptions, undefined, "GET");
         addCorsEnabledMethod(submit_registration_resource, submit_registration, methodOptions, undefined, "PUT");
     }
 }
