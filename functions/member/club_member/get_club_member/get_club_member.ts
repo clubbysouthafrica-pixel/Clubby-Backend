@@ -1,29 +1,27 @@
 import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse } from "./function_helpers";
+import { createResponse, deconstructEvent } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
     console.log(`EVENT @ ${new Date()}: `, event);
-    const origin = event.headers.origin;
-    console.log(`Called by origin: ${origin}`)
+
+    const { origin, body, query_string_params } = deconstructEvent(event);
 
     try {
-        const body = JSON.parse(event.body);
-
-        if (body?.club_account_id == null || body?.user_id == null) {
-            return createResponse(400, { message: "club_account_id and user_id required." }, origin);
+        if (query_string_params?.club_account_id == null || query_string_params?.user_id == null) {
+            return createResponse(400, { message: "club_account_id and user_id required in query string params." }, origin);
         }
-        if (typeof body.club_account_id !== 'string' || typeof body.user_id !== 'string') {
+        if (typeof query_string_params.club_account_id !== 'string' || typeof query_string_params.user_id !== 'string') {
             return createResponse(400, { message: "club_account_id and user_id must be STRING types." }, origin);
         }
 
         const command = new GetItemCommand({
             TableName: process.env.CLUB_MEMBER_TABLE_NAME,
             Key: {
-                club_account_id: { S: body.club_account_id },
-                user_id: { S: body.user_id }
+                club_account_id: { S: query_string_params.club_account_id },
+                user_id: { S: query_string_params.user_id }
             }
         });
         const response = await dynamodbClient.send(command);
@@ -38,7 +36,7 @@ export const handler = async (event: any) => {
         delete item.club_account_id
 
         return createResponse(200, { ...item }, origin);
-        
+
     } catch (error) {
         console.error("Error:", error);
         return createResponse(500, { message: "Internal Server Error" }, origin);
