@@ -104,10 +104,10 @@ async function memberNotExists(user_id: string): Promise<boolean> {
     });
     const response = await dynamodbClient.send(command);
     if (!response.Item) {
-        return false;
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
@@ -119,11 +119,11 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
         }
     });
     const response = await dynamodbClient.send(command);
-    if (!response.Item) {
-        return false;
+    if (response.Item) {
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 export const handler = async (event: any) => {
