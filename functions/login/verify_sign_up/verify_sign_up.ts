@@ -2,17 +2,15 @@ import {
   CognitoIdentityProviderClient,
   ConfirmSignUpCommand
 } from "@aws-sdk/client-cognito-identity-provider";
-import { createResponse } from "./function_helpers";
+import { createResponse, deconstructEvent } from "./function_helpers";
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
-  console.log(`EVENT @ ${new Date()}: `, event);
-  const origin = event.headers.origin;
-  console.log(`Called by origin: ${origin}`)
+  
+  const { origin, body, query_string_params } = deconstructEvent(event);
 
   try {
-    const body = JSON.parse(event.body);
 
     if (body?.username == null || body?.confirmation_code == null) {
       return createResponse(400, { message: 'Username and confirmation code required.' }, origin);

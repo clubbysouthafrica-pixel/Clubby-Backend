@@ -3,18 +3,16 @@ import {
   SignUpCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { createResponse } from "./function_helpers";
+import { createResponse, deconstructEvent } from "./function_helpers";
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
-  console.log(`EVENT @ ${new Date()}: `, event);
-  const origin = event.headers.origin;
-  console.log(`Called by origin: ${origin}`)
+  
+  const { origin, body, query_string_params } = deconstructEvent(event);
 
   try {
-    const body = JSON.parse(event.body);
 
     if (process.env.ADMIN_TOKEN != null) {
       if (body?.admin_token == null || body.admin_token !== process.env.ADMIN_TOKEN) {

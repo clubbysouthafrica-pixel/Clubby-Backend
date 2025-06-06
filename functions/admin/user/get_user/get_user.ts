@@ -1,7 +1,6 @@
 import { createResponse, deconstructEvent, getItem } from "./function_helpers";
 
 export const handler = async (event: any) => {
-    console.log(`EVENT @ ${new Date()}: `, event);
     
     const { origin, body, query_string_params } = deconstructEvent(event);
 

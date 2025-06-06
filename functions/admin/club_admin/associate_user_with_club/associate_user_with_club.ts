@@ -4,7 +4,6 @@ import { createResponse, ACCESS, getItem, addItem, deconstructEvent } from "./fu
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
-    console.log(`EVENT @ ${new Date()}: `, event);
 
     const { origin, body, query_string_params } = deconstructEvent(event);
 

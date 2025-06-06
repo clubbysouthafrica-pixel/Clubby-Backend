@@ -1,10 +1,12 @@
 import { SSMClient, PutParameterCommand } from '@aws-sdk/client-ssm';
 import jwt from 'jsonwebtoken';
+import { deconstructEvent } from './function_helpers';
 
 const ssmClient = new SSMClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
-    console.log(`EVENT @ ${new Date()}: `, event);
+    
+    const { origin, body, query_string_params } = deconstructEvent(event);
 
     try {
         const SECRET_KEY = process.env.JWT_SECRET as string;

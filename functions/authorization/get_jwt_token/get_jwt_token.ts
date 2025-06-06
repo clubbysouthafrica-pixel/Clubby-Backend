@@ -1,15 +1,13 @@
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
-import { createResponse } from "./function_helpers";
+import { createResponse, deconstructEvent } from "./function_helpers";
 
 const ssmClient = new SSMClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
-  console.log(`EVENT @ ${new Date()}: `, event);
-  const origin = event.headers.origin;
-  console.log(`Called by origin: ${origin}`)
+  
+  const { origin, body, query_string_params } = deconstructEvent(event);
   
   try {
-    const body = JSON.parse(event.body);
 
     if (body.username !== process.env.LOGIN || body.password !== process.env.PASSWORD ) {
         return createResponse(404, { message: "Invalid credentials." }, origin);

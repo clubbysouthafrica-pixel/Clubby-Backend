@@ -1,16 +1,14 @@
-import { createResponse, CLUB_TYPES, addItem } from "./function_helpers";
+import { createResponse, CLUB_TYPES, addItem, deconstructEvent } from "./function_helpers";
 
 function generate_club_Id(club_name: string): string {
     return `club_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
 }
 
 export const handler = async (event: any) => {
-    console.log(`EVENT @ ${new Date()}: `, event);
-    const origin = event.headers.origin;
-    console.log(`Called by origin: ${origin}`)
+    
+    const { origin, body, query_string_params } = deconstructEvent(event);
 
     try {
-        const body = JSON.parse(event.body);
 
         if (body?.admin_token == null || body.admin_token !== process.env.ADMIN_TOKEN) {
             return createResponse(400, { message: 'Not authorized for admin signup.' }, origin);
