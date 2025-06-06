@@ -1,5 +1,5 @@
 import { DynamoDBClient, GetItemCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { createResponse, CLUB_TYPES, ACCESS } from "./function_helpers";
+import { createResponse, ACCESS, getItemByKey } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
@@ -23,26 +23,19 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: `Invalid access. Valid values: ${ACCESS}.` }, origin);
         }
 
-        const userCommand = new GetItemCommand({
-            TableName: process.env.USERS_TABLE_NAME,
-            Key: {
-                user_type: { S: "ADMIN" },
-                user_id: { S: body.user_id }
-            }
+        const user = await getItemByKey(process.env.USERS_TABLE_NAME as string, {
+            user_type: "ADMIN",
+            user_id: body.user_id
         });
-        const userResponse = await dynamodbClient.send(userCommand);
-        if (!userResponse.Item) {
+        if (user == null) {
             return createResponse(200, { message: "User not found." }, origin);
         }
 
-        const clubCommand = new GetItemCommand({
-            TableName: process.env.CLUB_TABLE_NAME,
-            Key: {
-                club_account_id: { S: body.club_account_id }
-            }
-        });
-        const clubResponse = await dynamodbClient.send(clubCommand);
-        if (!clubResponse.Item) {
+   
+        const club = await getItemByKey(process.env.CLUB_TABLE_NAME as string, {
+            club_account_id: body.club_account_id
+        })
+        if (club == null) {
             return createResponse(200, { message: "Club not found." }, origin);
         }
 
@@ -51,7 +44,7 @@ export const handler = async (event: any) => {
             Item: {
                 "user_id": { S: body.user_id },
                 "club_account_id": { S: body.club_account_id },
-                "club_type": { S: clubResponse.Item["club_type"]["S"] as string },
+                "club_type": { S: club.club_type as string },
                 "access": { S: body.access }
             }
         });
