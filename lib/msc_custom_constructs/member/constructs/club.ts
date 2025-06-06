@@ -48,7 +48,7 @@ export class MSC_MemberClubConstruct extends Construct {
             authorizer: props.token_authorizer
         }
 
-        addCorsEnabledMethod(get_club_resource, get_club, methodOptions);
+        addCorsEnabledMethod(get_club_resource, get_club, methodOptions, undefined, "GET");
         addCorsEnabledMethod(get_all_clubs_resource, get_all_clubs, methodOptions, undefined, "GET");
     }
 }

@@ -50,7 +50,7 @@ export class MSC_MemberUserConstruct extends Construct {
             authorizer: props.token_authorizer
         }
 
-        addCorsEnabledMethod(get_user_resource, get_user, methodOptions);
+        addCorsEnabledMethod(get_user_resource, get_user, methodOptions, undefined, "GET");
         addCorsEnabledMethod(onboard_user_resource, onboard_user, methodOptions, undefined, "PUT");
     }
 }
