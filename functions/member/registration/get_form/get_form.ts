@@ -22,7 +22,6 @@ interface BillingField {
 type RegistrationForm = StandardField | BillingField;
 
 export const handler = async (event: any) => {
-    console.log(`EVENT @ ${new Date()}: `, event);
 
     const { origin, body, query_string_params } = deconstructEvent(event);
 

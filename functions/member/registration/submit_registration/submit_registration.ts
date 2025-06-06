@@ -6,7 +6,7 @@ import {
     QueryCommandInput
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse } from "./function_helpers";
+import { createResponse, deconstructEvent, addItem } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
@@ -127,10 +127,10 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
 }
 
 export const handler = async (event: any) => {
-    const origin = event.headers.origin;
+
+    const { origin, body, query_string_params } = deconstructEvent(event);
 
     try {
-        const body = JSON.parse(event.body);
         const validationMessage = validateRequestBody(body);
 
         if (validationMessage) {
@@ -170,7 +170,7 @@ export const handler = async (event: any) => {
         if (!validateBillingField(billingFields, body.billing_field)) {
             return createResponse(400, {
                 message: `Invalid billing field entered. Valid billing types: ${JSON.stringify(billingFields.reduce((acc: Record<string, number>, field: { field_name: string; amount: number }) => {
-                    acc[field.field_name] =  field.amount;
+                    acc[field.field_name] = field.amount;
                     return acc;
                 }, {}))}`
             }, origin);

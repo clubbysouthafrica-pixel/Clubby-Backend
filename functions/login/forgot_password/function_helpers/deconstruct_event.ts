@@ -1,4 +1,6 @@
 export const deconstructEvent = (event: any) => {
+    console.log(`EVENT @ ${new Date()}: `, event);
+    
     const origin = event.headers.origin;
     console.log(`Called by origin: ${origin}`)
     
