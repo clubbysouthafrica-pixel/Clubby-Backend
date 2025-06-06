@@ -1,8 +1,5 @@
-import { DynamoDBClient, QueryCommand, QueryCommandInput } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent } from "./function_helpers";
-
-const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
+import { createResponse, deconstructEvent, queryItemsByKey } from "./function_helpers";
 
 export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
 export type CurrencyType = 'DOLLAR' | 'RAND' | 'EURO' | 'POUND' | 'NEW ZEALAND DOLLAR' | 'AUSTRALIAN DOLLAR'
@@ -35,22 +32,20 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'club_account_id required in query string params.' }, origin);
         }
 
-        const params: QueryCommandInput = {
-            TableName: process.env.REGISTRATION_FORM_TABLE_NAME,
-            KeyConditionExpression: "club_account_id = :clubId",
-            ExpressionAttributeValues: {
-                ":clubId": { S: query_string_params.club_account_id },
-            },
-        };
+        const form = await queryItemsByKey(
+            process.env.REGISTRATION_FORM_TABLE_NAME as string,
+            "club_account_id = :clubId",
+            { ":clubId": query_string_params.club_account_id },
+            undefined,
+            false,
+        )
 
-        const response = await dynamodbClient.send(new QueryCommand(params));
-
-        if (!response.Items || response.Items.length === 0) {
+        if (form == null) {
             return createResponse(400, { message: `Registration form does not exist for club: ${query_string_params.club_account_id}.` }, origin);
         }
 
         const items: RegistrationForm[] = [];
-        response.Items?.forEach((item) => {
+        form.forEach((item) => {
 
             const set = unmarshall(item);
             delete set.club_account_id;
