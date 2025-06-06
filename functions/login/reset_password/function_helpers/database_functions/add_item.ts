@@ -9,7 +9,7 @@ export const addItem = async (
     item: Record<string, string>,
 ) => {
     if (!item || Object.keys(item).length === 0) {
-        throw new Error("Partition key must be provided and not empty.");
+        throw new Error("Item cannot empty.");
     }
 
     try {
@@ -19,7 +19,7 @@ export const addItem = async (
         });
 
         const response = await dynamodbClient.send(command);
-        console.log('@@@ addItem response: ', response);
+        console.log(`@@@ addItem response (Table_Name: ${table_name}): `, response);
     } catch (error) {
         throw error;
     }

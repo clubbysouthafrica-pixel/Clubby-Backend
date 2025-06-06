@@ -23,7 +23,7 @@ export const queryItems = async (
             ExpressionAttributeValues: marshall(expression_attribute_values)
         });
         const response = await dynamodbClient.send(command);
-        console.log('@@@ queryItems response: ', response);
+        console.log(`@@@ queryItems response (Table_Name: ${table_name}): `, response);
 
         if (!response.Items || response.Items.length === 0) {
             return null;

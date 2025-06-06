@@ -1,5 +1,5 @@
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { createResponse, deconstructEvent, getItem } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, addItem } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
@@ -90,29 +90,27 @@ export const handler = async (event: any) => {
 
         for (const field of body.fields) {
             const item: any = {
-                club_account_id: { S: body.club_account_id },
-                field_name: { S: field.field_name }
+                club_account_id: body.club_account_id ,
+                field_name: field.field_name
             };
 
             if (isStandardField(field)) {
-                item.field_type = { S: 'STANDARD' };
-                item.input_type = { S: field.type };
-                item.required = { BOOL: field.required };
+                item.field_type = 'STANDARD';
+                item.input_type = field.type;
+                item.required = field.required;
                 if (field.type === 'DROPDOWN' && field.options) {
-                    item.options = { SS: field.options };
+                    item.options = field.options;
                 }
             } else if (isBillingField(field)) {
-                item.field_type = { S: 'BILLING' };
-                item.currency = { S: field.currency };
-                item.amount = { N: field.amount.toString() };
+                item.field_type = 'BILLING';
+                item.currency = field.currency;
+                item.amount = field.amount;
             }
 
-            const putCommand = new PutItemCommand({
-                TableName: process.env.REGISTRATION_FORM_TABLE_NAME,
-                Item: item
-            });
-
-            await dynamodbClient.send(putCommand);
+            await addItem(
+                process.env.REGISTRATION_FORM_TABLE_NAME as string,
+                item
+            )
         }
 
         return createResponse(200, { message: "Fields successfully added." }, origin);
