@@ -11,7 +11,7 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "user_id required." }, origin);
         }
 
-        const item = await  getItem(
+        const item = await getItem(
             process.env.USERS_TABLE_NAME as string, 
             { 
                 user_type: process.env.USER_TYPE as string,

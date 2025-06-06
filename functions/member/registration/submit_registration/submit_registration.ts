@@ -1,12 +1,9 @@
 import {
     DynamoDBClient,
-    GetItemCommand,
     PutItemCommand,
-    QueryCommand,
-    QueryCommandInput
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent, addItem } from "./function_helpers";
+import { createResponse, deconstructEvent, addItem, queryItems, getItem } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
@@ -95,15 +92,15 @@ function validateStandardFields(standardFields: StandardField[], submittedFields
 }
 
 async function memberNotExists(user_id: string): Promise<boolean> {
-    const command = new GetItemCommand({
-        TableName: process.env.USERS_TABLE_NAME,
-        Key: {
-            user_type: { S: "MEMBER" },
-            user_id: { S: user_id }
+    const member = await getItem(
+        process.env.USERS_TABLE_NAME as string,
+        {
+            user_type: "MEMBER",
+            user_id: user_id
         }
-    });
-    const response = await dynamodbClient.send(command);
-    if (!response.Item) {
+    )
+
+    if (member == null) {
         return true;
     }
 
@@ -111,19 +108,19 @@ async function memberNotExists(user_id: string): Promise<boolean> {
 }
 
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
-    const command = new GetItemCommand({
-        TableName: process.env.CLUB_MEMBER_TABLE_NAME,
-        Key: {
-            club_account_id: { S: club_account_id },
-            user_id: { S: user_id }
+    const club_member = await getItem(
+        process.env.CLUB_MEMBER_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            user_id: user_id
         }
-    });
-    const response = await dynamodbClient.send(command);
-    if (response.Item) {
-        return true;
+    )
+
+    if (club_member == null) {
+        return false;
     }
 
-    return false;
+    return true;
 }
 
 export const handler = async (event: any) => {
@@ -145,23 +142,20 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: `Registration already submitted for user ${body.user_id} in club: ${body.club_account_id}.` }, origin);
         }
 
-        const queryParams: QueryCommandInput = {
-            TableName: process.env.REGISTRATION_FORM_TABLE_NAME,
-            KeyConditionExpression: "club_account_id = :clubId",
-            ExpressionAttributeValues: {
-                ":clubId": { S: body.club_account_id }
-            }
-        };
+        const form = await queryItems(
+            process.env.REGISTRATION_FORM_TABLE_NAME as string,
+            "club_account_id = :clubId",
+            { ":clubId": body.club_account_id }
+        )
 
-        const response = await dynamodbClient.send(new QueryCommand(queryParams));
-        if (!response.Items || response.Items.length === 0) {
+        if (form == null) {
             return createResponse(400, { message: `Registration form does not exist for club: ${body.club_account_id}.` }, origin);
         }
 
         const billingFields: BillingField[] = [];
         const standardFields: StandardField[] = [];
 
-        response.Items.forEach(item => {
+        form.forEach(item => {
             const field = unmarshall(item) as BillingField | StandardField;
             if (field.field_type === 'BILLING') billingFields.push(field as BillingField);
             else standardFields.push(field as StandardField);
@@ -182,24 +176,21 @@ export const handler = async (event: any) => {
         }
 
         const item = {
-            club_account_id: { S: body.club_account_id },
-            user_id: { S: body.user_id },
-            registered: { BOOL: false },
-            outstanding_amount: { N: body.billing_field.amount.toString() },
-            billing_type: { S: body.billing_field.billing_type },
-            ...body.standard_fields.reduce((acc: Record<string, { S: string }>, field: { name: string; value: string }) => {
-                acc[field.name] = { S: field.value };
+            club_account_id: body.club_account_id,
+            user_id: body.user_id,
+            registered: false,
+            outstanding_amount: body.billing_field.amount,
+            billing_type: body.billing_field.billing_type,
+            ...body.standard_fields.reduce((acc: Record<string, string>, field: { name: string; value: string }) => {
+                acc[field.name] = field.value;
                 return acc;
             }, {})
         };
 
-        const clubMemberCommand = new PutItemCommand({
-            TableName: process.env.CLUB_MEMBER_TABLE_NAME,
-            Item: item
-        });
-
-        const clubMemberResponse = await dynamodbClient.send(clubMemberCommand);
-        console.log('Member registration submitted successfully: ', clubMemberResponse);
+        await addItem(
+            process.env.CLUB_MEMBER_TABLE_NAME as string,
+            item
+        )
 
         return createResponse(200, { message: "Success" }, origin);
 
