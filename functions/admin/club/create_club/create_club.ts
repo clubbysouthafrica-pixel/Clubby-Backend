@@ -29,7 +29,7 @@ export const handler = async (event: any) => {
 
         const club_account_id = generate_club_Id(body.club_name);
 
-        const dynamodbCommand = new PutItemCommand({
+        await addItem({
             TableName: process.env.CLUB_TABLE_NAME,
             Item: {
                 "club_type": { S: body.club_type },
