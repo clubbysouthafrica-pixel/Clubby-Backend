@@ -1,5 +1,5 @@
 import { DynamoDBClient, UpdateItemCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { createResponse } from "./function_helpers";
+import { createResponse, deconstructEvent } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
@@ -29,12 +29,10 @@ const isValidPhoneNumber = (phone: string): boolean => {
 };
 
 export const handler = async (event: any) => {
-  console.log(`EVENT @ ${new Date()}: `, event);
-  const origin = event.headers.origin;
-  console.log(`Called by origin: ${origin}`);
+
+  const { origin, body, query_string_params } = deconstructEvent(event);
 
   try {
-    const body = JSON.parse(event.body);
 
     const requiredFields = ["user_id", "first_name", "surname", "date_of_birth", "email", "phone_number"];
     const missingFields = requiredFields.filter((field) => !body?.[field]);
