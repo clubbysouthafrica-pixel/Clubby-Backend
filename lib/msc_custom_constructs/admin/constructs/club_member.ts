@@ -16,10 +16,11 @@ export class MSC_ClubMemberClubConstruct extends Construct {
         const get_all_club_members = new MSC_Lambda(this, `${id}-CreateClub`, {
             code: "admin/club_member/get_all_club_members",
             envVariables: {
-                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
             },
             permissions: {
-                [props.club_member_table.tableArn]: [
+                [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
                     "dynamodb:Query"
                 ]
             }

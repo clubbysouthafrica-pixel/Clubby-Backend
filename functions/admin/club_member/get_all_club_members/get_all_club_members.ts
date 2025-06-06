@@ -14,12 +14,13 @@ export const handler = async (event: any) => {
         if (query_string_params?.club_account_id == null) {
             return createResponse(400, { message: "club_account_id required." }, origin);
         }
-        if (typeof query_string_params.club_account_id !== 'string' || typeof query_string_params.user_id !== 'string') {
+        if (typeof query_string_params.club_account_id !== 'string') {
             return createResponse(400, { message: "club_account_id must be STRING type." }, origin);
         }
 
         const command = new QueryCommand({
             TableName: process.env.CLUB_MEMBER_TABLE_NAME,
+            IndexName: process.env.CLUB_ACCOUNT_ID_INDEX,
             KeyConditionExpression: "club_account_id = :clubId",
             ExpressionAttributeValues: {
                 ":clubId": { S: query_string_params.club_account_id }
@@ -32,22 +33,21 @@ export const handler = async (event: any) => {
         }
 
         const registered: any[] = []
-        const not_registered: any[] = []
+        const unregistered: any[] = []
 
         response.Items.forEach(entry => {
             const item = unmarshall(entry)
 
-            delete item.user_id
             delete item.club_account_id
 
-            if (entry.registered) {
-                registered.push(entry)
+            if (item.registered) {
+                registered.push(item)
             } else {
-                not_registered.push(entry)
+                unregistered.push(item)
             }
         })
 
-        return createResponse(200, { registered, not_registered }, origin);
+        return createResponse(200, { registered, unregistered }, origin);
         
     } catch (error) {
         console.error("Error:", error);
