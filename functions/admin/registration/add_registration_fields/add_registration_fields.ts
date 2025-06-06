@@ -1,6 +1,5 @@
-import { DynamoDBClient, GetItemCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { createResponse } from "./function_helpers";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
+import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { createResponse, deconstructEvent, getItemByKey } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
@@ -46,11 +45,10 @@ function isBillingField(obj: any): obj is BillingField {
 
 export const handler = async (event: any) => {
     console.log(`EVENT @ ${new Date()}: `, event);
-    const origin = event.headers.origin;
-    console.log(`Called by origin: ${origin}`)
+
+    const { origin, body, query_string_params } = deconstructEvent(event)
 
     try {
-        const body = JSON.parse(event.body);
 
         if (body?.club_account_id == null || body?.fields == null) {
             return createResponse(400, { message: 'club_account_id and fields required.' }, origin);
@@ -82,14 +80,11 @@ export const handler = async (event: any) => {
             }, origin);
         }
 
-        const clubCommand = new GetItemCommand({
-            TableName: process.env.CLUB_TABLE_NAME,
-            Key: {
-                club_account_id: { S: body.club_account_id }
-            }
-        });
-        const clubResponse = await dynamodbClient.send(clubCommand);
-        if (!clubResponse.Item) {
+        const club = await getItemByKey(process.env.CLUB_TABLE_NAME as string, {
+            club_account_id: body.club_account_id
+        })
+
+        if (club == null) {
             return createResponse(200, { message: "Club not found." }, origin);
         }
 

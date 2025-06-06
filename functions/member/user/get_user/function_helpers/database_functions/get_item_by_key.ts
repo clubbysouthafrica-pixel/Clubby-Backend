@@ -1,6 +1,5 @@
 import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
-import { AttributeValue } from "@aws-sdk/client-dynamodb";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
