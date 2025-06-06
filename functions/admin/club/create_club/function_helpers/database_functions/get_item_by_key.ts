@@ -4,7 +4,7 @@ import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 
-export const getItemByKey = async (
+export const getItem = async (
     table_name: string, 
     keys: Record<string, string>,
 ) => {

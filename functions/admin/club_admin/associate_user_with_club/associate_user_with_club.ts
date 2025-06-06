@@ -1,5 +1,5 @@
 import { DynamoDBClient, GetItemCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { createResponse, ACCESS, getItemByKey } from "./function_helpers";
+import { createResponse, ACCESS, getItem } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
@@ -23,7 +23,7 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: `Invalid access. Valid values: ${ACCESS}.` }, origin);
         }
 
-        const user = await getItemByKey(process.env.USERS_TABLE_NAME as string, {
+        const user = await getItem(process.env.USERS_TABLE_NAME as string, {
             user_type: "ADMIN",
             user_id: body.user_id
         });
@@ -32,7 +32,7 @@ export const handler = async (event: any) => {
         }
 
    
-        const club = await getItemByKey(process.env.CLUB_TABLE_NAME as string, {
+        const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
             club_account_id: body.club_account_id
         })
         if (club == null) {

@@ -1,4 +1,4 @@
-import { createResponse, deconstructEvent, getItemByKey } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem } from "./function_helpers";
 
 export const handler = async (event: any) => {
     console.log(`EVENT @ ${new Date()}: `, event);
@@ -14,7 +14,7 @@ export const handler = async (event: any) => {
         }
 
 
-        const item = await getItemByKey(
+        const item = await getItem(
             process.env.CLUB_MEMBER_TABLE_NAME as string, 
             {
                 club_account_id: query_string_params.club_account_id,

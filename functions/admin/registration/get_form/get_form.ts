@@ -1,6 +1,6 @@
 import { DynamoDBClient, QueryCommand, QueryCommandInput } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent, queryItemsByKey } from "./function_helpers";
+import { createResponse, deconstructEvent, queryItems } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
@@ -44,7 +44,7 @@ export const handler = async (event: any) => {
 
         const response = await dynamodbClient.send(new QueryCommand(params));
 
-        const form = await queryItemsByKey(
+        const form = await queryItems(
             process.env.REGISTRATION_FORM_TABLE_NAME as string,
             "club_account_id = :clubId",
             { ":clubId": query_string_params.club_account_id },

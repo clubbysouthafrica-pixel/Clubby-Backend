@@ -1,5 +1,5 @@
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent, queryItemsByKey } from "./function_helpers";
+import { createResponse, deconstructEvent, queryItems } from "./function_helpers";
 
 export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
 export type CurrencyType = 'DOLLAR' | 'RAND' | 'EURO' | 'POUND' | 'NEW ZEALAND DOLLAR' | 'AUSTRALIAN DOLLAR'
@@ -32,7 +32,7 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'club_account_id required in query string params.' }, origin);
         }
 
-        const form = await queryItemsByKey(
+        const form = await queryItems(
             process.env.REGISTRATION_FORM_TABLE_NAME as string,
             "club_account_id = :clubId",
             { ":clubId": query_string_params.club_account_id },

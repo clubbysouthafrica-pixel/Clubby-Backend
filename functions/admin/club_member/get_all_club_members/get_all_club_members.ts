@@ -1,4 +1,4 @@
-import { createResponse, deconstructEvent, queryItemsByKey } from "./function_helpers";
+import { createResponse, deconstructEvent, queryItems } from "./function_helpers";
 
 export const handler = async (event: any) => {
     console.log(`EVENT @ ${new Date()}: `, event);
@@ -14,7 +14,7 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_account_id must be STRING type." }, origin);
         }
 
-        const club_members = await queryItemsByKey(
+        const club_members = await queryItems(
             process.env.CLUB_MEMBER_TABLE_NAME as string,
             "club_account_id = :clubId",
             { ":clubId": query_string_params.club_account_id },

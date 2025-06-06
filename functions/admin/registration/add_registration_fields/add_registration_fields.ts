@@ -1,5 +1,5 @@
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { createResponse, deconstructEvent, getItemByKey } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
@@ -80,7 +80,7 @@ export const handler = async (event: any) => {
             }, origin);
         }
 
-        const club = await getItemByKey(process.env.CLUB_TABLE_NAME as string, {
+        const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
             club_account_id: body.club_account_id
         })
 
