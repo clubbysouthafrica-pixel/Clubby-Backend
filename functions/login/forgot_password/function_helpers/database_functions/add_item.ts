@@ -19,7 +19,7 @@ export const addItem = async (
         });
 
         const response = await dynamodbClient.send(command);
-        console.log(`@@@ addItem response (Table_Name: ${table_name}): `, response);
+        console.log(`@@@ addItem response (Table_Name: ${table_name}): `, JSON.stringify(response));
     } catch (error) {
         throw error;
     }
