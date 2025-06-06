@@ -1,8 +1,4 @@
-// import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
-// import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { createResponse, deconstructEvent, getItemByKey } from "./function_helpers";
-
-// const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
     console.log(`EVENT @ ${new Date()}: `, event);
@@ -15,20 +11,6 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "user_id required." }, origin);
         }
 
-        // const command = new GetItemCommand({
-        //     TableName: process.env.USERS_TABLE_NAME,
-        //     Key: {
-        //         user_type: { S: process.env.USER_TYPE as string },
-        //         user_id: { S: query_string_params.user_id }
-        //     }
-        // });
-        // const response = await dynamodbClient.send(command);
-
-        // if (!response.Item) {
-        //     return createResponse(200, { message: "User not found" }, origin);
-        // }
-
-        // const item = unmarshall(response.Item);
         const item = await  getItemByKey(
             process.env.USERS_TABLE_NAME as string, 
             { 
@@ -55,7 +37,7 @@ export const handler = async (event: any) => {
             suburb: "suburb" in item ? item["suburb"] : undefined,
             surname: "surname" in item ? item["surname"] : undefined
          }, origin);
-         
+
     } catch (error) {
         console.error("Error:", error);
         return createResponse(500, { message: "Internal Server Error" }, origin);

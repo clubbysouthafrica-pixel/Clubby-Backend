@@ -1,8 +1,4 @@
-import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent } from "./function_helpers";
-
-const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
+import { createResponse, deconstructEvent, getItemByKey } from "./function_helpers";
 
 export const handler = async (event: any) => {
     console.log(`EVENT @ ${new Date()}: `, event);
@@ -17,20 +13,18 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_account_id and user_id must be STRING types." }, origin);
         }
 
-        const command = new GetItemCommand({
-            TableName: process.env.CLUB_MEMBER_TABLE_NAME,
-            Key: {
-                club_account_id: { S: query_string_params.club_account_id },
-                user_id: { S: query_string_params.user_id }
-            }
-        });
-        const response = await dynamodbClient.send(command);
 
-        if (!response.Item) {
+        const item = await getItemByKey(
+            process.env.CLUB_MEMBER_TABLE_NAME as string, 
+            {
+                club_account_id: query_string_params.club_account_id,
+                user_id: query_string_params.user_id
+            }
+        );
+
+        if (item == null) {
             return createResponse(400, { message: "User not found." }, origin);
         }
-
-        const item = unmarshall(response.Item);
 
         delete item.user_id
         delete item.club_account_id

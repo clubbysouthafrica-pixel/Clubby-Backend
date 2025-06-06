@@ -1,8 +1,4 @@
-import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent } from "./function_helpers";
-
-const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
+import { createResponse, deconstructEvent, getItemByKey } from "./function_helpers";
 
 export const handler = async (event: any) => {
     console.log(`EVENT @ ${new Date()}: `, event);
@@ -15,19 +11,13 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_type and club_account_id required." }, origin);
         }
 
-        const command = new GetItemCommand({
-            TableName: process.env.CLUB_TABLE_NAME,
-            Key: {
-                club_account_id: { S: query_string_params.club_account_id }
-            }
+        const item = await getItemByKey(process.env.CLUB_TABLE_NAME as string, {
+            club_account_id: query_string_params.club_account_id
         });
-        const response = await dynamodbClient.send(command);
 
-        if (!response.Item) {
+        if (item == null) {
             return createResponse(400, { message: "Club not found." }, origin);
         }
-
-        const item = unmarshall(response.Item);
 
         return createResponse(200, {
             club_account_id: item["club_account_id"],
