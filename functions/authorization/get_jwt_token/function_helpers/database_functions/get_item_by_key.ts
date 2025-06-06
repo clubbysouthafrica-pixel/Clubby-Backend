@@ -1,11 +1,10 @@
 import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
+import { AttributeValue } from "@aws-sdk/client-dynamodb";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
-type DynamoDBKey = {
-    [key: string]: { S: string } | { N: string } | { BOOL: boolean };
-};
+type DynamoDBKey = Record<string, AttributeValue>;
 
 
 export const getItemByKey = async (
@@ -13,6 +12,10 @@ export const getItemByKey = async (
     partition_key: DynamoDBKey, 
     sort_key?: DynamoDBKey
 ) => {
+    if (!partition_key || Object.keys(partition_key).length === 0) {
+        throw new Error("Partition key must be provided and not empty.");
+    }
+
     try {
         const command = new GetItemCommand({
             TableName: table_name,
