@@ -41,8 +41,6 @@ export const handler = async (event: any) => {
             return createResponse(200, { message: "User not found" }, origin);
         }
 
-
-
         return createResponse(200, { 
             user_id: item["user_id"],
             onboarded: item["onboarded"],
@@ -57,6 +55,7 @@ export const handler = async (event: any) => {
             suburb: "suburb" in item ? item["suburb"] : undefined,
             surname: "surname" in item ? item["surname"] : undefined
          }, origin);
+         
     } catch (error) {
         console.error("Error:", error);
         return createResponse(500, { message: "Internal Server Error" }, origin);
