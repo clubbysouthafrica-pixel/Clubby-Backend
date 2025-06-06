@@ -54,6 +54,6 @@ export class MSC_AdminRegistrationConstruct extends Construct {
         }
 
         addCorsEnabledMethod(add_registration_fields_resource, add_registration_fields, methodOptions);
-        addCorsEnabledMethod(get_form_resource, get_form, methodOptions);
+        addCorsEnabledMethod(get_form_resource, get_form, methodOptions, undefined, "GET");
     }
 }

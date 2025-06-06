@@ -1,18 +1,17 @@
 import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse } from "./function_helpers";
+import { createResponse, deconstructEvent } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
     console.log(`EVENT @ ${new Date()}: `, event);
-    const origin = event.headers.origin;
-    console.log(`Called by origin: ${origin}`)
+    
+    const { origin, body, query_string_params } = deconstructEvent(event);
 
     try {
-        const body = JSON.parse(event.body);
 
-        if (body?.user_id == null) {
+        if (query_string_params?.user_id == null) {
             return createResponse(400, { message: "user_id required." }, origin);
         }
 
@@ -20,7 +19,7 @@ export const handler = async (event: any) => {
             TableName: process.env.USERS_TABLE_NAME,
             Key: {
                 user_type: { S: process.env.USER_TYPE as string },
-                user_id: { S: body.user_id }
+                user_id: { S: query_string_params.user_id }
             }
         });
         const response = await dynamodbClient.send(command);

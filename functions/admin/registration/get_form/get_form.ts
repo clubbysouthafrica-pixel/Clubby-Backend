@@ -1,6 +1,6 @@
 import { DynamoDBClient, QueryCommand, QueryCommandInput } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse } from "./function_helpers";
+import { createResponse, deconstructEvent } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
@@ -25,13 +25,12 @@ type RegistrationForm = StandardField | BillingField;
 
 export const handler = async (event: any) => {
     console.log(`EVENT @ ${new Date()}: `, event);
-    const origin = event.headers.origin;
-    console.log(`Called by origin: ${origin}`)
+    
+    const { origin, body, query_string_params } = deconstructEvent(event);
 
     try {
-        const body = JSON.parse(event.body);
 
-        if (body?.club_account_id == null) {
+        if (query_string_params?.club_account_id == null) {
             return createResponse(400, { message: 'club_account_id required.' }, origin);
         }
 
@@ -39,14 +38,14 @@ export const handler = async (event: any) => {
             TableName: process.env.REGISTRATION_FORM_TABLE_NAME,
             KeyConditionExpression: "club_account_id = :clubId",
             ExpressionAttributeValues: {
-                ":clubId": { S: body.club_account_id },
+                ":clubId": { S: query_string_params.club_account_id },
             },
         };
 
         const response = await dynamodbClient.send(new QueryCommand(params));
 
         if (!response.Items || response.Items.length === 0) {
-            return createResponse(400, { message: `Registration form does not exist for club: ${body.club_account_id}.` }, origin);
+            return createResponse(400, { message: `Registration form does not exist for club: ${query_string_params.club_account_id}.` }, origin);
         }
 
         const items: RegistrationForm[] = [];
