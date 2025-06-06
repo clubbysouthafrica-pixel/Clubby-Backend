@@ -1,11 +1,5 @@
-import {
-    DynamoDBClient,
-    PutItemCommand,
-} from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { createResponse, deconstructEvent, addItem, queryItems, getItem } from "./function_helpers";
-
-const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
 export type CurrencyType = 'DOLLAR' | 'RAND' | 'EURO' | 'POUND' | 'NEW ZEALAND DOLLAR' | 'AUSTRALIAN DOLLAR';
