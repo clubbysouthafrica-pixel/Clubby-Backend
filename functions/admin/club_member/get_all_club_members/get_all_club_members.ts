@@ -1,8 +1,4 @@
-import { DynamoDBClient, QueryCommandInput, QueryCommand } from "@aws-sdk/client-dynamodb";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent } from "./function_helpers";
-
-const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
+import { createResponse, deconstructEvent, queryItemsByKey } from "./function_helpers";
 
 export const handler = async (event: any) => {
     console.log(`EVENT @ ${new Date()}: `, event);
@@ -18,26 +14,21 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_account_id must be STRING type." }, origin);
         }
 
-        const command = new QueryCommand({
-            TableName: process.env.CLUB_MEMBER_TABLE_NAME,
-            IndexName: process.env.CLUB_ACCOUNT_ID_INDEX,
-            KeyConditionExpression: "club_account_id = :clubId",
-            ExpressionAttributeValues: {
-                ":clubId": { S: query_string_params.club_account_id }
-            }
-        });
-        const response = await dynamodbClient.send(command);
+        const club_members = await queryItemsByKey(
+            process.env.CLUB_MEMBER_TABLE_NAME as string,
+            "club_account_id = :clubId",
+            { ":clubId": query_string_params.club_account_id },
+            process.env.CLUB_ACCOUNT_ID_INDEX as string
+        )
 
-        if (!response.Items || response.Items.length === 0) {
+        if (club_members == null) {
             return createResponse(200, { registered: [], not_registered: [] }, origin);
         }
 
         const registered: any[] = []
         const unregistered: any[] = []
 
-        response.Items.forEach(entry => {
-            const item = unmarshall(entry)
-
+        club_members.forEach(item => {
             delete item.club_account_id
 
             if (item.registered) {

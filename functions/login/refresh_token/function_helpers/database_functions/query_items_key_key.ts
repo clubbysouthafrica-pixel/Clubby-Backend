@@ -8,7 +8,8 @@ export const queryItemsByKey = async (
     table_name: string,
     key_condition_expression: string,
     expression_attribute_values: Record<string, string>,
-    index_name?: string
+    index_name?: string,
+    unmarshall_item: boolean = true,
 ) => {
     if (!expression_attribute_values || Object.keys(expression_attribute_values).length === 0) {
         throw new Error("ExpressionAttributeValues must be provided and not empty.");
@@ -27,7 +28,10 @@ export const queryItemsByKey = async (
             return null;
         }
 
-        return response.Items.map(item => unmarshall(item));
+        if (unmarshall_item) {
+            return response.Items.map(item => unmarshall(item));
+        }
+        return response.Items;
         
     } catch (error) {
         throw error;
