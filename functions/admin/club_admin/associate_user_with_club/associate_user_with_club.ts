@@ -1,5 +1,5 @@
 import { DynamoDBClient, GetItemCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { createResponse, ACCESS, getItem } from "./function_helpers";
+import { createResponse, ACCESS, getItem, } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 

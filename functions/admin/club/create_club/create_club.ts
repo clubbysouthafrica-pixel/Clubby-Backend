@@ -1,7 +1,5 @@
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { createResponse, CLUB_TYPES } from "./function_helpers";
-
-const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
+import { addItem } from "./function_helpers";
 
 function generate_club_Id(club_name: string): string {
     return `club_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
@@ -29,17 +27,14 @@ export const handler = async (event: any) => {
 
         const club_account_id = generate_club_Id(body.club_name);
 
-        await addItem({
-            TableName: process.env.CLUB_TABLE_NAME,
-            Item: {
-                "club_type": { S: body.club_type },
-                "club_name": { S: body.club_name },
-                "club_account_id": { S: club_account_id }
+        await addItem(
+            process.env.CLUB_TABLE_NAME as string,
+            {
+                "club_type": body.club_type,
+                "club_name": body.club_name,
+                "club_account_id": club_account_id
             }
-        });
-
-        const dynamodbResponse = await dynamodbClient.send(dynamodbCommand);
-        console.log('Club added to table successfully: ', dynamodbResponse)
+        );
 
         return createResponse(
             200,
@@ -49,6 +44,7 @@ export const handler = async (event: any) => {
             },
             origin
         );
+
     } catch (error: any) {
         console.error('Signup error:', error);
         const message = error?.message || "Internal Server Error";
