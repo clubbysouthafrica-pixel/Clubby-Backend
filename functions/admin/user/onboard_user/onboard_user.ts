@@ -1,7 +1,4 @@
-import { DynamoDBClient, UpdateItemCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { createResponse, deconstructEvent, updateItem } from "./function_helpers";
-
-const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 const isValidDateOfBirth = (dob: string): boolean => {
   const regex = /^\d{4}\/\d{2}\/\d{2}$/;
