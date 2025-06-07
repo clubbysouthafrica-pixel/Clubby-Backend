@@ -1,5 +1,5 @@
 import { DynamoDBClient, UpdateItemCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { createResponse, deconstructEvent } from "./function_helpers";
+import { createResponse, deconstructEvent, updateItem } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
@@ -78,8 +78,8 @@ export const handler = async (event: any) => {
     }
 
     const key = {
-      user_type: { S: process.env.USER_TYPE as string },
-      user_id: { S: body.user_id },
+      user_type: process.env.USER_TYPE as string,
+      user_id: body.user_id,
     };
 
     const updatableFields = [
@@ -95,36 +95,36 @@ export const handler = async (event: any) => {
       "postal_code",
     ];
 
-    const updateExpressions: string[] = [];
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {};
+    const update_expressions: string[] = [];
+    const expression_attribute_names: Record<string, string> = {};
+    const expression_attribute_values: Record<string, string | boolean | number> = {};
 
     for (const field of updatableFields) {
       if (body[field] !== undefined && body[field] !== null) {
         const placeholder = `#${field}`;
         const valueKey = `:${field}`;
-        updateExpressions.push(`${placeholder} = ${valueKey}`);
-        expressionAttributeNames[placeholder] = field;
-        expressionAttributeValues[valueKey] = { S: body[field] };
+        update_expressions.push(`${placeholder} = ${valueKey}`);
+        expression_attribute_names[placeholder] = field;
+        expression_attribute_values[valueKey] = body[field];
       }
     }
 
-    updateExpressions.push("#onboarded = :onboarded");
-    expressionAttributeNames["#onboarded"] = "onboarded";
-    expressionAttributeValues[":onboarded"] = { BOOL: true };
+    update_expressions.push("#onboarded = :onboarded");
+    expression_attribute_names["#onboarded"] = "onboarded";
+    expression_attribute_values[":onboarded"] = true;
 
-    const UpdateExpression = `SET ${updateExpressions.join(", ")}`;
+    const update_expression = `SET ${update_expressions.join(", ")}`;
 
     try {
-      const response = await dynamodbClient.send(new UpdateItemCommand({
-        TableName: process.env.USERS_TABLE_NAME,
-        Key: key,
-        UpdateExpression,
-        ExpressionAttributeNames: expressionAttributeNames,
-        ExpressionAttributeValues: expressionAttributeValues,
-        ConditionExpression: "attribute_exists(user_type) AND attribute_exists(user_id)",
-        ReturnValues: "ALL_NEW",
-      }));
+      await updateItem(
+        process.env.USERS_TABLE_NAME as string,
+        key,
+        update_expression,
+        expression_attribute_names,
+        expression_attribute_values,
+        "attribute_exists(user_type) AND attribute_exists(user_id)",
+        true
+      )
 
       return createResponse(200, { message: "User onboarded successfully." }, origin);
     } catch (error: any) {

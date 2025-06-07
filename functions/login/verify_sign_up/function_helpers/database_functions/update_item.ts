@@ -8,8 +8,8 @@ export const updateItem = async (
     table_name: string,
     key: Record<string, string>,
     update_expression: string,
-    expression_attribute_values: Record<string, string>,
     expression_attribute_names: Record<string, string>,
+    expression_attribute_values: Record<string, string | boolean | number>,
     condition_expression: string,
     return_values: boolean = false,
 ) => {
@@ -23,6 +23,7 @@ export const updateItem = async (
             Key: marshall(key),
             UpdateExpression: update_expression,
             ExpressionAttributeNames: expression_attribute_names,
+            ExpressionAttributeValues: marshall(expression_attribute_values),
             ConditionExpression: condition_expression,
             ReturnValues: return_values ? "ALL_NEW" : undefined
         });
