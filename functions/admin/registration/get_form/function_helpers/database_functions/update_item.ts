@@ -33,6 +33,8 @@ export const updateItem = async (
         if (return_values) {
             return response;
         }
+
+        return null
         
     } catch (error) {
         throw error;
