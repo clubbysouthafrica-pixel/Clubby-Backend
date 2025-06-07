@@ -9,19 +9,16 @@ export const handler = async (event: any) => {
     const { origin, body, query_string_params } = deconstructEvent(event);
 
     try {
-        const users = scanItems(process.env.CLUB_TABLE_NAME as string)
+        const users = await scanItems(process.env.CLUB_TABLE_NAME as string)
 
         let items: any[] = [];
-        if (response.Items) {
-            items = response.Items.map((item) => {
-                const entry = unmarshall(item);
-                return {
-                    club_name: entry.club_name,
-                    club_account_id: entry.club_account_id,
-                    club_type: entry.club_type
-                };
-            });
-        }
+        items = users.map((item) => {
+            return {
+                club_name: item.club_name,
+                club_account_id: item.club_account_id,
+                club_type: item.club_type
+            };
+        });
 
         return createResponse(200, { items }, origin);
 
