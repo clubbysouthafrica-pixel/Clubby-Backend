@@ -1,8 +1,4 @@
-import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { createResponse, deconstructEvent, scanItems } from "./function_helpers";
-
-const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
 
