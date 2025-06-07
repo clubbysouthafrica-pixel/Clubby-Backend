@@ -9,10 +9,10 @@ export const handler = async (event: any) => {
     const { origin, body, query_string_params } = deconstructEvent(event);
 
     try {
-        const users = await scanItems(process.env.CLUB_TABLE_NAME as string)
+        const clubs = await scanItems(process.env.CLUB_TABLE_NAME as string)
 
         let items: any[] = [];
-        items = users.map((item) => {
+        items = clubs.map((item) => {
             return {
                 club_name: item.club_name,
                 club_account_id: item.club_account_id,
