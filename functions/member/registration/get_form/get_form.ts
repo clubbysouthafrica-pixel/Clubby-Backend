@@ -45,12 +45,11 @@ export const handler = async (event: any) => {
 
         const items: RegistrationForm[] = [];
         form.forEach((item) => {
-
             const set = unmarshall(item);
             delete set.club_account_id;
 
             if (item.field_type.S === "STANDARD" && item.input_type.S === "DROPDOWN") {
-                set["options"] = item.options.SS;
+                set["options"] = item.options.L.map((item: {S: string}) => item.S);
             }
 
             items.push(set as RegistrationForm);
