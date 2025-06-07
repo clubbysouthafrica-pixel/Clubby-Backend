@@ -1,4 +1,3 @@
-import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { createResponse, deconstructEvent, addItem, queryItems, getItem } from "./function_helpers";
 
 export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';

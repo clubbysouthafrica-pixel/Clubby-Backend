@@ -102,13 +102,13 @@ export const handler = async (event: any) => {
         const valueKey = `:${field}`;
         update_expressions.push(`${placeholder} = ${valueKey}`);
         expression_attribute_names[placeholder] = field;
-        expression_attribute_values[valueKey] = { S: body[field] };
+        expression_attribute_values[valueKey] = body[field];
       }
     }
 
     update_expressions.push("#onboarded = :onboarded");
     expression_attribute_names["#onboarded"] = "onboarded";
-    expression_attribute_values[":onboarded"] = { BOOL: true };
+    expression_attribute_values[":onboarded"] = true;
 
     const update_expression = `SET ${update_expressions.join(", ")}`;
 
@@ -123,7 +123,7 @@ export const handler = async (event: any) => {
         "attribute_exists(user_type) AND attribute_exists(user_id)"
       )
       return createResponse(200, { message: "User onboarded successfully." }, origin);
-      
+
     } catch (error: any) {
       if (error.name === "ConditionalCheckFailedException") {
         return createResponse(404, { message: "User does not exist" }, origin);

@@ -1,8 +1,5 @@
-import { DynamoDBClient, QueryCommand, QueryCommandInput } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { createResponse, deconstructEvent, queryItems } from "./function_helpers";
-
-const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
 export type CurrencyType = 'DOLLAR' | 'RAND' | 'EURO' | 'POUND' | 'NEW ZEALAND DOLLAR' | 'AUSTRALIAN DOLLAR'
@@ -32,16 +29,6 @@ export const handler = async (event: any) => {
         if (query_string_params?.club_account_id == null) {
             return createResponse(400, { message: 'club_account_id required.' }, origin);
         }
-
-        const params: QueryCommandInput = {
-            TableName: process.env.REGISTRATION_FORM_TABLE_NAME,
-            KeyConditionExpression: "club_account_id = :clubId",
-            ExpressionAttributeValues: {
-                ":clubId": { S: query_string_params.club_account_id },
-            },
-        };
-
-        const response = await dynamodbClient.send(new QueryCommand(params));
 
         const form = await queryItems(
             process.env.REGISTRATION_FORM_TABLE_NAME as string,
