@@ -16,7 +16,7 @@ export const scanItems = async (
         console.log(`@@@ scanItems response (Table_Name: ${table_name}): `, JSON.stringify(response));
 
         if (!response.Items || response.Items.length === 0) {
-            return null;
+            return [];
         }
 
         if (unmarshall_item) {

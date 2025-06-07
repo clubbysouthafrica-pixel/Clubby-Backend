@@ -1,6 +1,6 @@
 import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent } from "./function_helpers";
+import { createResponse, deconstructEvent, scanItems } from "./function_helpers";
 
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
@@ -9,10 +9,7 @@ export const handler = async (event: any) => {
     const { origin, body, query_string_params } = deconstructEvent(event);
 
     try {
-        const command = new ScanCommand({
-            TableName: process.env.CLUB_TABLE_NAME,
-        });
-        const response = await dynamodbClient.send(command);
+        const users = scanItems(process.env.CLUB_TABLE_NAME as string)
 
         let items: any[] = [];
         if (response.Items) {
