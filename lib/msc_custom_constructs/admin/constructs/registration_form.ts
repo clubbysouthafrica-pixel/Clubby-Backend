@@ -14,7 +14,7 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_AdminRegistrationFormConstructProps) {
         super(scope, id);
 
-        const add_registration_fields = new MSC_Lambda(this, `${id}-AddRegistrationFields`, {
+        const add_registration_fields = new MSC_Lambda(this, `${id}-AddFields`, {
             code: "admin/registration/add_registration_fields",
             envVariables: {
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
