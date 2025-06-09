@@ -3,14 +3,14 @@ import { MSC_Lambda, MSC_APIGateway, MSC_Table } from "../../../msc_service_cons
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 
-interface MSC_MemberRegistrationConstructProps {
+interface MSC_MemberRegistrationFormConstructProps {
     api_gateway: MSC_APIGateway;
     registration_form_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
 }
 
-export class MSC_MemberRegistrationConstruct extends Construct {
-    constructor(scope: Construct, id: string, props: MSC_MemberRegistrationConstructProps) {
+export class MSC_MemberRegistrationFormConstruct extends Construct {
+    constructor(scope: Construct, id: string, props: MSC_MemberRegistrationFormConstructProps) {
         super(scope, id);
 
         const get_form = new MSC_Lambda(this, `${id}-GetForm`, {

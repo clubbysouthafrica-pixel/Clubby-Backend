@@ -6,7 +6,7 @@ import {
     MSC_MemberLoginConstruct, 
     MSC_MemberUserConstruct, 
     MSC_MemberClubConstruct ,
-    MSC_MemberRegistrationConstruct,
+    MSC_MemberRegistrationFormConstruct,
     MSC_ClubMemberConstruct
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs"
@@ -36,7 +36,7 @@ export class MSC_MemberNestedStack extends Stack {
             token_authorizer: jwt_construct.token_authorizer
         });
 
-        new MSC_MemberRegistrationConstruct(this, `${id}-Registration`, {
+        new MSC_MemberRegistrationFormConstruct(this, `${id}-Registration`, {
             api_gateway: api_gateway,
             registration_form_table: props.registration_form_table,
             token_authorizer: jwt_construct.token_authorizer,
