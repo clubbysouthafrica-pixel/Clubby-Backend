@@ -178,6 +178,7 @@ export const handler = async (event: any) => {
             user_id: body.user_id,
             registered: false,
             outstanding_amount: body.billing_field.amount,
+            primary_member: body.user_id,
             billing_type: body.billing_field.billing_type,
             ...body.standard_fields.reduce((acc: Record<string, string>, field: { name: string; value: string }) => {
                 acc[field.name] = field.value;
