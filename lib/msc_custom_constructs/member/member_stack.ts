@@ -36,7 +36,7 @@ export class MSC_MemberNestedStack extends Stack {
             token_authorizer: jwt_construct.token_authorizer
         });
 
-        new MSC_MemberRegistrationFormConstruct(this, `${id}-Registration`, {
+        new MSC_MemberRegistrationFormConstruct(this, `${id}-RegistrationForm`, {
             api_gateway: api_gateway,
             registration_form_table: props.registration_form_table,
             token_authorizer: jwt_construct.token_authorizer,
