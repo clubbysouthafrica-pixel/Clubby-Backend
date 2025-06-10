@@ -2,7 +2,7 @@ import { createResponse, ACCESS, getItem, addItem, deconstructEvent } from "./fu
 
 export const handler = async (event: any) => {
 
-    const { origin, body, query_string_params } = deconstructEvent(event);
+    const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
 
@@ -10,7 +10,7 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'Not authorized for admin signup.' }, origin);
         }
 
-        if (body?.user_id == null || body?.club_account_id == null || body?.access == null) {
+        if (user_id == null || body?.club_account_id == null || body?.access == null) {
             return createResponse(400, { message: "user_id, club_account_id, and access required." }, origin);
         }
 
@@ -20,7 +20,7 @@ export const handler = async (event: any) => {
 
         const user = await getItem(process.env.USERS_TABLE_NAME as string, {
             user_type: "ADMIN",
-            user_id: body.user_id
+            user_id: user_id
         });
         if (user == null) {
             return createResponse(200, { message: "User not found." }, origin);
@@ -37,7 +37,7 @@ export const handler = async (event: any) => {
         await addItem(
             process.env.CLUB_ADMIN_ACCOUNT_TABLE_NAME as string,
             {
-                "user_id": body.user_id,
+                "user_id": user_id,
                 "club_account_id": body.club_account_id,
                 "club_type": club.club_type as string,
                 "access": body.access

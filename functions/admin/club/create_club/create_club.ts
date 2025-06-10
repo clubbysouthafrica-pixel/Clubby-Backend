@@ -6,7 +6,7 @@ function generate_club_Id(club_name: string): string {
 
 export const handler = async (event: any) => {
     
-    const { origin, body, query_string_params } = deconstructEvent(event);
+    const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
 
