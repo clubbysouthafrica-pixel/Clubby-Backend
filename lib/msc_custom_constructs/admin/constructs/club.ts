@@ -2,11 +2,13 @@ import { Construct } from "constructs";
 import { MSC_Lambda, MSC_APIGateway, MSC_Table } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
+import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_AdminClubConstructProps {
     api_gateway: MSC_APIGateway;
     club_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
+    layers: MSC_Layers;
 }
 
 export class MSC_AdminClubConstruct extends Construct {
@@ -23,7 +25,8 @@ export class MSC_AdminClubConstruct extends Construct {
                 [props.club_table.tableArn]: [
                     "dynamodb:PutItem"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
 
         const club_resource = props.api_gateway.root.addResource("club");

@@ -2,6 +2,7 @@ import { Construct } from "constructs";
 import { MSC_Lambda, MSC_APIGateway, MSC_Table } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
+import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_ClubAdminClubConstructProps {
     api_gateway: MSC_APIGateway;
