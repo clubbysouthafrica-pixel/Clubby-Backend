@@ -134,7 +134,7 @@ export const handler = async (event: any) => {
         }
 
         if (await registrationSubmitted(body.club_account_id, user_id as string)) {
-            return createResponse(400, { message: `Registration already submitted for user ${user_id} in club: ${body.club_account_id}.` }, origin);
+            return createResponse(400, { message: `Registration already submitted for this user in club: ${body.club_account_id}.` }, origin);
         }
 
         const form = await queryItems(
