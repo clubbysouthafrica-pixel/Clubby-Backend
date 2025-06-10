@@ -1,9 +1,8 @@
 import { APIGatewayAuthorizerResult } from "aws-lambda";
-import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 import jwt from 'jsonwebtoken';
 import jwksClient from "jwks-rsa";
 
-const ISSUER = `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.USER_POOL_CLIENT_ID}`;
+const ISSUER = `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.USER_POOL_ID}`;
 
 const client = jwksClient({
     jwksUri: `${ISSUER}/.well-known/jwks.json`

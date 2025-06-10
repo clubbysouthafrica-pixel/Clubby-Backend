@@ -17,7 +17,7 @@ export class MSC_JWTConstruct extends Construct {
         const lambda_authorizer = new MSC_Lambda(this, `${id}-Authorizer`, {
             code: "authorization/lambda_authorizer",
             envVariables: {
-                USER_POOL_CLIENT_ID: props.user_pool.userPoolId
+                USER_POOL_ID: props.user_pool.userPoolId
             }
         });
         this.token_authorizer = new TokenAuthorizer(this, `${id}-Authorizer`, {
