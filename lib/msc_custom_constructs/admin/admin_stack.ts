@@ -60,6 +60,7 @@ export class MSC_AdminNestedStack extends Stack {
             token_authorizer: jwt_construct.token_authorizer,
             users_table: props.users_table,
             club_admin_table: props.club_admin_table,
+            layers: props.layers
         });
 
         new MSC_AdminRegistrationFormConstruct(this, `${id}-RegistrationForm`, {

@@ -10,13 +10,14 @@ interface MSC_ClubAdminClubConstructProps {
     users_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     club_admin_table: MSC_Table;
+    layers: MSC_Layers;
 }
 
 export class MSC_ClubAdminClubConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_ClubAdminClubConstructProps) {
         super(scope, id);
 
-        const associate_user_with_club = new MSC_Lambda(this, `${id}-CreateClub`, {
+        const associate_user_with_club = new MSC_Lambda(this, `${id}-CreateClubAdmin`, {
             code: "admin/club_admin/associate_user_with_club",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
@@ -34,7 +35,8 @@ export class MSC_ClubAdminClubConstruct extends Construct {
                 [props.club_admin_table.tableArn]: [
                     "dynamodb:PutItem"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
 
         const admin_club_resource = props.api_gateway.root.addResource("clubAdmin");
