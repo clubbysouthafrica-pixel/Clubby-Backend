@@ -16,7 +16,6 @@ export const handler = async (event: any) => {
         }
 
         return createResponse(200, { 
-            user_id: item["user_id"],
             onboarded: item["onboarded"],
             address_line_1: "address_line_1" in item ? item["address_line_1"] : undefined,
             address_line_2: "address_line_2" in item ? item["address_line_2"] : undefined,
