@@ -10,12 +10,14 @@ import {
     MSC_ClubMemberConstruct
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs"
+import { MSC_Layers } from '../lambda_layers';
 
 export interface MSC_MemberNestedStackProps extends StackProps {
     users_table: MSC_Table;
     club_table: MSC_Table;
     club_member_table: MSC_Table;
     registration_form_table: MSC_Table;
+    layers: MSC_Layers;
 }
 
 export class MSC_MemberNestedStack extends Stack {
@@ -31,6 +33,7 @@ export class MSC_MemberNestedStack extends Stack {
         const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, {
             api_gateway: api_gateway, user_type: "member",
             user_pool: login_construct.user_pool,
+            layers: props.layers
         });
 
         new MSC_ClubMemberConstruct(this, `${id}-ClubMember`, {

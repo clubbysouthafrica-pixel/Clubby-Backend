@@ -8,6 +8,7 @@ import {
     ServicePrincipal,
 } from "aws-cdk-lib/aws-iam";
 import { Duration } from "aws-cdk-lib";
+import { MSC_LambdaLayer } from "./msc_lambda_layer";
 
 interface MSC_LambdaProps {
     code: string;
@@ -15,6 +16,7 @@ interface MSC_LambdaProps {
     permissions?: Record<string, Array<string>>;
     timeout?: number;
     memory?: number;
+    layers?: MSC_LambdaLayer[],
 }
 
 export class MSC_Lambda extends Function {
@@ -51,6 +53,7 @@ export class MSC_Lambda extends Function {
                 ...props.envVariables,
             },
             role: lambdaRole,
+            layers: props.layers ?? undefined
         });
     }
 }

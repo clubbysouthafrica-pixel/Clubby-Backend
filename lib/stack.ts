@@ -20,6 +20,7 @@ export class MSC_Stack extends cdk.Stack {
       club_table: tables.club_table,
       club_member_table: tables.club_member_table,
       registration_form_table: tables.registration_form_table,
+      layers,
     });
 
     new MSC_AdminNestedStack(this, `${stack_id}-AdminStack`, { 
@@ -27,7 +28,8 @@ export class MSC_Stack extends cdk.Stack {
       club_table: tables.club_table,
       club_admin_table: tables.club_admin_table,
       registration_form_table: tables.registration_form_table,
-      club_member_table: tables.club_member_table
+      club_member_table: tables.club_member_table,
+      layers,
     });
   }
 }

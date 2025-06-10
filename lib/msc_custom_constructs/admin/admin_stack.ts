@@ -11,6 +11,7 @@ import {
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
+import { MSC_Layers } from '../lambda_layers';
 
 export interface MSC_AdminNestedStackProps extends StackProps {
     users_table: MSC_Table;
@@ -18,6 +19,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     club_admin_table: MSC_Table;
     registration_form_table: MSC_Table;
     club_member_table: MSC_Table;
+    layers: MSC_Layers;
 }
 
 export class MSC_AdminNestedStack extends Stack {
@@ -33,7 +35,8 @@ export class MSC_AdminNestedStack extends Stack {
         const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, { 
             api_gateway: api_gateway, 
             user_pool: login_construct.user_pool,
-            user_type: "admin"
+            user_type: "admin",
+            layers: props.layers
         });
 
         new MSC_AdminUserConstruct(this, `${id}-User`, {
