@@ -55,7 +55,7 @@ export class MSC_ClubMemberConstruct extends Construct {
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
-                    "dynamodb:GetItem"
+                    "dynamodb:Query"
                 ]
             }
         });

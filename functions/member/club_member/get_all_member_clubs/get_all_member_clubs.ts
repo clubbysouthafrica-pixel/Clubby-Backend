@@ -13,15 +13,20 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "user_id must be STRING type." }, origin);
         }
 
-        const items = await queryItems(
+        const clubs = await queryItems(
             process.env.CLUB_MEMBER_TABLE_NAME as string,
             "user_id = :user_id",
             { ":user_id": query_string_params.user_id }
         )
 
-        if (items == null) {
+        if (clubs == null) {
             return createResponse(200, { items: [] }, origin);
         }
+
+        const items = clubs.map(item => {
+            delete item.user_id;
+            return item;
+        })
 
         return createResponse(200, { items }, origin);
         
