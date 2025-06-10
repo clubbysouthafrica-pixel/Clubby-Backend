@@ -7,10 +7,10 @@ export const deconstructEvent = (event: any) => {
     console.log(`Called by origin: ${origin}`)
 
     const decoded = jwt.decode(event.headers.Authorization);
-    console.log('Decoded: ', decoded)
+    const sub = decoded?.sub;
     
     const body = JSON.parse(event.body);
     const query_string_params = event.queryStringParameters;
 
-    return { origin, body, query_string_params }
+    return { origin, body, query_string_params, sub }
 };
