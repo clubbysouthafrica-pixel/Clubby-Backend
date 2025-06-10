@@ -34,7 +34,8 @@ export class MSC_MemberLoginConstruct extends Construct {
                 [props.users_table.tableArn]: [
                     "dynamodb:PutItem"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
 
         const verify_sign_up = new MSC_Lambda(this, `${id}-VerifySignUp`, {
@@ -46,7 +47,8 @@ export class MSC_MemberLoginConstruct extends Construct {
                 [this.user_pool.userPoolArn]: [
                     "cognito-idp:ConfirmSignUp"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
 
         const sign_in = new MSC_Lambda(this, `${id}-SignIn`, {
@@ -73,7 +75,8 @@ export class MSC_MemberLoginConstruct extends Construct {
                     "cognito-idp:InitiateAuth",
                     "cognito-idp:AdminInitiateAuth"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
 
         const forgot_password = new MSC_Lambda(this, `${id}-ForgotPassword`, {
@@ -85,7 +88,8 @@ export class MSC_MemberLoginConstruct extends Construct {
                 [this.user_pool.userPoolArn]: [
                     "cognito-idp:AdminConfirmForgotPassword"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
 
         const reset_password = new MSC_Lambda(this, `${id}-ResetPassword`, {
@@ -97,7 +101,8 @@ export class MSC_MemberLoginConstruct extends Construct {
                 [this.user_pool.userPoolArn]: [
                     "cognito-idp:AdminResetUserPassword"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
 
         const member_resource = props.api_gateway.root.addResource("member");
