@@ -42,7 +42,7 @@ function isBillingField(obj: any): obj is BillingField {
 
 export const handler = async (event: any) => {
 
-    const { origin, body, query_string_params } = deconstructEvent(event)
+    const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
 

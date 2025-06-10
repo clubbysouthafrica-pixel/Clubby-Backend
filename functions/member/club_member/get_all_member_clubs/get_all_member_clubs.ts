@@ -2,21 +2,14 @@ import { createResponse, deconstructEvent, queryItems } from "./function_helpers
 
 export const handler = async (event: any) => {
 
-    const { origin, body, query_string_params } = deconstructEvent(event);
+    const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
-
-        if (query_string_params?.user_id == null) {
-            return createResponse(400, { message: "user_id required." }, origin);
-        }
-        if (typeof query_string_params.user_id !== 'string') {
-            return createResponse(400, { message: "user_id must be STRING type." }, origin);
-        }
 
         const clubs = await queryItems(
             process.env.CLUB_MEMBER_TABLE_NAME as string,
             "user_id = :user_id",
-            { ":user_id": query_string_params.user_id }
+            { ":user_id": user_id as string }
         )
 
         if (clubs == null) {

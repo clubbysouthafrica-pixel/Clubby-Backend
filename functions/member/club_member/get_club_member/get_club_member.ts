@@ -2,14 +2,14 @@ import { createResponse, deconstructEvent, getItem } from "./function_helpers";
 
 export const handler = async (event: any) => {
 
-    const { origin, body, query_string_params } = deconstructEvent(event);
+    const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
-        if (query_string_params?.club_account_id == null || query_string_params?.user_id == null) {
-            return createResponse(400, { message: "club_account_id and user_id required in query string params." }, origin);
+        if (query_string_params?.club_account_id == null) {
+            return createResponse(400, { message: "club_account_id required in query string params." }, origin);
         }
-        if (typeof query_string_params.club_account_id !== 'string' || typeof query_string_params.user_id !== 'string') {
-            return createResponse(400, { message: "club_account_id and user_id must be STRING types." }, origin);
+        if (typeof query_string_params.club_account_id !== 'string') {
+            return createResponse(400, { message: "club_account_id must be STRING type." }, origin);
         }
 
 
@@ -17,7 +17,7 @@ export const handler = async (event: any) => {
             process.env.CLUB_MEMBER_TABLE_NAME as string, 
             {
                 club_account_id: query_string_params.club_account_id,
-                user_id: query_string_params.user_id
+                user_id: user_id as string
             }
         );
 

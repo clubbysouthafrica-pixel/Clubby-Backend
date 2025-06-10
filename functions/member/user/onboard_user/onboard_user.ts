@@ -27,11 +27,11 @@ const isValidPhoneNumber = (phone: string): boolean => {
 
 export const handler = async (event: any) => {
 
-  const { origin, body, query_string_params } = deconstructEvent(event);
+  const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
   try {
 
-    const requiredFields = ["user_id", "first_name", "surname", "date_of_birth", "email", "phone_number"];
+    const requiredFields = ["first_name", "surname", "date_of_birth", "email", "phone_number"];
     const missingFields = requiredFields.filter((field) => !body?.[field]);
 
     if (missingFields.length > 0) {
@@ -76,7 +76,7 @@ export const handler = async (event: any) => {
 
     const key = {
       user_type: process.env.USER_TYPE as string,
-      user_id: body.user_id,
+      user_id: user_id as string,
     };
 
     const updatableFields = [

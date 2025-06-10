@@ -124,7 +124,7 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
 
 export const handler = async (event: any) => {
 
-    const { origin, body, query_string_params } = deconstructEvent(event);
+    const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
         const validationMessage = validateRequestBody(body);
@@ -133,12 +133,8 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: validationMessage }, origin);
         }
 
-        if (await memberNotExists(body.user_id)) {
-            return createResponse(400, { message: "user_id is invalid." }, origin);
-        }
-
-        if (await registrationSubmitted(body.club_account_id, body.user_id)) {
-            return createResponse(400, { message: `Registration already submitted for user ${body.user_id} in club: ${body.club_account_id}.` }, origin);
+        if (await registrationSubmitted(body.club_account_id, user_id as string)) {
+            return createResponse(400, { message: `Registration already submitted for user ${user_id} in club: ${body.club_account_id}.` }, origin);
         }
 
         const form = await queryItems(
@@ -175,10 +171,10 @@ export const handler = async (event: any) => {
 
         const item = {
             club_account_id: body.club_account_id,
-            user_id: body.user_id,
+            user_id: user_id,
             registered: false,
             outstanding_amount: body.billing_field.amount,
-            primary_member: body.user_id,
+            primary_member: user_id,
             billing_type: body.billing_field.billing_type,
             ...body.standard_fields.reduce((acc: Record<string, string>, field: { name: string; value: string }) => {
                 acc[field.name] = field.value;

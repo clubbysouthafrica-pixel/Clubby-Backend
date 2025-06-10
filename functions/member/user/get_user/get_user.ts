@@ -2,19 +2,15 @@ import { createResponse, deconstructEvent, getItem } from "./function_helpers";
 
 export const handler = async (event: any) => {
     
-    const { origin, body, query_string_params } = deconstructEvent(event);
+    const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
-
-        if (query_string_params?.user_id == null) {
-            return createResponse(400, { message: "user_id required." }, origin);
-        }
 
         const item = await getItem(
             process.env.USERS_TABLE_NAME as string, 
             { 
                 user_type: process.env.USER_TYPE as string,
-                user_id: query_string_params.user_id
+                user_id: user_id as string
             }
         )
 

@@ -39,6 +39,7 @@ export const handler = async (event: any) => {
       {
         "user_type": process.env.USER_TYPE as string,
         "user_id": cognitoResponse["UserSub"],
+        "email": body.username,
         "onboarded": false
       }
     )
