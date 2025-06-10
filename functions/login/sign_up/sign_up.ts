@@ -2,15 +2,13 @@ import {
   CognitoIdentityProviderClient,
   SignUpCommand
 } from "@aws-sdk/client-cognito-identity-provider";
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { createResponse, deconstructEvent } from "./function_helpers";
+import { createResponse, deconstructEvent, addItem } from "./function_helpers";
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
-const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
   
-  const { origin, body, query_string_params } = deconstructEvent(event);
+  const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
   try {
 
@@ -36,16 +34,14 @@ export const handler = async (event: any) => {
     const cognitoResponse: any = await cognitoClient.send(cognitoCommand);
     console.log('Signup successful:', cognitoResponse);
 
-    const dynamodbCommand = new PutItemCommand({
-      TableName: process.env.USERS_TABLE_NAME,
-      Item: {
-        "user_type": { S: process.env.USER_TYPE as string },
-        "user_id": { S: body.username },
-        "onboarded": { BOOL: false }
+    await addItem(
+      process.env.USERS_TABLE_NAME as string,
+      {
+        "user_type": process.env.USER_TYPE as string,
+        "user_id": cognitoResponse["UserSub"],
+        "onboarded": false
       }
-    });
-    const dynamodbResponse = await dynamodbClient.send(dynamodbCommand);
-    console.log('User added to table successfully: ', dynamodbResponse)
+    )
 
     if (process.env.ADMIN_TOKEN != null) {
       return createResponse(

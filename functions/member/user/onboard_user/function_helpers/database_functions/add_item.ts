@@ -6,7 +6,7 @@ const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 export const addItem = async (
     table_name: string, 
-    item: Record<string, string>,
+    item: Record<string, string | boolean | number>,
 ) => {
     if (!item || Object.keys(item).length === 0) {
         throw new Error("Item cannot empty.");
