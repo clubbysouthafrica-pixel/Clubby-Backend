@@ -3,13 +3,14 @@ import { LambdaFunction } from "aws-cdk-lib/aws-events-targets";
 import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { ParameterDataType, ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway } from "../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Cognito } from "../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../msc_custom_functions";
 import { MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { Duration } from "aws-cdk-lib";
 
 interface MSC_JWTConstructProps {
     api_gateway: MSC_APIGateway;
+    user_pool: MSC_Cognito;
     user_type: "member" | "admin";
 }
 
@@ -29,7 +30,8 @@ export class MSC_JWTConstruct extends Construct {
         const lambda_authorizer = new MSC_Lambda(this, `${id}-Authorizer`, {
             code: "authorization/lambda_authorizer",
             envVariables: {
-                SSM_TOKEN_NAME: token_parameter.parameterName
+                SSM_TOKEN_NAME: token_parameter.parameterName,
+                USER_POOL_CLIENT_ID: props.user_pool.userPoolClient.userPoolClientId
             },
             permissions: {
                 [token_parameter.parameterArn]: ["ssm:GetParameter"]

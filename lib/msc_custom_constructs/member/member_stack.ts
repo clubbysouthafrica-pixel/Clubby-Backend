@@ -24,8 +24,13 @@ export class MSC_MemberNestedStack extends Stack {
 
         const api_gateway = new MSC_APIGateway(this, id);
 
+        const login_construct = new MSC_MemberLoginConstruct(this, `${id}-Login`, {
+            api_gateway: api_gateway, users_table: props.users_table
+        });
+
         const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, {
-            api_gateway: api_gateway, user_type: "member"
+            api_gateway: api_gateway, user_type: "member",
+            user_pool: login_construct.user_pool,
         });
 
         new MSC_ClubMemberConstruct(this, `${id}-ClubMember`, {
@@ -46,10 +51,6 @@ export class MSC_MemberNestedStack extends Stack {
             api_gateway: api_gateway,
             club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
-        });
-
-        new MSC_MemberLoginConstruct(this, `${id}-Login`, {
-            api_gateway: api_gateway, users_table: props.users_table
         });
 
         new MSC_MemberUserConstruct(this, `${id}-User`, {

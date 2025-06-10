@@ -26,10 +26,14 @@ export class MSC_AdminNestedStack extends Stack {
 
         const api_gateway = new MSC_APIGateway(this, id);
 
-        const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, { api_gateway: api_gateway, user_type: "admin" })
-
-        new MSC_AdminLoginConstruct(this, `${id}-Login`, {
+        const login_construct = new MSC_AdminLoginConstruct(this, `${id}-Login`, {
             api_gateway: api_gateway, users_table: props.users_table
+        });
+
+        const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, { 
+            api_gateway: api_gateway, 
+            user_pool: login_construct.user_pool,
+            user_type: "admin"
         });
 
         new MSC_AdminUserConstruct(this, `${id}-User`, {
@@ -57,12 +61,12 @@ export class MSC_AdminNestedStack extends Stack {
             registration_form_table: props.registration_form_table,
             club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
-        })
+        });
 
         new MSC_ClubMemberClubConstruct(this, `${id}-GetAllClubMembers`, {
             api_gateway: api_gateway,
             club_member_table: props.club_member_table,
             token_authorizer: jwt_construct.token_authorizer
-        })
+        });
     }
 }
