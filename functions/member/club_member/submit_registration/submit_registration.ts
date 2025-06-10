@@ -25,8 +25,8 @@ interface BillingField {
 }
 
 function validateRequestBody(body: any) {
-    if (!body?.club_account_id || !body?.user_id || !body?.billing_field || !body?.standard_fields) {
-        return 'club_account_id, user_id, billing_field and standard_fields required.';
+    if (!body?.club_account_id || !body?.billing_field || !body?.standard_fields) {
+        return 'club_account_id, billing_field and standard_fields required.';
     }
 
     if (typeof body.billing_field !== 'object') {
