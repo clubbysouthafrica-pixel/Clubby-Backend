@@ -27,7 +27,8 @@ export class MSC_MemberNestedStack extends Stack {
         const api_gateway = new MSC_APIGateway(this, id);
 
         const login_construct = new MSC_MemberLoginConstruct(this, `${id}-Login`, {
-            api_gateway: api_gateway, users_table: props.users_table
+            api_gateway: api_gateway, users_table: props.users_table,
+            layers: props.layers
         });
 
         const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, {
@@ -41,25 +42,29 @@ export class MSC_MemberNestedStack extends Stack {
             club_member_table: props.club_member_table,
             registration_form_table: props.registration_form_table,
             users_table: props.users_table,
-            token_authorizer: jwt_construct.token_authorizer
+            token_authorizer: jwt_construct.token_authorizer,
+            layers: props.layers
         });
 
         new MSC_MemberRegistrationFormConstruct(this, `${id}-RegistrationForm`, {
             api_gateway: api_gateway,
             registration_form_table: props.registration_form_table,
             token_authorizer: jwt_construct.token_authorizer,
+            layers: props.layers
         });
 
         new MSC_MemberClubConstruct(this, `${id}-Club`, {
             api_gateway: api_gateway,
             club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
+            layers: props.layers
         });
 
         new MSC_MemberUserConstruct(this, `${id}-User`, {
             api_gateway: api_gateway,
             users_table: props.users_table,
             token_authorizer: jwt_construct.token_authorizer,
+            layers: props.layers
         });
     }
 }

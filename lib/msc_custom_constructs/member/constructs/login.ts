@@ -3,10 +3,12 @@ import { MSC_Cognito, MSC_Lambda, MSC_APIGateway } from "../../../msc_service_co
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { MethodOptions } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Table } from "../../../msc_service_constructs";
+import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_MemberLoginConstructProps {
     api_gateway: MSC_APIGateway;
     users_table: MSC_Table;
+    layers: MSC_Layers;
 }
 
 export class MSC_MemberLoginConstruct extends Construct {
@@ -57,7 +59,8 @@ export class MSC_MemberLoginConstruct extends Construct {
                     "cognito-idp:InitiateAuth",
                     "cognito-idp:AdminInitiateAuth"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
 
         const refresh_token = new MSC_Lambda(this, `${id}-RefreshToken`, {

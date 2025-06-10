@@ -29,7 +29,8 @@ export class MSC_AdminNestedStack extends Stack {
         const api_gateway = new MSC_APIGateway(this, id);
 
         const login_construct = new MSC_AdminLoginConstruct(this, `${id}-Login`, {
-            api_gateway: api_gateway, users_table: props.users_table
+            api_gateway: api_gateway, users_table: props.users_table,
+            layers: props.layers
         });
 
         const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, { 

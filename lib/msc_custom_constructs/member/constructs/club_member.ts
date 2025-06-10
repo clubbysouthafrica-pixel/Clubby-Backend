@@ -2,6 +2,7 @@ import { Construct } from "constructs";
 import { MSC_Lambda, MSC_APIGateway, MSC_Table } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, LambdaIntegration, MethodOptions, MockIntegration, PassthroughBehavior, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
+import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_ClubMemberConstructProps {
     api_gateway: MSC_APIGateway;
@@ -9,6 +10,7 @@ interface MSC_ClubMemberConstructProps {
     token_authorizer: TokenAuthorizer;
     registration_form_table: MSC_Table;
     users_table: MSC_Table;
+    layers: MSC_Layers;
 }
 
 export class MSC_ClubMemberConstruct extends Construct {
@@ -33,7 +35,8 @@ export class MSC_ClubMemberConstruct extends Construct {
                 [props.users_table.tableArn]: [
                     "dynamodb:GetItem"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
 
         const get_club_member = new MSC_Lambda(this, `${id}-GetClubMember`, {
@@ -45,7 +48,8 @@ export class MSC_ClubMemberConstruct extends Construct {
                 [props.club_member_table.tableArn]: [
                     "dynamodb:GetItem"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
 
         const get_all_member_clubs = new MSC_Lambda(this, `${id}-GetAllMemberClubs`, {
@@ -57,7 +61,8 @@ export class MSC_ClubMemberConstruct extends Construct {
                 [props.club_member_table.tableArn]: [
                     "dynamodb:Query"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
 
         const club_resource = props.api_gateway.root.addResource("clubMember");

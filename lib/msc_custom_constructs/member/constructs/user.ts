@@ -2,11 +2,13 @@ import { Construct } from "constructs";
 import { MSC_Lambda, MSC_APIGateway, MSC_Table } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, LambdaIntegration, MethodOptions, MockIntegration, PassthroughBehavior, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
+import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_MemberUserConstructProps {
     api_gateway: MSC_APIGateway;
     users_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
+    layers: MSC_Layers;
 }
 
 export class MSC_MemberUserConstruct extends Construct {
@@ -23,7 +25,8 @@ export class MSC_MemberUserConstruct extends Construct {
                 [props.users_table.tableArn]: [
                     "dynamodb:GetItem"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
 
         const onboard_user = new MSC_Lambda(this, `${id}-OnboardUser`, {
@@ -36,7 +39,8 @@ export class MSC_MemberUserConstruct extends Construct {
                 [props.users_table.tableArn]: [
                     "dynamodb:UpdateItem"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
 
         const user_resource = props.api_gateway.root.addResource("user");
