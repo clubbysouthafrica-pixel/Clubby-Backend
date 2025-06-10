@@ -76,6 +76,18 @@ export const handler = async (event: any) => {
             }, origin);
         }
 
+        const club_admin = await getItem(
+            process.env.CLUB_ADMIN_TABLE_NAME as string,
+            {
+                club_account_id: body.club_account_id,
+                user_id: user_id as string,
+            }
+        )
+
+        if (club_admin == null) {
+            return createResponse(200, { message: "User not associated with club." }, origin);
+        }
+
         const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
             club_account_id: body.club_account_id
         })

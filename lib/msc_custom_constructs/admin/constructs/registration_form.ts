@@ -8,6 +8,7 @@ interface MSC_AdminRegistrationFormConstructProps {
     api_gateway: MSC_APIGateway;
     registration_form_table: MSC_Table;
     club_table: MSC_Table;
+    club_admin_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     layers: MSC_Layers;
 }
@@ -21,12 +22,16 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
             envVariables: {
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
+                CLUB_ADMIN_TABLE_NAME: props.club_admin_table.tableName
             },
             permissions: {
                 [props.registration_form_table.tableArn]: [
                     "dynamodb:PutItem"
                 ],
                 [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.club_admin_table.tableArn]: [
                     "dynamodb:GetItem"
                 ]
             },

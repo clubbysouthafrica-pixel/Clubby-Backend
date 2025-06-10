@@ -66,6 +66,7 @@ export class MSC_AdminNestedStack extends Stack {
             api_gateway: api_gateway,
             registration_form_table: props.registration_form_table,
             club_table: props.club_table,
+            club_admin_table: props.club_admin_table,
             token_authorizer: jwt_construct.token_authorizer,
             layers: props.layers
         });
