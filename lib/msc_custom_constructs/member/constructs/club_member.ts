@@ -48,10 +48,23 @@ export class MSC_ClubMemberConstruct extends Construct {
             }
         });
 
+        const get_all_members_clubs = new MSC_Lambda(this, `${id}-GetAllMemberClubs`, {
+            code: "member/club_member/get_all_members_clubs",
+            envVariables: {
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+            },
+            permissions: {
+                [props.club_member_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ]
+            }
+        });
+
         const club_resource = props.api_gateway.root.addResource("clubMember");
 
         const get_club_member_resource = club_resource.addResource("getClubMember");
         const submit_registration_resource = club_resource.addResource("submitRegistration");
+        const get_all_members_clubs_resource = club_resource.addResource("getAllMemberClubs");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -60,6 +73,7 @@ export class MSC_ClubMemberConstruct extends Construct {
         }
 
         addCorsEnabledMethod(get_club_member_resource, get_club_member, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(get_all_members_clubs_resource, get_all_members_clubs, methodOptions, undefined, "GET");
         addCorsEnabledMethod(submit_registration_resource, submit_registration, methodOptions, undefined, "PUT");
     }
 }
