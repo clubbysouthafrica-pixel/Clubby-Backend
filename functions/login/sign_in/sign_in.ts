@@ -9,7 +9,7 @@ const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.RE
 
 export const handler = async (event: any) => {
   
-  const { origin, body, query_string_params } = deconstructEvent(event);
+  const { origin, body, query_string_params } = deconstructEvent(event, false);
 
   try {
 
