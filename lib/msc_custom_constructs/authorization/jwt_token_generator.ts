@@ -31,7 +31,7 @@ export class MSC_JWTConstruct extends Construct {
             code: "authorization/lambda_authorizer",
             envVariables: {
                 SSM_TOKEN_NAME: token_parameter.parameterName,
-                USER_POOL_CLIENT_ID: props.user_pool.userPoolClient.userPoolClientId
+                USER_POOL_CLIENT_ID: props.user_pool.userPoolId
             },
             permissions: {
                 [token_parameter.parameterArn]: ["ssm:GetParameter"]

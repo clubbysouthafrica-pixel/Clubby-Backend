@@ -21,10 +21,12 @@ function getKey(header: any, callback: any) {
 }
 
 export const handler = async (event: any): Promise<APIGatewayAuthorizerResult> => {
+    console.log("----------------------------------")
     console.log(`EVENT @ ${new Date()}: `, event);
 
     const token = event.authorizationToken;
     if (!token) {
+        console.log("----------------------------------")
         return generatePolicy("user", "Deny");
     }
 
@@ -35,9 +37,13 @@ export const handler = async (event: any): Promise<APIGatewayAuthorizerResult> =
                 else resolve(decoded);
             });
         });
+        console.log('PASS: ', decoded)
 
+        console.log("----------------------------------")
         return generatePolicy("user", "Allow");
     } catch (err) {
+        console.log('ERROR: ', err)
+        console.log("----------------------------------")
         return generatePolicy("user", "Deny");
     }
 };
