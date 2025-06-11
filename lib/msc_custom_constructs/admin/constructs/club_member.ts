@@ -41,7 +41,8 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                     "dynamodb:GetItem"
                 ],
                 [props.club_member_table.tableArn]: [
-                    "dynamodb:UpdateItem"
+                    "dynamodb:UpdateItem",
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
