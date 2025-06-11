@@ -10,7 +10,7 @@ export const updateItem = async (
     update_expression: string,
     expression_attribute_names: Record<string, string>,
     expression_attribute_values: Record<string, string | boolean | number>,
-    condition_expression: string,
+    condition_expression?: string,
     return_values: boolean = false,
 ) => {
     if (!expression_attribute_values || Object.keys(expression_attribute_values).length === 0) {
