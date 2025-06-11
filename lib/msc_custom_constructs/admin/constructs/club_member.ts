@@ -7,6 +7,7 @@ import { MSC_Layers } from "../../lambda_layers";
 interface MSC_ClubMemberClubConstructProps {
     api_gateway: MSC_APIGateway;
     club_member_table: MSC_Table;
+    registration_form_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     layers: MSC_Layers;
 }
@@ -29,9 +30,27 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const register_member = new MSC_Lambda(this, `${id}-RegisterMember`, {
+            code: "admin/club_member/register_member",
+            envVariables: {
+                REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName
+            },
+            permissions: {
+                [props.registration_form_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.club_member_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const club_member_resource = props.api_gateway.root.addResource("clubMember");
 
         const get_all_club_members_resource = club_member_resource.addResource("getAllClubMembers");
+        const register_member_resource = club_member_resource.addResource("registerMember");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -40,5 +59,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
         }
 
         addCorsEnabledMethod(get_all_club_members_resource, get_all_club_members, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(register_member_resource, register_member, methodOptions);
     }
 }
