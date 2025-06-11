@@ -13,6 +13,21 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_account_id, member_billing_type, member_id must be STRING type." }, origin);
         }
 
+        const member = await getItem(
+            process.env.CLUB_MEMBER_TABLE_NAME as string,
+            {
+                user_id: body.member_id,
+                club_account_id: body.club_account_id, 
+            }
+        );
+        if (member == null) {
+            return createResponse(400, { message: "Member does not exist." }, origin);
+        }
+
+        if (member.registered) {
+            return createResponse(400, { message: "Member already registered." }, origin);
+        }
+
         const registration_billing = await getItem(
             process.env.REGISTRATION_FORM_TABLE_NAME as string,
             {
