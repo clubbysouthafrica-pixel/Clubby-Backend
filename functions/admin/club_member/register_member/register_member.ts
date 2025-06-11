@@ -6,18 +6,18 @@ export const handler = async (event: any) => {
 
     try {
 
-        if (query_string_params?.club_account_id == null || body?.billing_type == null) {
-            return createResponse(400, { message: "Invalid request. club_account_id required in query string params. billing_type requried in body." }, origin);
+        if (query_string_params?.club_account_id == null || body?.member_billing_type == null) {
+            return createResponse(400, { message: "Invalid request. club_account_id required in query string params. member_billing_type requried in body." }, origin);
         }
-        if (typeof query_string_params.club_account_id !== 'string' || typeof body.billing_type !== 'string') {
-            return createResponse(400, { message: "club_account_id and billing_type must be STRING type." }, origin);
+        if (typeof query_string_params.club_account_id !== 'string' || typeof body.member_billing_type !== 'string') {
+            return createResponse(400, { message: "club_account_id and member_billing_type must be STRING type." }, origin);
         }
 
         const registration_billing = await getItem(
             process.env.REGISTRATION_FORM_TABLE_NAME as string,
             {
                 club_account_id: query_string_params.club_account_id,
-                field_name: body.billing_type
+                field_name: body.member_billing_type
             }
         );
 
