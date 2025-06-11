@@ -2,39 +2,15 @@ import {
   CognitoIdentityProviderClient,
   InitiateAuthCommand
 } from "@aws-sdk/client-cognito-identity-provider";
+import { createResponse, deconstructEvent } from "./function_helpers";
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 
-const allowedOrigins = [
-  "http://localhost:5173"
-];
-
-const createResponse = (statusCode: number, data: object, origin: string) => {
-  const allowOrigin = allowedOrigins.includes(origin)
-    ? origin
-    : allowedOrigins[0];
-
-  const response = {
-    statusCode: statusCode,
-    body: JSON.stringify(data),
-    headers: {
-      "Access-Control-Allow-Origin": allowOrigin,
-      "Access-Control-Allow-Methods": "OPTIONS,POST",
-      "Access-Control-Allow-Headers": "Content-Type,X-Requested-With",
-      "Access-Control-Allow-Credentials": "true"
-    },
-  };
-  console.log(`RESPONSE @ ${new Date()}: `, response);
-  return response;
-};
-
 export const handler = async (event: any) => {
-  console.log(`EVENT @ ${new Date()}: `, event);
-  const origin = event.headers.origin;
-  console.log(`Called by origin: ${origin}`)
+  
+  const { origin, body, query_string_params } = deconstructEvent(event, false);
 
   try {
-    const body = JSON.parse(event.body);
 
     if (body?.refreshToken == null) {
       return createResponse(400, { message: 'Refresh token required.' }, origin);

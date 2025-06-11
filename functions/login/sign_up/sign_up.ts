@@ -2,45 +2,27 @@ import {
   CognitoIdentityProviderClient,
   SignUpCommand
 } from "@aws-sdk/client-cognito-identity-provider";
+import { createResponse, deconstructEvent, addItem } from "./function_helpers";
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 
-const allowedOrigins = [
-  "http://localhost:5173"
-];
-
-const createResponse = (statusCode: number, data: object, origin: string) => {
-  const allowOrigin = allowedOrigins.includes(origin)
-    ? origin
-    : allowedOrigins[0];
-
-  const response = {
-    statusCode: statusCode,
-    body: JSON.stringify(data),
-    headers: {
-      "Access-Control-Allow-Origin": allowOrigin,
-      "Access-Control-Allow-Methods": "OPTIONS,POST",
-      "Access-Control-Allow-Headers": "Content-Type,X-Requested-With",
-      "Access-Control-Allow-Credentials": "true"
-    },
-  };
-  console.log(`RESPONSE @ ${new Date()}: `, response);
-  return response;
-};
-
 export const handler = async (event: any) => {
-  console.log(`EVENT @ ${new Date()}: `, event);
-  const origin = event.headers.origin;
-  console.log(`Called by origin: ${origin}`)
+  
+  const { origin, body, query_string_params } = deconstructEvent(event, false);
 
   try {
-    const body = JSON.parse(event.body);
+
+    if (process.env.ADMIN_TOKEN != null) {
+      if (body?.admin_token == null || body.admin_token !== process.env.ADMIN_TOKEN) {
+        return createResponse(400, { message: 'Not authorized for admin signup.' }, origin);
+      }
+    }
 
     if (body?.username == null || body?.password == null) {
       return createResponse(400, { message: 'Username and password required.' }, origin);
     }
 
-    const command = new SignUpCommand({
+    const cognitoCommand = new SignUpCommand({
       ClientId: process.env.USER_POOL_CLIENT_ID,
       Username: body.username,
       Password: body.password,
@@ -49,14 +31,35 @@ export const handler = async (event: any) => {
       ],
     });
 
-    const response: any = await cognitoClient.send(command);
-    console.log('Signup successful:', response);
+    const cognitoResponse: any = await cognitoClient.send(cognitoCommand);
+    console.log('Signup successful:', cognitoResponse);
+
+    await addItem(
+      process.env.USERS_TABLE_NAME as string,
+      {
+        "user_type": process.env.USER_TYPE as string,
+        "user_id": cognitoResponse["UserSub"],
+        "email": body.username,
+        "onboarded": false
+      }
+    )
+
+    if (process.env.ADMIN_TOKEN != null) {
+      return createResponse(
+        200,
+        {
+          message: "Sign up successful. Remember to authenticate the admin in Cognito.",
+          deliveryDetails: cognitoResponse.CodeDeliveryDetails
+        },
+        origin
+      );
+    }
 
     return createResponse(
       200,
       {
         message: "Sign up successful. Please check your email for a verification code.",
-        deliveryDetails: response.CodeDeliveryDetails
+        deliveryDetails: cognitoResponse.CodeDeliveryDetails
       },
       origin
     );

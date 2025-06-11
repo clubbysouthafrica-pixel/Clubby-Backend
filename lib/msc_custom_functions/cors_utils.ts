@@ -1,19 +1,20 @@
-import { LambdaIntegration, MethodOptions, PassthroughBehavior, MockIntegration } from "aws-cdk-lib/aws-apigateway";
+import { LambdaIntegration, MethodOptions, PassthroughBehavior, MockIntegration, AuthorizationType } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Lambda } from "../msc_service_constructs/msc_lambda";
 
-export function addCorsEnabledPostMethod(
+export function addCorsEnabledMethod(
   resource: any,
   lambda: MSC_Lambda,
   methodOptions: MethodOptions,
-  origin = 'http://localhost:5173'
+  origin = 'http://localhost:5173',
+  method = 'POST'
 ) {
   const integration = new LambdaIntegration(lambda, {
     integrationResponses: ['200', '400', '500'].map((statusCode) => ({
       statusCode,
       responseParameters: {
         'method.response.header.Access-Control-Allow-Origin': `'${origin}'`,
-        'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
-        'method.response.header.Access-Control-Allow-Methods': "'OPTIONS,POST,GET'",
+        'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,Authorization'",
+        'method.response.header.Access-Control-Allow-Methods': "'OPTIONS,POST,GET,PUT'",
         'method.response.header.Access-Control-Allow-Credentials': "'true'",
       },
     })),
@@ -29,7 +30,7 @@ export function addCorsEnabledPostMethod(
     },
   }));
 
-  resource.addMethod('POST', integration, {
+  resource.addMethod(method, integration, {
     ...methodOptions,
     methodResponses,
   });
@@ -46,10 +47,10 @@ export function addCorsOptions(resource: any, origin = 'http://localhost:5173') 
           statusCode: '200',
           responseParameters: {
             'method.response.header.Access-Control-Allow-Headers':
-              "'Content-Type,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
+              "'Content-Type,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,Authorization'",
             'method.response.header.Access-Control-Allow-Origin': `'${origin}'`,
             'method.response.header.Access-Control-Allow-Credentials': "'true'",
-            'method.response.header.Access-Control-Allow-Methods': "'OPTIONS,POST,GET'",
+            'method.response.header.Access-Control-Allow-Methods': "'OPTIONS,POST,GET,PUT'",
           },
         },
       ],
