@@ -6,11 +6,11 @@ export const handler = async (event: any) => {
 
     try {
 
-        if (body?.club_account_id == null || body?.member_billing_type == null || body.member_id == null) {
-            return createResponse(400, { message: "Invalid request. club_account_id, member_billing_type, member_id requried in body." }, origin);
+        if (body?.club_account_id == null || body.member_id == null) {
+            return createResponse(400, { message: "Invalid request. club_account_id, member_id requried in body." }, origin);
         }
-        if (typeof body.club_account_id !== 'string' || typeof body.member_billing_type !== 'string' || typeof body.member_id !== 'string') {
-            return createResponse(400, { message: "club_account_id, member_billing_type, member_id must be STRING type." }, origin);
+        if (typeof body.club_account_id !== 'string' || typeof body.member_id !== 'string') {
+            return createResponse(400, { message: "club_account_id, member_id must be STRING type." }, origin);
         }
 
         const member = await getItem(
@@ -32,7 +32,7 @@ export const handler = async (event: any) => {
             process.env.REGISTRATION_FORM_TABLE_NAME as string,
             {
                 club_account_id: body.club_account_id,
-                field_name: body.member_billing_type
+                field_name: member.billing_type
             }
         );
 
