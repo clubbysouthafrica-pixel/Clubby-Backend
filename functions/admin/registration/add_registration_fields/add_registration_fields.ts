@@ -21,8 +21,8 @@ function isStandardField(obj: any): obj is StandardField {
     return typeof obj === 'object' &&
         typeof obj.field_name === 'string' &&
         typeof obj.required === 'boolean' &&
-        validTypes.includes(obj.type) &&
-        (obj.type !== 'DROPDOWN' || (Array.isArray(obj.options) && obj.options.every((o: any) => typeof o === 'string')));
+        validTypes.includes(obj.input_type) &&
+        (obj.input_type !== 'DROPDOWN' || (Array.isArray(obj.options) && obj.options.every((o: any) => typeof o === 'string')));
 }
 
 function isBillingField(obj: any): obj is BillingField {
