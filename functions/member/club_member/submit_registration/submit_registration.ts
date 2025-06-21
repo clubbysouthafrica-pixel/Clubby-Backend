@@ -37,13 +37,12 @@ function validateRequestBody(body: any) {
         return 'standard_fields is required to be an array containing objects.';
     }
 
-    const { billing_type, amount } = body.billing_field;
-    if (!billing_type || amount == null) {
-        return 'billing_type and amount is required in each billing_field object.';
+    if (body.billing_type == null) {
+        return 'billing_type is required.';
     }
 
-    if (typeof billing_type !== 'string' || typeof amount !== 'number') {
-        return 'Each billing_field object requires billing_type to be STRING and amount to be NUMBER.';
+    if (typeof body.billing_type !== 'string') {
+        return 'billing_type must be STRING value.';
     }
 
     for (const field of body.standard_fields) {
@@ -56,12 +55,21 @@ function validateRequestBody(body: any) {
     return null;
 }
 
-function validateBillingField(billingFields: BillingField[], userBillingField: { billing_type: string, amount: number }): boolean {
-    return billingFields.some(
-        (field) =>
-            field.field_name === userBillingField.billing_type &&
-            field.amount === userBillingField.amount
+function validateBillingField(billingFields: BillingField[], billing_type: string): number | null {
+
+    let amount = null;
+    billingFields.forEach(
+        (field) => {
+            if (field.field_name === billing_type) {
+                amount = field.amount
+            }
+        }
     );
+
+    if (amount == null) {
+        return null
+    }
+    return amount
 }
 
 function validateStandardFields(standardFields: StandardField[], submittedFields: { name: string; value: string }[]): string | null {
@@ -155,7 +163,8 @@ export const handler = async (event: any) => {
             else standardFields.push(field as StandardField);
         });
 
-        if (!validateBillingField(billingFields, body.billing_field)) {
+        const membership_amount = validateBillingField(billingFields, body.billing_type)
+        if (membership_amount == null) {
             return createResponse(400, {
                 message: `Invalid billing field entered. Valid billing types: ${JSON.stringify(billingFields.reduce((acc: Record<string, number>, field: { field_name: string; amount: number }) => {
                     acc[field.field_name] = field.amount;
@@ -173,9 +182,9 @@ export const handler = async (event: any) => {
             club_account_id: body.club_account_id,
             user_id: user_id,
             registered: false,
-            outstanding_amount: body.billing_field.amount,
+            outstanding_amount: membership_amount,
             primary_member: user_id,
-            billing_type: body.billing_field.billing_type,
+            billing_type: body.billing_type,
             ...body.standard_fields.reduce((acc: Record<string, string>, field: { name: string; value: string }) => {
                 acc[field.name] = field.value;
                 return acc;
