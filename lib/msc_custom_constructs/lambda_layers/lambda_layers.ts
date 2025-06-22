@@ -9,12 +9,12 @@ export class MSC_Layers extends Construct {
     constructor(scope: Construct, id: string, props: MSC_LayersProps) {
         super(scope, `${id}-LambdaLayers`);
 
-        this.jwt_layer = new MSC_LambdaLayer(this, `${id}-JasonWebToken`, {
+        this.jwt_layer = new MSC_LambdaLayer(this, `${id}-JWT`, {
             code: "jwt_code",
             description: "JWT Lambda Layer"
         });
 
-        this.jwks_rsa_layer = new MSC_LambdaLayer(this, `${id}-JWKS_RSA`, {
+        this.jwks_rsa_layer = new MSC_LambdaLayer(this, `${id}-JWKS`, {
             code: "jwks-rsa_code",
             description: "JKS-RSA Lambda Layer"
         });
