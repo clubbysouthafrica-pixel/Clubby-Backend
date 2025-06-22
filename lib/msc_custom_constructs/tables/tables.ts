@@ -30,7 +30,7 @@ export class MSC_TablesConstruct extends Construct {
             sortKey: { "club_account_id": "STRING" },
             gsi: {
                 indexName: "ClubAccountIDIndex",
-                partitionKey: {name: "user_id", type: AttributeType.STRING}
+                partitionKey: {name: "club_account_id", type: AttributeType.STRING}
             }
         });
 
