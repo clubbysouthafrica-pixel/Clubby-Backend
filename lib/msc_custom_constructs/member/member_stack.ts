@@ -42,6 +42,7 @@ export class MSC_MemberNestedStack extends Stack {
             club_member_table: props.club_member_table,
             registration_form_table: props.registration_form_table,
             users_table: props.users_table,
+            club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
             layers: props.layers
         });
