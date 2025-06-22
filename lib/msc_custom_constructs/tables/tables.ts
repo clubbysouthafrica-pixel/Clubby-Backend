@@ -1,3 +1,4 @@
+import { AttributeType } from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
 import { MSC_Table } from "../../msc_service_constructs"
 
@@ -26,7 +27,11 @@ export class MSC_TablesConstruct extends Construct {
 
         this.club_member_table = new MSC_Table(this, `${id}-ClubMember`, {
             partitionKey: { "user_id": "STRING" },
-            sortKey: { "club_account_id": "STRING" }
+            sortKey: { "club_account_id": "STRING" },
+            gsi: {
+                indexName: "ClubAccountIDIndex",
+                partitionKey: {name: "user_id", type: AttributeType.STRING}
+            }
         });
 
         this.club_admin_table = new MSC_Table(this, `${id}-ClubAdmin`, {
