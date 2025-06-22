@@ -114,6 +114,18 @@ async function memberNotExists(user_id: string): Promise<boolean> {
     return false;
 }
 
+async function getClubName(club_account_id: string): Promise<string | null> {
+    const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
+        club_account_id: club_account_id
+    });
+
+    if (club == null) {
+        return null
+    }
+
+    return club.club_name as string;
+}
+
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
     const club_member = await getItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
@@ -180,6 +192,7 @@ export const handler = async (event: any) => {
             club_account_id: body.club_account_id,
             user_id: user_id,
             registered: false,
+            club_name: await getClubName(body.club_account_id),
             outstanding_amount: membership_amount,
             primary_member: user_id,
             billing_type: body.billing_type,
