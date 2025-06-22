@@ -1,9 +1,9 @@
-import { 
-    createResponse, 
-    deconstructEvent, 
-    addItem, 
-    queryItems, 
-    getItem 
+import {
+    createResponse,
+    deconstructEvent,
+    addItem,
+    queryItems,
+    getItem
 } from "./function_helpers";
 
 export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
@@ -163,13 +163,11 @@ export const handler = async (event: any) => {
             else standardFields.push(field as StandardField);
         });
 
-        const membership_amount = validateBillingField(billingFields, body.billing_type)
+        const membership_amount = validateBillingField(billingFields, body.billing_type);
         if (membership_amount == null) {
+            const validBillingTypes = billingFields.map(field => field.field_name).join(', ');
             return createResponse(400, {
-                message: `Invalid billing field entered. Valid billing types: ${JSON.stringify(billingFields.reduce((acc: Record<string, number>, field: { field_name: string; amount: number }) => {
-                    acc[field.field_name] = field.amount;
-                    return acc;
-                }, {}))}`
+                message: `Invalid billing_type entered. Valid billing types: ${validBillingTypes}`
             }, origin);
         }
 
