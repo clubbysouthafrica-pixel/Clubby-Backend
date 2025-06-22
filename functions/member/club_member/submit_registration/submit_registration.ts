@@ -29,8 +29,8 @@ function validateRequestBody(body: any) {
         return 'club_account_id, billing_field and standard_fields required.';
     }
 
-    if (typeof body.billing_field !== 'object') {
-        return 'billing_field is required to be an object.';
+    if (typeof body.billing_type !== 'string') {
+        return 'billing_type is required to be an object.';
     }
 
     if (!Array.isArray(body.standard_fields) || body.standard_fields.length === 0) {
