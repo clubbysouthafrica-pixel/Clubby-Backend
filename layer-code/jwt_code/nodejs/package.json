@@ -1,0 +1,8 @@
+{
+  "name": "jwt_code",
+  "version": "1.0.0",
+  "description": "jwt_code Lambda Layer",
+  "dependencies": {
+    "jsonwebtoken": "9.0.0"
+  }
+}
