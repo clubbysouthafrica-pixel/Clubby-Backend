@@ -18,10 +18,23 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Club not found." }, origin);
         }
 
+        let member_exists: boolean = false
+        if (query_string_params?.member_exists == 'true') {
+            const club_member = await getItem(process.env.CLUB_MEMBER_TABLE_NAME as string, {
+                club_account_id: query_string_params.club_account_id,
+                user_id: user_id as string
+            });
+
+            if (club_member) {
+                member_exists = true
+            }
+        }
+
         return createResponse(200, {
             club_account_id: item["club_account_id"],
             club_type: item["club_type"],
-            club_name: item["club_name"]
+            club_name: item["club_name"],
+            member_exists: member_exists
         }, origin);
         
     } catch (error) {
