@@ -98,22 +98,6 @@ function validateStandardFields(standardFields: StandardField[], submittedFields
     return null;
 }
 
-async function memberNotExists(user_id: string): Promise<boolean> {
-    const member = await getItem(
-        process.env.USERS_TABLE_NAME as string,
-        {
-            user_type: "MEMBER",
-            user_id: user_id
-        }
-    )
-
-    if (member == null) {
-        return true;
-    }
-
-    return false;
-}
-
 async function getClubName(club_account_id: string): Promise<string | null> {
     const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
         club_account_id: club_account_id
