@@ -25,7 +25,7 @@ interface BillingField {
 }
 
 function validateRequestBody(body: any) {
-    if (!body?.club_account_id || !body?.billing_field || !body?.standard_fields) {
+    if (!body?.club_account_id || !body?.billing_type || !body?.standard_fields) {
         return 'club_account_id, billing_field and standard_fields required.';
     }
 
