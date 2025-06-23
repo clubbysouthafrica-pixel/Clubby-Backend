@@ -1,6 +1,6 @@
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { createResponse, deconstructEvent } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem } from "./function_helpers";
 
 const s3_client = new S3Client({ region: process.env.REGION });
 
@@ -29,6 +29,14 @@ export const handler = async (event: any) => {
 
         const key = `cover/${query_string_params.club_account_id}_cover`;
         const contentType = 'image/jpeg';
+
+        const club = getItem(process.env.CLUB_TABLE_NAME as string, {
+            club_account_id: query_string_params.club_account_id
+        });
+
+        if (!club) {
+            return createResponse(400, { message: 'Club does not exist.' }, origin);
+        }
 
         // Generate PUT URL (upload)
         const putCommand = new PutObjectCommand({

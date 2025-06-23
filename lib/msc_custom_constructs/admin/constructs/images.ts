@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Bucket} from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Bucket, MSC_Table} from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Layers } from "../../lambda_layers";
@@ -7,6 +7,7 @@ import { MSC_Layers } from "../../lambda_layers";
 interface MSC_ImagesConstructProps {
     api_gateway: MSC_APIGateway;
     layers: MSC_Layers;
+    club_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     image_bucket: MSC_Bucket;
 }
@@ -18,7 +19,13 @@ export class MSC_ImagesConstruct extends Construct {
         const generate_cover_presigned_url = new MSC_Lambda(this, `${id}-PresignedURL`, {
             code: "admin/images/generate_cover_presigned_url",
             envVariables: {
-                IMAGE_BUCKET_NAME: props.image_bucket.bucketName
+                IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
+                CLUB_TABLE_NAME: props.club_table.tableName
+            },
+            permissions: {
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ]
             },
             layers: [props.layers.jwt_layer]
         });
