@@ -1,13 +1,14 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MSC_APIGateway } from '../../msc_service_constructs';
+import { MSC_APIGateway, MSC_Bucket } from '../../msc_service_constructs';
 import { MSC_JWTConstruct } from '../authorization';
 import { 
     MSC_MemberLoginConstruct, 
     MSC_MemberUserConstruct, 
     MSC_MemberClubConstruct ,
     MSC_MemberRegistrationFormConstruct,
-    MSC_ClubMemberConstruct
+    MSC_ClubMemberConstruct,
+    MSC_ImagesConstruct
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs"
 import { MSC_Layers } from '../lambda_layers';
@@ -17,6 +18,7 @@ export interface MSC_MemberNestedStackProps extends StackProps {
     club_table: MSC_Table;
     club_member_table: MSC_Table;
     registration_form_table: MSC_Table;
+    image_bucket: MSC_Bucket;
     layers: MSC_Layers;
 }
 
@@ -35,6 +37,14 @@ export class MSC_MemberNestedStack extends Stack {
             api_gateway: api_gateway, user_type: "member",
             user_pool: login_construct.user_pool,
             layers: props.layers
+        });
+
+        new MSC_ImagesConstruct(this, `${id}-Images`, {
+            api_gateway: api_gateway,
+            club_table: props.club_table,
+            image_bucket: props.image_bucket,
+            layers: props.layers,
+            token_authorizer: jwt_construct.token_authorizer
         });
 
         new MSC_ClubMemberConstruct(this, `${id}-ClubMember`, {
