@@ -7,8 +7,9 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsc --build",
+    "create-layers": "bash scripts/build-layers.sh",
     "update-helpers": "node scripts/copy-helpers.js",
-    "predeploy": "node scripts/copy-helpers.js && bash scripts/build-layers.sh && npm run build",
+    "predeploy": "node scripts/copy-helpers.js && npm run build",
     "deploy": "npm run predeploy && cdk deploy --all"
   },
   "devDependencies": {

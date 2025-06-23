@@ -6,12 +6,14 @@ import {
   MSC_TablesConstruct, 
   MSC_Layers 
 } from "./msc_custom_constructs";
+import { MSC_BucketsConstruct } from './msc_custom_constructs/buckets/buckets';
 
 export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
     super(scope, stack_id, props);
 
     const tables = new MSC_TablesConstruct(this, stack_id, {});
+    const buckets = new MSC_BucketsConstruct(this, stack_id, {});
 
     const layers = new MSC_Layers(this, stack_id, {});
 
