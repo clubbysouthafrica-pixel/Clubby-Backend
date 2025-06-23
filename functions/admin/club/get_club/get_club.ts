@@ -21,7 +21,8 @@ export const handler = async (event: any) => {
         return createResponse(200, {
             club_account_id: item["club_account_id"],
             club_type: item["club_type"],
-            club_name: item["club_name"]
+            club_name: item["club_name"],
+            description: item["description"] ?? undefined
         }, origin);
 
     } catch (error) {
