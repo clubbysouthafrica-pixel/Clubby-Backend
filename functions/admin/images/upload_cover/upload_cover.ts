@@ -37,7 +37,7 @@ export const handler = async (event: any) => {
             ContentType: 'image/jpeg'
         }));
 
-        return createResponse(200, { message: "User successfully registered." }, origin);
+        return createResponse(200, { message: "Cover successfully added." }, origin);
 
     } catch (error) {
         console.error("Error:", error);
