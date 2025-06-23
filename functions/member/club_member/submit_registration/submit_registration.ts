@@ -56,7 +56,6 @@ function validateRequestBody(body: any) {
 }
 
 function validateBillingField(billingFields: BillingField[], billing_type: string): number | null {
-
     let amount = null;
     billingFields.forEach(
         (field) => {
@@ -73,7 +72,6 @@ function validateBillingField(billingFields: BillingField[], billing_type: strin
 }
 
 function validateStandardFields(standardFields: StandardField[], submittedFields: { name: string; value: string }[]): string | null {
-
     const requiredFields = standardFields.filter(f => f.required);
     const fieldNames = submittedFields.map(f => f.name);
     const allValid = requiredFields.every(req => {
