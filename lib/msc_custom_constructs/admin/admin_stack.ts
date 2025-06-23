@@ -45,6 +45,7 @@ export class MSC_AdminNestedStack extends Stack {
         new MSC_ImagesConstruct(this, `${id}-Images`, {
             api_gateway: api_gateway,
             image_bucket: props.image_bucket,
+            club_table: props.club_table,
             layers: props.layers,
             token_authorizer: jwt_construct.token_authorizer
         });
