@@ -8,4 +8,8 @@ dotenv.config();
 
 const app = new cdk.App();
 new MSC_Stack(app, `${process.env.ENVIRONMENT}-MSC`, {
+    env: {
+        account: process.env.ACCOUNT,
+        region: process.env.REGION,
+    },
 });

@@ -26,9 +26,12 @@ export interface MSC_AdminNestedStackProps extends StackProps {
 
 export class MSC_AdminNestedStack extends Stack {
     constructor(scope: Construct, id: string, props: MSC_AdminNestedStackProps) {
-        super(scope, id);
+        super(scope, id, props);
 
-        const api_gateway = new MSC_APIGateway(this, id);
+        const api_gateway = new MSC_APIGateway(this, id, {
+            domain: "admin",
+            cert_arn: process.env.ADMIN_CERT_ARN as string
+        });
 
         const login_construct = new MSC_AdminLoginConstruct(this, `${id}-Login`, {
             api_gateway: api_gateway, users_table: props.users_table,

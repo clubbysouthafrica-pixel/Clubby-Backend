@@ -24,9 +24,12 @@ export interface MSC_MemberNestedStackProps extends StackProps {
 
 export class MSC_MemberNestedStack extends Stack {
     constructor(scope: Construct, id: string, props: MSC_MemberNestedStackProps) {
-        super(scope, id);
+        super(scope, id, props);
 
-        const api_gateway = new MSC_APIGateway(this, id);
+        const api_gateway = new MSC_APIGateway(this, id, {
+            domain: "member",
+            cert_arn: process.env.MEMBER_CERT_ARN as string
+        });
 
         const login_construct = new MSC_MemberLoginConstruct(this, `${id}-Login`, {
             api_gateway: api_gateway, users_table: props.users_table,

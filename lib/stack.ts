@@ -18,6 +18,7 @@ export class MSC_Stack extends cdk.Stack {
     const layers = new MSC_Layers(this, stack_id, {});
 
     new MSC_MemberNestedStack(this, `${stack_id}-MemberStack`, {
+      env: props?.env,
       users_table: tables.users_table,
       club_table: tables.club_table,
       club_member_table: tables.club_member_table,
@@ -27,6 +28,7 @@ export class MSC_Stack extends cdk.Stack {
     });
 
     new MSC_AdminNestedStack(this, `${stack_id}-AdminStack`, { 
+      env: props?.env,
       users_table: tables.users_table, 
       club_table: tables.club_table,
       club_admin_table: tables.club_admin_table,
