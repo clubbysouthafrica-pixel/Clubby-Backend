@@ -15,22 +15,19 @@ export class MSC_ImagesConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_ImagesConstructProps) {
         super(scope, id);
 
-        const upload_cover_img = new MSC_Lambda(this, `${id}-UploadCover`, {
-            code: "admin/images/upload_cover",
+        const generate_cover_presigned_url = new MSC_Lambda(this, `${id}-PresignedURL`, {
+            code: "admin/images/generate_cover_presigned_url",
             envVariables: {
                 IMAGE_BUCKET_NAME: props.image_bucket.bucketName
             },
-            permissions: {
-                [`${props.image_bucket.bucketArn}/*`]: [
-                    "s3:PutObject"
-                ]
-            },
             layers: [props.layers.jwt_layer]
         });
+        props.image_bucket.grantPut(generate_cover_presigned_url);
+        props.image_bucket.grantRead(generate_cover_presigned_url);
 
         const images_resource = props.api_gateway.root.addResource("images");
 
-        const upload_cover_img_resource = images_resource.addResource("uploadCover");
+        const generate_cover_presigned_url_resource = images_resource.addResource("presignedCoverURL");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -38,6 +35,6 @@ export class MSC_ImagesConstruct extends Construct {
             authorizer: props.token_authorizer
         }
 
-        addCorsEnabledMethod(upload_cover_img_resource, upload_cover_img, methodOptions, undefined, "PUT");
+        addCorsEnabledMethod(generate_cover_presigned_url_resource, generate_cover_presigned_url, methodOptions, undefined, "GET");
     }
 }
