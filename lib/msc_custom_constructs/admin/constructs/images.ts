@@ -27,7 +27,7 @@ export class MSC_ImagesConstruct extends Construct {
 
         const images_resource = props.api_gateway.root.addResource("images");
 
-        const generate_cover_presigned_url_resource = images_resource.addResource("presignedCoverURL");
+        const generate_cover_presigned_url_resource = images_resource.addResource("presignedCoverUrl");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
