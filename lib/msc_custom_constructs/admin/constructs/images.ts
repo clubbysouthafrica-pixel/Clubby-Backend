@@ -16,7 +16,7 @@ export class MSC_ImagesConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_ImagesConstructProps) {
         super(scope, id);
 
-        const generate_cover_presigned_url = new MSC_Lambda(this, `${id}-PresignedURL`, {
+        const generate_cover_presigned_url = new MSC_Lambda(this, `${id}-CoverPresignedURL`, {
             code: "admin/images/generate_cover_presigned_url",
             envVariables: {
                 IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
@@ -32,9 +32,20 @@ export class MSC_ImagesConstruct extends Construct {
         props.image_bucket.grantPut(generate_cover_presigned_url);
         props.image_bucket.grantRead(generate_cover_presigned_url);
 
+        const generate_profile_presigned_url = new MSC_Lambda(this, `${id}-ProfilePresignedURL`, {
+            code: "admin/images/generate_profile_presigned_url",
+            envVariables: {
+                IMAGE_BUCKET_NAME: props.image_bucket.bucketName
+            },
+            layers: [props.layers.jwt_layer]
+        });
+        props.image_bucket.grantPut(generate_profile_presigned_url);
+        props.image_bucket.grantRead(generate_profile_presigned_url);
+
         const images_resource = props.api_gateway.root.addResource("images");
 
         const generate_cover_presigned_url_resource = images_resource.addResource("presignedCoverUrl");
+        const generate_profile_presigned_url_resource = images_resource.addResource("presignedProfileUrl");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -43,5 +54,6 @@ export class MSC_ImagesConstruct extends Construct {
         }
 
         addCorsEnabledMethod(generate_cover_presigned_url_resource, generate_cover_presigned_url, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(generate_profile_presigned_url_resource, generate_profile_presigned_url, methodOptions, undefined, "GET");
     }
 }
