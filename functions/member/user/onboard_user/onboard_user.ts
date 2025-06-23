@@ -1,4 +1,4 @@
-import { createResponse, deconstructEvent, updateItem } from "./function_helpers";
+import { createResponse, deconstructEvent, updateItem, getItem } from "./function_helpers";
 
 const isValidDateOfBirth = (dob: string): boolean => {
   const regex = /^\d{4}\/\d{2}\/\d{2}$/;
@@ -78,6 +78,19 @@ export const handler = async (event: any) => {
       user_type: process.env.USER_TYPE as string,
       user_id: user_id as string,
     };
+
+    const user = await getItem(
+      process.env.USERS_TABLE_NAME as string,
+      key
+    );
+
+    if (user != null && "first_name" in user) {
+      return createResponse(
+        400,
+        { message: "User already onboarded." },
+        origin
+      );
+    }
 
     const updatableFields = [
       "first_name",

@@ -5,7 +5,8 @@ export type CurrencyType = 'DOLLAR' | 'RAND' | 'EURO' | 'POUND' | 'NEW ZEALAND D
 
 export interface StandardField {
     field_name: string;
-    type: InputType;
+    id: string;
+    input_type: InputType;
     required: true | false;
     options?: string[];
 }
@@ -20,9 +21,10 @@ function isStandardField(obj: any): obj is StandardField {
     const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE'];
     return typeof obj === 'object' &&
         typeof obj.field_name === 'string' &&
+        typeof obj.id === 'string' &&
         typeof obj.required === 'boolean' &&
-        validTypes.includes(obj.type) &&
-        (obj.type !== 'DROPDOWN' || (Array.isArray(obj.options) && obj.options.every((o: any) => typeof o === 'string')));
+        validTypes.includes(obj.input_type) &&
+        (obj.input_type !== 'DROPDOWN' || (Array.isArray(obj.options) && obj.options.every((o: any) => typeof o === 'string')));
 }
 
 function isBillingField(obj: any): obj is BillingField {
@@ -60,7 +62,7 @@ export const handler = async (event: any) => {
 
         if (invalidFields.length > 0) {
             return createResponse(400, {
-                message: "Invalid fields detected. Attributes required for 'STANDARD' field: field_name, type, required. Attributes requird for 'BILLING' field: field_name, currency, amount.",
+                message: "Invalid fields detected. Attributes required for 'STANDARD' field: field_name, input_type, required, id. Attributes requird for 'BILLING' field: field_name, currency, amount.",
                 invalidFields
             }, origin);
         }
@@ -102,9 +104,10 @@ export const handler = async (event: any) => {
 
             if (isStandardField(field)) {
                 item.field_type = 'STANDARD';
-                item.input_type = field.type;
+                item.input_type = field.input_type;
+                item.id = field.id;
                 item.required = field.required;
-                if (field.type === 'DROPDOWN' && field.options) {
+                if (field.input_type === 'DROPDOWN' && field.options) {
                     item.options = field.options;
                 }
             } else if (isBillingField(field)) {

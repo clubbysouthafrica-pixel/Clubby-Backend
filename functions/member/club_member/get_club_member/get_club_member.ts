@@ -22,7 +22,7 @@ export const handler = async (event: any) => {
         );
 
         if (item == null) {
-            return createResponse(400, { message: "User not found." }, origin);
+            return createResponse(400, { message: "Club member not found." }, origin);
         }
 
         delete item.user_id

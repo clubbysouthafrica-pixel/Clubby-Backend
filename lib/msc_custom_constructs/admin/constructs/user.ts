@@ -37,7 +37,8 @@ export class MSC_AdminUserConstruct extends Construct {
             },
             permissions: {
                 [props.users_table.tableArn]: [
-                    "dynamodb:UpdateItem"
+                    "dynamodb:UpdateItem",
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]

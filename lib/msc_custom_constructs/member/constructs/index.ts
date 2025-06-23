@@ -3,3 +3,4 @@ export { MSC_MemberUserConstruct } from "./user";
 export { MSC_MemberClubConstruct } from "./club";
 export { MSC_MemberRegistrationFormConstruct } from "./registration_form";
 export { MSC_ClubMemberConstruct } from "./club_member";
+export { MSC_ImagesConstruct } from "./images";

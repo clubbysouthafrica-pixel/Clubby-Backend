@@ -1,0 +1,8 @@
+{
+  "name": "jwks-rsa_code",
+  "version": "1.0.0",
+  "description": "jwks-rsa_code Lambda Layer",
+  "dependencies": {
+    "jwks-rsa": "3.2.0"
+  }
+}

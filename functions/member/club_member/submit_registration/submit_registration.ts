@@ -1,9 +1,9 @@
-import { 
-    createResponse, 
-    deconstructEvent, 
-    addItem, 
-    queryItems, 
-    getItem 
+import {
+    createResponse,
+    deconstructEvent,
+    addItem,
+    queryItems,
+    getItem
 } from "./function_helpers";
 
 export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
@@ -25,25 +25,24 @@ interface BillingField {
 }
 
 function validateRequestBody(body: any) {
-    if (!body?.club_account_id || !body?.billing_field || !body?.standard_fields) {
+    if (!body?.club_account_id || !body?.billing_type || !body?.standard_fields) {
         return 'club_account_id, billing_field and standard_fields required.';
     }
 
-    if (typeof body.billing_field !== 'object') {
-        return 'billing_field is required to be an object.';
+    if (typeof body.billing_type !== 'string') {
+        return 'billing_type is required to be an object.';
     }
 
     if (!Array.isArray(body.standard_fields) || body.standard_fields.length === 0) {
         return 'standard_fields is required to be an array containing objects.';
     }
 
-    const { billing_type, amount } = body.billing_field;
-    if (!billing_type || amount == null) {
-        return 'billing_type and amount is required in each billing_field object.';
+    if (body.billing_type == null) {
+        return 'billing_type is required.';
     }
 
-    if (typeof billing_type !== 'string' || typeof amount !== 'number') {
-        return 'Each billing_field object requires billing_type to be STRING and amount to be NUMBER.';
+    if (typeof body.billing_type !== 'string') {
+        return 'billing_type must be STRING value.';
     }
 
     for (const field of body.standard_fields) {
@@ -56,16 +55,23 @@ function validateRequestBody(body: any) {
     return null;
 }
 
-function validateBillingField(billingFields: BillingField[], userBillingField: { billing_type: string, amount: number }): boolean {
-    return billingFields.some(
-        (field) =>
-            field.field_name === userBillingField.billing_type &&
-            field.amount === userBillingField.amount
+function validateBillingField(billingFields: BillingField[], billing_type: string): number | null {
+    let amount = null;
+    billingFields.forEach(
+        (field) => {
+            if (field.field_name === billing_type) {
+                amount = field.amount
+            }
+        }
     );
+
+    if (amount == null) {
+        return null
+    }
+    return amount
 }
 
 function validateStandardFields(standardFields: StandardField[], submittedFields: { name: string; value: string }[]): string | null {
-
     const requiredFields = standardFields.filter(f => f.required);
     const fieldNames = submittedFields.map(f => f.name);
     const allValid = requiredFields.every(req => {
@@ -90,20 +96,16 @@ function validateStandardFields(standardFields: StandardField[], submittedFields
     return null;
 }
 
-async function memberNotExists(user_id: string): Promise<boolean> {
-    const member = await getItem(
-        process.env.USERS_TABLE_NAME as string,
-        {
-            user_type: "MEMBER",
-            user_id: user_id
-        }
-    )
+async function getClubName(club_account_id: string): Promise<string | null> {
+    const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
+        club_account_id: club_account_id
+    });
 
-    if (member == null) {
-        return true;
+    if (club == null) {
+        return null
     }
 
-    return false;
+    return club.club_name as string;
 }
 
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
@@ -155,12 +157,11 @@ export const handler = async (event: any) => {
             else standardFields.push(field as StandardField);
         });
 
-        if (!validateBillingField(billingFields, body.billing_field)) {
+        const membership_amount = validateBillingField(billingFields, body.billing_type);
+        if (membership_amount == null) {
+            const validBillingTypes = billingFields.map(field => field.field_name).join(', ');
             return createResponse(400, {
-                message: `Invalid billing field entered. Valid billing types: ${JSON.stringify(billingFields.reduce((acc: Record<string, number>, field: { field_name: string; amount: number }) => {
-                    acc[field.field_name] = field.amount;
-                    return acc;
-                }, {}))}`
+                message: `Invalid billing_type entered. Valid billing types: ${validBillingTypes}`
             }, origin);
         }
 
@@ -173,9 +174,10 @@ export const handler = async (event: any) => {
             club_account_id: body.club_account_id,
             user_id: user_id,
             registered: false,
-            outstanding_amount: body.billing_field.amount,
+            club_name: await getClubName(body.club_account_id),
+            outstanding_amount: membership_amount,
             primary_member: user_id,
-            billing_type: body.billing_field.billing_type,
+            billing_type: body.billing_type,
             ...body.standard_fields.reduce((acc: Record<string, string>, field: { name: string; value: string }) => {
                 acc[field.name] = field.value;
                 return acc;

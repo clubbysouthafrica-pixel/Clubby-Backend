@@ -22,6 +22,7 @@ export const queryItems = async (
             KeyConditionExpression: key_condition_expression,
             ExpressionAttributeValues: marshall(expression_attribute_values)
         });
+        console.log(`@@@ queryItems request (Table_Name: ${table_name}): `, JSON.stringify(command));
         const response = await dynamodbClient.send(command);
         console.log(`@@@ queryItems response (Table_Name: ${table_name}): `, JSON.stringify(response));
 

@@ -1,7 +1,7 @@
 import { createResponse, deconstructEvent, getItem } from "./function_helpers";
 
 export const handler = async (event: any) => {
-    
+
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
@@ -18,12 +18,20 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Club not found." }, origin);
         }
 
+        const club_member = await getItem(process.env.CLUB_MEMBER_TABLE_NAME as string, {
+            club_account_id: query_string_params.club_account_id,
+            user_id: user_id as string
+        });
+
+        const member_exists = club_member ? true : false;
+
         return createResponse(200, {
             club_account_id: item["club_account_id"],
             club_type: item["club_type"],
-            club_name: item["club_name"]
+            club_name: item["club_name"],
+            club_member_exists: member_exists
         }, origin);
-        
+
     } catch (error) {
         console.error("Error:", error);
         return createResponse(500, { message: "Internal Server Error" }, origin);

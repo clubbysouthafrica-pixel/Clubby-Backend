@@ -7,6 +7,7 @@ export type CurrencyType = 'DOLLAR' | 'RAND' | 'EURO' | 'POUND' | 'NEW ZEALAND D
 interface StandardField {
     field_type: string;
     field_name: string;
+    id: string;
     type: InputType;
     options?: string[];
 }
