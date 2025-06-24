@@ -4,18 +4,28 @@ import {
   MSC_MemberNestedStack, 
   MSC_AdminNestedStack, 
   MSC_TablesConstruct, 
-  MSC_Layers 
+  MSC_Layers,
+  MSC_BillingConstruct
 } from "./msc_custom_constructs";
 import { MSC_BucketsConstruct } from './msc_custom_constructs/buckets/buckets';
+import { MSC_Queue } from './msc_service_constructs';
 
 export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
     super(scope, stack_id, props);
 
+    const billing_queue = new MSC_Queue(this, `${stack_id}-Billing`, {
+      queue_name: 'Billing'
+    });
+
     const tables = new MSC_TablesConstruct(this, stack_id, {});
     const buckets = new MSC_BucketsConstruct(this, stack_id, {});
 
     const layers = new MSC_Layers(this, stack_id, {});
+
+    new MSC_BillingConstruct(this, `${stack_id}-Billing`, {
+      billing_queue: billing_queue,
+    });
 
     new MSC_MemberNestedStack(this, `${stack_id}-MemberStack`, {
       env: props?.env,
