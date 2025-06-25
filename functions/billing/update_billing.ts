@@ -1,7 +1,10 @@
-import { getItem,  } from "./function_helpers";
+import { FEE_TYPES } from "./function_helpers";
 
 function isRegistrationFee(body: any): boolean {
-    if (body.feeType == null || typeof body.feeType !== 'string' || body.feeType !== 'REGISTRATION')
+    if (body.feeType == null || typeof body.feeType !== 'string' || body.feeType !== FEE_TYPES.USER_REGISTRATION) {
+        return false
+    }
+    return true
 }
 
 export const handler = async (event: any) => {
@@ -20,6 +23,9 @@ export const handler = async (event: any) => {
                 }
             }
 
+            if (isRegistrationFee(body)) {
+                console.log('HERE')
+            }
 
         }
 
