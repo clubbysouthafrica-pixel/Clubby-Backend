@@ -31,7 +31,7 @@ export const handler = async (event: any) => {
 
   try {
 
-    const requiredFields = ["first_name", "surname", "date_of_birth", "email", "phone_number"];
+    const requiredFields = ["first_name", "surname", "date_of_birth", "phone_number"];
     const missingFields = requiredFields.filter((field) => !body?.[field]);
 
     if (missingFields.length > 0) {
@@ -96,7 +96,6 @@ export const handler = async (event: any) => {
       "first_name",
       "surname",
       "date_of_birth",
-      "email",
       "address_line_1",
       "address_line_2",
       "suburb",
