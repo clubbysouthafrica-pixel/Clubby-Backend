@@ -1,6 +1,4 @@
-import { getItem } from "./function_helpers";
-
-const REGISTRATION_FEE_TYPE = 'USER_REGISTRATION';
+import { getItem,  } from "./function_helpers";
 
 function isRegistrationFee(body: any): boolean {
     if (body.feeType == null || typeof body.feeType !== 'string' || body.feeType !== 'REGISTRATION')
