@@ -28,6 +28,7 @@ export class MSC_Stack extends cdk.Stack {
       billing_queue: billing_queue,
       layers: layers,
       club_admin_table: tables.club_admin_table,
+      users_table: tables.users_table,
       club_table: tables.club_table
     });
 

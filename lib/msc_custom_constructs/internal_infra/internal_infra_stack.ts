@@ -3,13 +3,15 @@ import { Construct } from 'constructs';
 import { MSC_APIGateway, MSC_Queue } from '../../msc_service_constructs';
 import {
     MSC_InternalInfraBillingConstruct,
-    MSC_InternalInfraClubConstruct
+    MSC_InternalInfraClubConstruct,
+    MSC_InternalInfraClubAdminConstruct
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs";
 import { MSC_Layers } from '../lambda_layers';
 
 export interface MSC_InternalInfraStackProps extends StackProps {
     club_table: MSC_Table;
+    users_table: MSC_Table;
     club_admin_table: MSC_Table;
     billing_queue: MSC_Queue;
     layers: MSC_Layers;
@@ -34,6 +36,14 @@ export class MSC_InternalInfraStack extends Stack {
             api_gateway: api_gateway,
             club_table: props.club_table,
             billing_table: internal_infra_billing_construct.billing_table,
+            layers: props.layers
+        });
+
+        new MSC_InternalInfraClubAdminConstruct(this, `${id}-ClubAdmin`, {
+            api_gateway: api_gateway,
+            club_admin_table: props.club_admin_table,
+            club_table: props.club_table,
+            users_table: props.users_table,
             layers: props.layers
         });
     }

@@ -6,8 +6,6 @@ import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_ClubAdminClubConstructProps {
     api_gateway: MSC_APIGateway;
-    club_table: MSC_Table;
-    users_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     club_admin_table: MSC_Table;
     layers: MSC_Layers;
@@ -16,28 +14,6 @@ interface MSC_ClubAdminClubConstructProps {
 export class MSC_ClubAdminClubConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_ClubAdminClubConstructProps) {
         super(scope, id);
-
-        const associate_user_with_club = new MSC_Lambda(this, `${id}-AssociateAdminWithClub`, {
-            code: "admin/club_admin/associate_user_with_club",
-            envVariables: {
-                CLUB_TABLE_NAME: props.club_table.tableName,
-                USERS_TABLE_NAME: props.users_table.tableName,
-                CLUB_ADMIN_ACCOUNT_TABLE_NAME: props.club_admin_table.tableName,
-                ADMIN_TOKEN: "FHJ289489JDJD"
-            },
-            permissions: {
-                [props.club_table.tableArn]: [
-                    "dynamodb:GetItem"
-                ],
-                [props.users_table.tableArn]: [
-                    "dynamodb:GetItem"
-                ],
-                [props.club_admin_table.tableArn]: [
-                    "dynamodb:PutItem"
-                ]
-            },
-            layers: [props.layers.jwt_layer]
-        });
 
         const get_all_admin_clubs = new MSC_Lambda(this, `${id}-GetAllAdminClubs`, {
             code: "admin/club_admin/get_all_admin_clubs",
@@ -55,7 +31,6 @@ export class MSC_ClubAdminClubConstruct extends Construct {
 
         const admin_club_resource = props.api_gateway.root.addResource("clubAdmin");
 
-        const associate_user_with_club_resource = admin_club_resource.addResource("associateUserWithClub");
         const get_all_admin_clubs_resource = admin_club_resource.addResource("getAllAdminClubs");
 
         const methodOptions: MethodOptions = {
@@ -64,7 +39,6 @@ export class MSC_ClubAdminClubConstruct extends Construct {
             authorizer: props.token_authorizer
         }
 
-        addCorsEnabledMethod(associate_user_with_club_resource, associate_user_with_club, { methodResponses: [] }, undefined, "PUT");
         addCorsEnabledMethod(get_all_admin_clubs_resource, get_all_admin_clubs, methodOptions, undefined, "GET");
     }
 }
