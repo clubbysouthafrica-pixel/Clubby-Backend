@@ -1,4 +1,4 @@
-import { FEE_TYPES, getItem, addItem } from "./function_helpers";
+import { FEE_TYPES, getItem, addItem, updateItem } from "./function_helpers";
 
 function isRegistrationFee(body: any): boolean {
     if (body.feeType == null || typeof body.feeType !== 'string' || body.feeType !== FEE_TYPES.USER_REGISTRATION) {
@@ -24,25 +24,25 @@ export const handler = async (event: any) => {
             }
 
             if (isRegistrationFee(body)) {
-                const club = await getItem(
+                await updateItem(
                     process.env.BILLING_TABLE_NAME as string,
-                    { club_account_id: body.club_account_id }
-                );
-
-                if (!club) {
-                    
-                    // Send to failure queue
-                    console.log(`Club ${body.club_account_id} does not exist!`)
-                } else {
-                    club.total_registered_users = club.total_registered_users + 1
-                    club.total_amount = club.total_amount + club.user_registration_fee
-                    club.outstanding_amount = club.outstanding_amount + club.user_registration_fee
-
-                    await addItem(
-                        process.env.BILLING_TABLE_NAME as string,
-                        club
-                    );
-                }
+                    { club_account_id: body.club_account_id },
+                    `SET 
+                        #total_registered_users = if_not_exists(#total_registered_users, :zero) + :one,
+                        #total_amount = if_not_exists(#total_amount, :zero) + #user_registration_fee,
+                        #outstanding_amount = if_not_exists(#outstanding_amount, :zero) + #user_registration_fee
+                    `,
+                    {
+                        "#total_registered_users": "total_registered_users",
+                        "#total_amount": "total_amount",
+                        "#outstanding_amount": "outstanding_amount",
+                        "#user_registration_fee": "user_registration_fee"
+                    },
+                    {
+                        ":one": 1,
+                        ":zero": 0
+                    }
+                )
             }
 
         }
