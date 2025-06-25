@@ -1,8 +1,8 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_Queue, MSC_Table } from "../../msc_service_constructs";
+import { MSC_Lambda, MSC_Queue, MSC_Table } from "../../../msc_service_constructs";
 import { TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
-import { MSC_Layers } from "../lambda_layers";
+import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_BillingConstructProps {
     billing_queue: MSC_Queue;
