@@ -40,8 +40,7 @@ export class MSC_BillingConstruct extends Construct {
             }
         });
         update_billing.addEventSource(new SqsEventSource(props.billing_queue, {
-            batchSize: 1,
-            maxConcurrency: 1
+            batchSize: 1
         }));
     }
 }

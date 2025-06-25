@@ -8,6 +8,7 @@ function isRegistrationFee(body: any): boolean {
 }
 
 export const handler = async (event: any) => {
+    console.log("-------------------------------")
     console.log(`EVENT @ ${new Date()}: `, event);
 
     try {
@@ -18,6 +19,7 @@ export const handler = async (event: any) => {
             if (body?.club_account_id == null || typeof body.club_account_id !== 'string') {
 
                 // Send to failure queue
+                console.log("-------------------------------")
                 return {
                     message: "Invalid body provided."
                 }
@@ -29,6 +31,7 @@ export const handler = async (event: any) => {
 
         }
 
+        console.log("-------------------------------")
         return {
             message: "Pass"
         }
@@ -37,6 +40,7 @@ export const handler = async (event: any) => {
 
         console.log('Error: ', error)
         // Send to failure queue
+        console.log("-------------------------------")
         return {
             message: error
         }
