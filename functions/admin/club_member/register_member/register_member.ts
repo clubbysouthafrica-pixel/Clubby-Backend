@@ -1,4 +1,11 @@
-import { createResponse, deconstructEvent, updateItem, getItem } from "./function_helpers";
+import { 
+    createResponse, 
+    deconstructEvent, 
+    updateItem, 
+    getItem, 
+    sendSqsMessage,
+    FEE_TYPES
+} from "./function_helpers";
 
 export const handler = async (event: any) => {
 
@@ -56,6 +63,15 @@ export const handler = async (event: any) => {
               ":deduct_amount": registration_billing.amount,
             }
         );
+
+        await sendSqsMessage(
+            process.env.BILLING_QUEUE_URL as string,
+            {
+                club_account_id: body.club_account_id,
+                feeType: FEE_TYPES.USER_REGISTRATION
+            },
+            FEE_TYPES.USER_REGISTRATION
+        )
 
         return createResponse(200, { message: "User successfully registered." }, origin);
 

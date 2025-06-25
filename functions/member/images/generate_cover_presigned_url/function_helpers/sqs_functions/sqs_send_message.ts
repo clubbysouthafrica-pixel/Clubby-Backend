@@ -6,7 +6,7 @@ const client = new SQSClient({ region: process.env.REGION });
 export const sendSqsMessage = async (
     queue_url: string,
     message_body: Record<string, string>,
-    group_id: typeof FEE_TYPES[keyof typeof FEE_TYPES],
+    group_id: string,
 ) => {
     if (!message_body || Object.keys(message_body).length === 0) {
         throw new Error("Message body cannot empty.");
