@@ -5,7 +5,7 @@ function generate_club_Id(club_name: string): string {
 }
 
 export const handler = async (event: any) => {
-    
+
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
@@ -14,12 +14,16 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'Not authorized for admin signup.' }, origin);
         }
 
-        if (body?.club_type == null || body?.club_name == null) {
-            return createResponse(400, { message: 'club_type and club_name required.' }, origin);
+        if (body?.club_type == null || body?.club_name == null || body?.user_registration_fee == null) {
+            return createResponse(400, { message: 'club_type, user_registration_fee and club_name required.' }, origin);
         }
 
         if (!CLUB_TYPES.includes(body.club_type)) {
             return createResponse(400, { message: `Invalid club_type. Valid values: ${CLUB_TYPES}.` }, origin);
+        }
+
+        if (typeof body.user_registration_fee !== 'number') {
+            return createResponse(400, { message: "user_registration_fee must be of type number." }, origin)
         }
 
         const club_account_id = generate_club_Id(body.club_name);
@@ -32,6 +36,17 @@ export const handler = async (event: any) => {
                 "club_account_id": club_account_id
             }
         );
+
+        await addItem(
+            process.env.BILLING_TABLE_NAME as string,
+            {
+                "club_account_id": club_account_id,
+                "outstanding_amount": 0,
+                "total_amount": 0,
+                "total_registered_users": 0,
+                "user_registration_fee": body.user_registration_fee
+            }
+        )
 
         return createResponse(
             200,

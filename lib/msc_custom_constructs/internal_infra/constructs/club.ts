@@ -19,10 +19,14 @@ export class MSC_InternalInfraClubConstruct extends Construct {
             code: "internal_infra/club/create_club",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
+                BILLING_TABLE_NAME: props.billing_table.tableName,
                 ADMIN_TOKEN: "FHJ289489JDJD"
             },
             permissions: {
                 [props.club_table.tableArn]: [
+                    "dynamodb:PutItem"
+                ],
+                [props.billing_table.tableArn]: [
                     "dynamodb:PutItem"
                 ]
             },
@@ -32,12 +36,6 @@ export class MSC_InternalInfraClubConstruct extends Construct {
         const club_resource = props.api_gateway.root.addResource("club");
 
         const create_club_resource = club_resource.addResource("createClub");
-
-        // const methodOptions: MethodOptions = {
-        //     methodResponses: [],
-        //     authorizationType: AuthorizationType.CUSTOM,
-        //     authorizer: props.token_authorizer
-        // }
 
         addCorsEnabledMethod(create_club_resource, create_club, { methodResponses: [] }, undefined, "PUT");
     }
