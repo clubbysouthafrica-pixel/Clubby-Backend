@@ -14,7 +14,8 @@ export const handler = async (event: any) => {
     try {
 
         for (const record of event.Records) {
-            const body = record.body;
+
+            const body = JSON.parse(record.body);;
             
             if (body?.club_account_id == null || typeof body.club_account_id !== 'string') {
 
