@@ -7,6 +7,7 @@ const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 export const addItem = async (
     table_name: string, 
     item: Record<string, string | boolean | number>,
+    condition_expression?: string,
 ) => {
     if (!item || Object.keys(item).length === 0) {
         throw new Error("Item cannot empty.");
@@ -16,6 +17,7 @@ export const addItem = async (
         const command = new PutItemCommand({
             TableName: table_name,
             Item: marshall(item),
+            ConditionExpression: condition_expression ?? undefined,
         });
 
         const response = await dynamodbClient.send(command);

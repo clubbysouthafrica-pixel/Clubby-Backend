@@ -41,13 +41,14 @@ export const handler = async (event: any) => {
                 "club_account_id": body.club_account_id,
                 "club_type": club.club_type as string,
                 "access": body.access
-            }
+            },
+            "attribute_not_exists(user_id)"
         )
 
         return createResponse(200, { message: "Admin successfully associated with club." }, origin);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error:", error);
-        return createResponse(500, { message: "Internal Server Error" }, origin);
+        return createResponse(500, { message: error.message }, origin);
     }
 };
