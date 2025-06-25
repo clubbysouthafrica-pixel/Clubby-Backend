@@ -1,6 +1,6 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MSC_APIGateway, MSC_Bucket } from '../../msc_service_constructs';
+import { MSC_APIGateway, MSC_Bucket, MSC_Queue } from '../../msc_service_constructs';
 import {
     MSC_AdminLoginConstruct,
     MSC_AdminUserConstruct,
@@ -20,6 +20,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     club_admin_table: MSC_Table;
     registration_form_table: MSC_Table;
     club_member_table: MSC_Table;
+    billing_queue: MSC_Queue;
     image_bucket: MSC_Bucket;
     layers: MSC_Layers;
 }
@@ -90,6 +91,7 @@ export class MSC_AdminNestedStack extends Stack {
             club_member_table: props.club_member_table,
             token_authorizer: jwt_construct.token_authorizer,
             registration_form_table: props.registration_form_table,
+            billing_queue: props.billing_queue,
             layers: props.layers
         });
     }
