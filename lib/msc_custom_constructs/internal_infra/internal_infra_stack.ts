@@ -1,10 +1,11 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MSC_APIGateway, MSC_Queue } from '../../msc_service_constructs';
+import { MSC_APIGateway, MSC_Cognito, MSC_Queue } from '../../msc_service_constructs';
 import {
     MSC_InternalInfraBillingConstruct,
     MSC_InternalInfraClubConstruct,
-    MSC_InternalInfraClubAdminConstruct
+    MSC_InternalInfraClubAdminConstruct,
+    MSC_InternalInfraAdminSignupConstruct
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs";
 import { MSC_Layers } from '../lambda_layers';
@@ -14,6 +15,7 @@ export interface MSC_InternalInfraStackProps extends StackProps {
     users_table: MSC_Table;
     club_admin_table: MSC_Table;
     billing_queue: MSC_Queue;
+    admin_pool: MSC_Cognito;
     layers: MSC_Layers;
 }
 
@@ -30,6 +32,13 @@ export class MSC_InternalInfraStack extends Stack {
         const internal_infra_billing_construct = new MSC_InternalInfraBillingConstruct(this, `${id}-Billing`, {
             billing_queue: props.billing_queue,
             layers: props.layers
+        });
+
+        new MSC_InternalInfraAdminSignupConstruct(this, `${id}-AdminSignup`, {
+            admin_pool: props.admin_pool,
+            api_gateway: api_gateway,
+            layers: props.layers,
+            users_table: props.users_table
         });
 
         new MSC_InternalInfraClubConstruct(this, `${id}-Club`, {

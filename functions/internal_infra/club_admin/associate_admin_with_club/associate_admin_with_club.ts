@@ -49,6 +49,11 @@ export const handler = async (event: any) => {
 
     } catch (error: any) {
         console.error("Error:", error);
+
+        if (error.message === "The conditional request failed") {
+            return createResponse(500, { message: "Admin already associated with club." }, origin);
+        }
+
         return createResponse(500, { message: error.message }, origin);
     }
 };

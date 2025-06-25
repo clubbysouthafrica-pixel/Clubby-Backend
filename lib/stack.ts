@@ -23,9 +23,22 @@ export class MSC_Stack extends cdk.Stack {
 
     const layers = new MSC_Layers(this, stack_id, {});
 
+    const admin_stack = new MSC_AdminNestedStack(this, `${stack_id}-AdminStack`, { 
+      env: props?.env,
+      users_table: tables.users_table, 
+      club_table: tables.club_table,
+      club_admin_table: tables.club_admin_table,
+      registration_form_table: tables.registration_form_table,
+      club_member_table: tables.club_member_table,
+      image_bucket: buckets.image_bucket,
+      billing_queue: billing_queue,
+      layers,
+    });
+
     new MSC_InternalInfraStack(this, `${stack_id}-InternalInfra`, {
       env: props?.env,
       billing_queue: billing_queue,
+      admin_pool: admin_stack.admin_pool,
       layers: layers,
       club_admin_table: tables.club_admin_table,
       users_table: tables.users_table,
@@ -39,18 +52,6 @@ export class MSC_Stack extends cdk.Stack {
       club_member_table: tables.club_member_table,
       registration_form_table: tables.registration_form_table,
       image_bucket: buckets.image_bucket,
-      layers,
-    });
-
-    new MSC_AdminNestedStack(this, `${stack_id}-AdminStack`, { 
-      env: props?.env,
-      users_table: tables.users_table, 
-      club_table: tables.club_table,
-      club_admin_table: tables.club_admin_table,
-      registration_form_table: tables.registration_form_table,
-      club_member_table: tables.club_member_table,
-      image_bucket: buckets.image_bucket,
-      billing_queue: billing_queue,
       layers,
     });
   }

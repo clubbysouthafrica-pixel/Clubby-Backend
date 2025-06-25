@@ -1,6 +1,6 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MSC_APIGateway, MSC_Bucket, MSC_Queue } from '../../msc_service_constructs';
+import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_Queue } from '../../msc_service_constructs';
 import {
     MSC_AdminLoginConstruct,
     MSC_AdminUserConstruct,
@@ -26,6 +26,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
 }
 
 export class MSC_AdminNestedStack extends Stack {
+    public readonly admin_pool: MSC_Cognito;
     constructor(scope: Construct, id: string, props: MSC_AdminNestedStackProps) {
         super(scope, id, props);
 
@@ -35,9 +36,11 @@ export class MSC_AdminNestedStack extends Stack {
         });
 
         const login_construct = new MSC_AdminLoginConstruct(this, `${id}-Login`, {
-            api_gateway: api_gateway, users_table: props.users_table,
+            api_gateway: api_gateway,
             layers: props.layers
         });
+
+        this.admin_pool = login_construct.user_pool;
 
         const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, {
             api_gateway: api_gateway,
