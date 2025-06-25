@@ -70,9 +70,7 @@ export class MSC_AdminNestedStack extends Stack {
 
         new MSC_ClubAdminClubConstruct(this, `${id}-ClubAdmin`, {
             api_gateway: api_gateway,
-            club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
-            users_table: props.users_table,
             club_admin_table: props.club_admin_table,
             layers: props.layers
         });
