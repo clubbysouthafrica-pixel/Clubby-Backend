@@ -53,14 +53,16 @@ export const handler = async (event: any) => {
               user_id: body.member_id,
               club_account_id: body.club_account_id,
             },
-            "SET #reg = :registered, #amount = #amount - :deduct_amount",
+            "SET #reg = :registered, #amount = #amount - :deduct_amount, #registered_on = :registered_on",
             {
               "#reg": "registered",
               "#amount": "outstanding_amount",
+              "#registered_on": "registered_on"
             },
             {
               ":registered": true,
               ":deduct_amount": registration_billing.amount,
+              ":registered_on": new Date().toISOString()
             }
         );
 

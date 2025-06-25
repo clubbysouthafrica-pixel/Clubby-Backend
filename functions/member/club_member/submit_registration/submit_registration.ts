@@ -174,6 +174,7 @@ export const handler = async (event: any) => {
             club_account_id: body.club_account_id,
             user_id: user_id,
             registered: false,
+            registration_submitted_on: new Date().toISOString(),
             club_name: await getClubName(body.club_account_id),
             outstanding_amount: membership_amount,
             primary_member: user_id,
