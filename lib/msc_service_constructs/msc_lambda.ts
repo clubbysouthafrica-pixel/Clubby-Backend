@@ -42,7 +42,7 @@ export class MSC_Lambda extends Function {
             }
         }
 
-        super(scope, id, {
+        super(scope, `${id}-Lambda`, {
             runtime: Runtime.NODEJS_20_X,
             functionName: id,
             handler: `${props.code}.handler`,
