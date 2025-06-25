@@ -5,7 +5,7 @@
 !layer-code/**/package.json
 !layer-code/**/package-lock.json
 
-# CDK asset staging directory
 .cdk.staging
 cdk.out
 *.2.ts
+**/.env
