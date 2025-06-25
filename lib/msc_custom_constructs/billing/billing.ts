@@ -16,17 +16,17 @@ export class MSC_BillingConstruct extends Construct {
             partitionKey: { "club_account_id": "STRING" },
         });
 
-        const add_club_to_billing = new MSC_Lambda(this, `${id}-AddClubBilling`, {
-            code: "billing/add_club_billing",
-            envVariables: {
-                BILLING_TABLE_NAME: billing_table.tableName
-            },
-            permissions: {
-                [billing_table.tableArn]: [
-                    "dynamodb:PutItem"
-                ]
-            }
-        });
+        // const add_club_to_billing = new MSC_Lambda(this, `${id}-AddClubBilling`, {
+        //     code: "billing/add_club_billing",
+        //     envVariables: {
+        //         BILLING_TABLE_NAME: billing_table.tableName
+        //     },
+        //     permissions: {
+        //         [billing_table.tableArn]: [
+        //             "dynamodb:PutItem"
+        //         ]
+        //     }
+        // });
 
         const update_billing = new MSC_Lambda(this, `${id}-UpdateBilling`, {
             code: "billing/update_billing",
