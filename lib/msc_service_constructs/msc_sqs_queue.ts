@@ -1,5 +1,4 @@
-import { Duration, RemovalPolicy } from "aws-cdk-lib";
-import { Bucket, BucketEncryption } from "aws-cdk-lib/aws-s3";
+import { Duration } from "aws-cdk-lib";
 import { Queue } from "aws-cdk-lib/aws-sqs";
 import { Construct } from "constructs";
 
