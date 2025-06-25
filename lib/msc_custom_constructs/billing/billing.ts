@@ -12,7 +12,7 @@ export class MSC_BillingConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_BillingConstructProps) {
         super(scope, id);
 
-        const billing_table = new MSC_Table(this, `${id}-Billing`, {
+        const billing_table = new MSC_Table(this, id, {
             partitionKey: { "club_account_id": "STRING" },
         });
 
