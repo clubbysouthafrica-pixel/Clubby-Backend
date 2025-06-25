@@ -4,39 +4,27 @@ import { TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { MSC_Layers } from "../../lambda_layers";
 
-interface MSC_BillingConstructProps {
+interface MSC_InternalInfraBillingConstructProps {
     billing_queue: MSC_Queue;
     layers: MSC_Layers;
 }
 
-export class MSC_BillingConstruct extends Construct {
-    public readonly token_authorizer: TokenAuthorizer;
-    constructor(scope: Construct, id: string, props: MSC_BillingConstructProps) {
+export class MSC_InternalInfraBillingConstruct extends Construct {
+    public readonly billing_table: MSC_Table;
+    constructor(scope: Construct, id: string, props: MSC_InternalInfraBillingConstructProps) {
         super(scope, id);
 
-        const billing_table = new MSC_Table(this, id, {
+        this.billing_table = new MSC_Table(this, id, {
             partitionKey: { "club_account_id": "STRING" },
         });
 
-        // const add_club_to_billing = new MSC_Lambda(this, `${id}-AddClubBilling`, {
-        //     code: "billing/add_club_billing",
-        //     envVariables: {
-        //         BILLING_TABLE_NAME: billing_table.tableName
-        //     },
-        //     permissions: {
-        //         [billing_table.tableArn]: [
-        //             "dynamodb:PutItem"
-        //         ]
-        //     }
-        // });
-
         const update_billing = new MSC_Lambda(this, `${id}-UpdateBilling`, {
-            code: "billing/update_billing",
+            code: "internal_infra/billing/update_billing",
             envVariables: {
-                BILLING_TABLE_NAME: billing_table.tableName
+                BILLING_TABLE_NAME: this.billing_table.tableName
             },
             permissions: {
-                [billing_table.tableArn]: [
+                [this.billing_table.tableArn]: [
                     "dynamodb:UpdateItem"
                 ]
             },

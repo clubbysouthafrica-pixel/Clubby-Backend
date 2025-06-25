@@ -17,7 +17,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_ClubMemberClubConstructProps) {
         super(scope, id);
 
-        const get_all_club_members = new MSC_Lambda(this, `${id}-CreateClub`, {
+        const get_all_club_members = new MSC_Lambda(this, `${id}-GetAllClubs`, {
             code: "admin/club_member/get_all_club_members",
             envVariables: {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,

@@ -15,6 +15,8 @@ export const sendSqsMessage = async (
     const deduplicate_id = Date.now().toString()
 
     try {
+
+
         const command = new SendMessageCommand({
             QueueUrl: queue_url,
             MessageBody: JSON.stringify(message_body),

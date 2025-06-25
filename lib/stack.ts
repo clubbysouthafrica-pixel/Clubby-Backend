@@ -5,7 +5,7 @@ import {
   MSC_AdminNestedStack, 
   MSC_TablesConstruct, 
   MSC_Layers,
-  MSC_BillingConstruct
+  MSC_InternalInfraStack
 } from "./msc_custom_constructs";
 import { MSC_BucketsConstruct } from './msc_custom_constructs/buckets/buckets';
 import { MSC_Queue } from './msc_service_constructs';
@@ -23,9 +23,12 @@ export class MSC_Stack extends cdk.Stack {
 
     const layers = new MSC_Layers(this, stack_id, {});
 
-    new MSC_BillingConstruct(this, `${stack_id}-Billing`, {
+    new MSC_InternalInfraStack(this, `${stack_id}-InternalInfra`, {
+      env: props?.env,
       billing_queue: billing_queue,
       layers: layers,
+      club_admin_table: tables.club_admin_table,
+      club_table: tables.club_table
     });
 
     new MSC_MemberNestedStack(this, `${stack_id}-MemberStack`, {

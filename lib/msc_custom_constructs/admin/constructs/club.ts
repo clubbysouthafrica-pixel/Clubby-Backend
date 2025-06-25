@@ -15,20 +15,6 @@ export class MSC_AdminClubConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_AdminClubConstructProps) {
         super(scope, id);
 
-        const create_club = new MSC_Lambda(this, `${id}-CreateClub`, {
-            code: "admin/club/create_club",
-            envVariables: {
-                CLUB_TABLE_NAME: props.club_table.tableName,
-                ADMIN_TOKEN: "FHJ289489JDJD"
-            },
-            permissions: {
-                [props.club_table.tableArn]: [
-                    "dynamodb:PutItem"
-                ]
-            },
-            layers: [props.layers.jwt_layer]
-        });
-
         const get_club = new MSC_Lambda(this, `${id}-GetClub`, {
             code: "admin/club/get_club",
             envVariables: {
@@ -57,7 +43,6 @@ export class MSC_AdminClubConstruct extends Construct {
 
         const club_resource = props.api_gateway.root.addResource("club");
 
-        const create_club_resource = club_resource.addResource("createClub");
         const get_club_resource = club_resource.addResource("getClub");
         const update_club_details_resource = club_resource.addResource("updateClubDetails");
 
@@ -67,7 +52,6 @@ export class MSC_AdminClubConstruct extends Construct {
             authorizer: props.token_authorizer
         }
 
-        addCorsEnabledMethod(create_club_resource, create_club, { methodResponses: [] }, undefined, "PUT");
         addCorsEnabledMethod(get_club_resource, get_club, methodOptions, undefined, "GET");
         addCorsEnabledMethod(update_club_details_resource, update_club_details, methodOptions, undefined, "POST");
     }

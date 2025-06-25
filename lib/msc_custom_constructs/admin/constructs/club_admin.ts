@@ -17,7 +17,7 @@ export class MSC_ClubAdminClubConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_ClubAdminClubConstructProps) {
         super(scope, id);
 
-        const associate_user_with_club = new MSC_Lambda(this, `${id}-CreateClubAdmin`, {
+        const associate_user_with_club = new MSC_Lambda(this, `${id}-AssociateAdminWithClub`, {
             code: "admin/club_admin/associate_user_with_club",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
