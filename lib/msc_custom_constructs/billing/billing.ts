@@ -2,9 +2,11 @@ import { Construct } from "constructs";
 import { MSC_Lambda, MSC_Queue, MSC_Table } from "../../msc_service_constructs";
 import { TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
+import { MSC_Layers } from "../lambda_layers";
 
 interface MSC_BillingConstructProps {
     billing_queue: MSC_Queue;
+    layers: MSC_Layers;
 }
 
 export class MSC_BillingConstruct extends Construct {
@@ -37,7 +39,8 @@ export class MSC_BillingConstruct extends Construct {
                 [billing_table.tableArn]: [
                     "dynamodb:UpdateItem"
                 ]
-            }
+            },
+            layers: [props.layers.jwt_layer]
         });
         update_billing.addEventSource(new SqsEventSource(props.billing_queue, {
             batchSize: 1

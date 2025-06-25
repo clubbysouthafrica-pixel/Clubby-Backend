@@ -25,6 +25,7 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_BillingConstruct(this, `${stack_id}-Billing`, {
       billing_queue: billing_queue,
+      layers: layers,
     });
 
     new MSC_MemberNestedStack(this, `${stack_id}-MemberStack`, {
