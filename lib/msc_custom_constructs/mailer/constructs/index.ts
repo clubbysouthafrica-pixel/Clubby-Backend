@@ -1,0 +1,1 @@
+export { MSC_SendEmailConstruct } from "./send_mail";

@@ -5,7 +5,8 @@ import {
   MSC_AdminNestedStack, 
   MSC_TablesConstruct, 
   MSC_Layers,
-  MSC_InternalInfraStack
+  MSC_InternalInfraStack,
+  MSC_MailingStack
 } from "./msc_custom_constructs";
 import { MSC_BucketsConstruct } from './msc_custom_constructs/buckets/buckets';
 import { MSC_Queue } from './msc_service_constructs';
@@ -22,6 +23,10 @@ export class MSC_Stack extends cdk.Stack {
     const buckets = new MSC_BucketsConstruct(this, stack_id, {});
 
     const layers = new MSC_Layers(this, stack_id, {});
+
+    new MSC_MailingStack(this, `${stack_id}-Mailer`, {
+      layers: layers
+    });
 
     const admin_stack = new MSC_AdminNestedStack(this, `${stack_id}-AdminStack`, { 
       env: props?.env,

@@ -1,0 +1,1 @@
+export { MSC_MailingStack } from "./mailer";
