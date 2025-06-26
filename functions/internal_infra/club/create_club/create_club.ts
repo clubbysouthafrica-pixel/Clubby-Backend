@@ -14,8 +14,8 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'Not authorized for admin signup.' }, origin);
         }
 
-        if (body?.club_type == null || body?.club_name == null || body?.user_registration_fee == null) {
-            return createResponse(400, { message: 'club_type, user_registration_fee and club_name required.' }, origin);
+        if (body?.club_type == null || body?.club_name == null || body?.user_registration_fee == null || body?.verified_identity == null) {
+            return createResponse(400, { message: 'club_type, user_registration_fee, verified_identity and club_name required.' }, origin);
         }
 
         if (!CLUB_TYPES.includes(body.club_type)) {
@@ -32,6 +32,7 @@ export const handler = async (event: any) => {
             process.env.CLUB_TABLE_NAME as string,
             {
                 "club_type": body.club_type,
+                "verified_identity": body.verified_identity,
                 "club_name": body.club_name,
                 "club_account_id": club_account_id
             }

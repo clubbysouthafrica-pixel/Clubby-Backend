@@ -14,16 +14,13 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_account_id must be STRING type." }, origin);
         }
 
-        if (query_string_params.club_account_id === "club_1750880664373_833970") {
-            return createResponse(200, { registered: mock_data.registered, not_registered: mock_data.unregistered }, origin);
-        }
-
-        const club_members = await queryItems(
-            process.env.CLUB_MEMBER_TABLE_NAME as string,
-            "club_account_id = :clubId",
-            { ":clubId": query_string_params.club_account_id },
-            process.env.CLUB_ACCOUNT_ID_INDEX as string
-        )
+        const club_members = query_string_params.club_account_id === "club_1750880664373_833970" ? mock_data :
+            await queryItems(
+                process.env.CLUB_MEMBER_TABLE_NAME as string,
+                "club_account_id = :clubId",
+                { ":clubId": query_string_params.club_account_id },
+                process.env.CLUB_ACCOUNT_ID_INDEX as string
+            )
 
         if (club_members == null) {
             return createResponse(200, { registered: [], not_registered: [] }, origin);
@@ -35,12 +32,39 @@ export const handler = async (event: any) => {
         club_members.forEach(item => {
             delete item.club_account_id
 
+            const meta = { ...item };
+            delete meta.billing_type;
+            delete meta.club_name;
+            delete meta.outstanding_amount;
+            delete meta.primary_member;
+            delete meta.registration_submitted_on;
+            delete meta.user_id;
+            delete meta.registered_on;
+
             if (item.registered) {
                 delete item.registered
-                registered.push(item)
+                registered.push({
+                    billing_type: item.billing_type,
+                    club_name: item.club_name,
+                    outstanding_amount: item.outstanding_amount,
+                    primary_member: item.primary_member,
+                    user_id: item.user_id,
+                    registration_submitted_on: item.registration_submitted_on ?? undefined,
+                    registered_on: item.registered_on ?? undefined,
+                    meta: meta,
+                });
             } else {
                 delete item.registered
-                unregistered.push(item)
+                unregistered.push({
+                    billing_type: item.billing_type,
+                    club_name: item.club_name,
+                    outstanding_amount: item.outstanding_amount,
+                    primary_member: item.primary_member,
+                    user_id: item.user_id,
+                    registration_submitted_on: item.registration_submitted_on ?? undefined,
+                    registered_on: item.registered_on ?? undefined,
+                    meta: meta,
+                });
             }
         })
 
