@@ -13,7 +13,7 @@ export class MSC_SendEmailConstruct extends Construct {
             queue_name: 'Mail'
           });
 
-        const send_mail = new MSC_Lambda(this, `${id}-SendMail`, {
+        const send_mail = new MSC_Lambda(this, id, {
             code: "mailer/send_mail",
             permissions: {
                 [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
