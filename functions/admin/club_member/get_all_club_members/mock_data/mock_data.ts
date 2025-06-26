@@ -2,6 +2,8 @@ export const mock_data = [
     {
         "club_account_id": "club_1750880664373_833970",
         "registered": true,
+        "member_first_name": "Test",
+        "member_surname": "1",
         "Boat type": "Kayak",
         "club_name": "Sea Point Paddlers",
         "user_id": "a1234567-89ab-cdef-0123-456789abcdef",
@@ -13,6 +15,8 @@ export const mock_data = [
     },
     {
         "club_account_id": "club_1750880664373_833970",
+        "member_first_name": "Test",
+        "member_surname": "4",
         "registered": true,
         "Boat type": "Canoe",
         "club_name": "Durban River Club",
@@ -25,6 +29,8 @@ export const mock_data = [
     },
     {
         "club_account_id": "club_1750880664373_833970",
+        "member_first_name": "Test",
+        "member_surname": "3",
         "registered": false,
         "Boat type": "Boat 1",
         "club_name": "Century City Canoe Club",
@@ -37,6 +43,8 @@ export const mock_data = [
     },
     {
         "club_account_id": "club_1750880664373_833970",
+        "member_first_name": "Test",
+        "member_surname": "2",
         "registered": false,
         "Boat type": "K1",
         "club_name": "Langebaan Lagoon Club",

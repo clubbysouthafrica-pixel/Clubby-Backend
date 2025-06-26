@@ -40,6 +40,8 @@ export const handler = async (event: any) => {
             delete meta.registration_submitted_on;
             delete meta.user_id;
             delete meta.registered_on;
+            delete meta.member_first_name;
+            delete meta.member_surname;
 
             if (item.registered) {
                 delete item.registered
@@ -49,6 +51,8 @@ export const handler = async (event: any) => {
                     outstanding_amount: item.outstanding_amount,
                     primary_member: item.primary_member,
                     user_id: item.user_id,
+                    member_first_name: item.member_first_name,
+                    member_surname: item.surname,
                     registration_submitted_on: item.registration_submitted_on ?? undefined,
                     registered_on: item.registered_on ?? undefined,
                     meta: meta,
@@ -60,6 +64,8 @@ export const handler = async (event: any) => {
                     club_name: item.club_name,
                     outstanding_amount: item.outstanding_amount,
                     primary_member: item.primary_member,
+                    member_first_name: item.member_first_name,
+                    member_surname: item.surname,
                     user_id: item.user_id,
                     registration_submitted_on: item.registration_submitted_on ?? undefined,
                     registered_on: item.registered_on ?? undefined,
