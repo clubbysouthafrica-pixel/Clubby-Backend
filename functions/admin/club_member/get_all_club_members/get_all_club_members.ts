@@ -1,4 +1,5 @@
 import { createResponse, deconstructEvent, queryItems } from "./function_helpers";
+import { mock_data } from "./mock_data";
 
 export const handler = async (event: any) => {
 
@@ -11,6 +12,10 @@ export const handler = async (event: any) => {
         }
         if (typeof query_string_params.club_account_id !== 'string') {
             return createResponse(400, { message: "club_account_id must be STRING type." }, origin);
+        }
+
+        if (body.club_account_id === "club_1750880664373_833970") {
+            return createResponse(200, { registered: mock_data.registered, not_registered: mock_data.unregistered }, origin);
         }
 
         const club_members = await queryItems(
@@ -38,7 +43,7 @@ export const handler = async (event: any) => {
         })
 
         return createResponse(200, { registered, unregistered }, origin);
-        
+
     } catch (error) {
         console.error("Error:", error);
         return createResponse(500, { message: "Internal Server Error" }, origin);
