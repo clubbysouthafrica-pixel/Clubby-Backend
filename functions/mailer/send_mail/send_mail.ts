@@ -29,14 +29,12 @@ export const handler = async (event: any) => {
 
             const chunkedEmails = chunkArray(emails, 45);
 
-            const rateLimit = 14; // max calls per second
-            const delayMs = 1000; // 1 second delay between batches
+            const rateLimit = 14;
+            const delayMs = 1000;
 
-            // Process chunked emails in batches of rateLimit
             for (let i = 0; i < chunkedEmails.length; i += rateLimit) {
                 const batch = chunkedEmails.slice(i, i + rateLimit);
 
-                // Send all emails in this batch in parallel
                 await Promise.all(batch.map(async (chunk) => {
                     const params = {
                         Source: email_source,
@@ -66,7 +64,6 @@ export const handler = async (event: any) => {
                     }
                 }));
 
-                // Wait 1 second before sending the next batch (if any)
                 if (i + rateLimit < chunkedEmails.length) {
                     await delay(delayMs);
                 }
