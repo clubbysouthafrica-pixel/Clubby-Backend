@@ -36,8 +36,10 @@ export const handler = async (event: any) => {
             delete item.club_account_id
 
             if (item.registered) {
+                delete item.registered
                 registered.push(item)
             } else {
+                delete item.registered
                 unregistered.push(item)
             }
         })
