@@ -19,12 +19,19 @@ export class MSC_Stack extends cdk.Stack {
       queue_name: 'Billing'
     });
 
+    const mail_queue = new MSC_Queue(this, `${stack_id}-SendMail`, {
+      queue_name: 'SendMail',
+    });
+
     const tables = new MSC_TablesConstruct(this, stack_id, {});
     const buckets = new MSC_BucketsConstruct(this, stack_id, {});
 
     const layers = new MSC_Layers(this, stack_id, {});
 
-    new MSC_MailingStack(this, `${stack_id}-Mailer`, {});
+    new MSC_MailingStack(this, `${stack_id}-MailerStack`, {
+      env: props?.env,
+      mail_queue: mail_queue
+    });
 
     const admin_stack = new MSC_AdminNestedStack(this, `${stack_id}-AdminStack`, { 
       env: props?.env,
@@ -35,7 +42,8 @@ export class MSC_Stack extends cdk.Stack {
       club_member_table: tables.club_member_table,
       image_bucket: buckets.image_bucket,
       billing_queue: billing_queue,
-      layers,
+      mail_queue: mail_queue,
+      layers
     });
 
     new MSC_InternalInfraStack(this, `${stack_id}-InternalInfra`, {

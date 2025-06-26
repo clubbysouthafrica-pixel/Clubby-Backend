@@ -8,7 +8,8 @@ import {
     MSC_ClubAdminClubConstruct,
     MSC_AdminRegistrationFormConstruct,
     MSC_ClubMemberClubConstruct,
-    MSC_ImagesConstruct
+    MSC_ImagesConstruct,
+    MSC_MailerConstruct
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
@@ -22,6 +23,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     club_member_table: MSC_Table;
     billing_queue: MSC_Queue;
     image_bucket: MSC_Bucket;
+    mail_queue: MSC_Queue;
     layers: MSC_Layers;
 }
 
@@ -47,6 +49,14 @@ export class MSC_AdminNestedStack extends Stack {
             user_pool: login_construct.user_pool,
             user_type: "admin",
             layers: props.layers
+        });
+
+        new MSC_MailerConstruct(this, `${id}-Mail`, {
+            api_gateway: api_gateway,
+            club_table: props.club_table,
+            layers: props.layers,
+            token_authorizer: jwt_construct.token_authorizer,
+            mail_queue: props.mail_queue
         });
 
         new MSC_ImagesConstruct(this, `${id}-Images`, {
