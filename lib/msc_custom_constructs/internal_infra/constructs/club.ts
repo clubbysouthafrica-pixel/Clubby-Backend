@@ -7,7 +7,6 @@ import { MSC_Layers } from "../../lambda_layers";
 interface MSC_InternalInfraClubConstructProps {
     api_gateway: MSC_APIGateway;
     club_table: MSC_Table;
-    billing_table: MSC_Table;
     layers: MSC_Layers;
 }
 
@@ -19,14 +18,10 @@ export class MSC_InternalInfraClubConstruct extends Construct {
             code: "internal_infra/club/create_club",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
-                BILLING_TABLE_NAME: props.billing_table.tableName,
                 ADMIN_TOKEN: "FHJ289489JDJD"
             },
             permissions: {
                 [props.club_table.tableArn]: [
-                    "dynamodb:PutItem"
-                ],
-                [props.billing_table.tableArn]: [
                     "dynamodb:PutItem"
                 ]
             },

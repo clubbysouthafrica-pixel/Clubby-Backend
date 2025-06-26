@@ -34,20 +34,10 @@ export const handler = async (event: any) => {
                 "club_type": body.club_type,
                 "verified_identity": body.verified_identity,
                 "club_name": body.club_name,
-                "club_account_id": club_account_id
-            }
-        );
-
-        await addItem(
-            process.env.BILLING_TABLE_NAME as string,
-            {
                 "club_account_id": club_account_id,
-                "outstanding_amount": 0,
-                "total_amount": 0,
-                "total_registered_users": 0,
                 "user_registration_fee": body.user_registration_fee
             }
-        )
+        );
 
         return createResponse(
             200,

@@ -29,7 +29,7 @@ export class MSC_InternalInfraStack extends Stack {
         });
 
 
-        const internal_infra_billing_construct = new MSC_InternalInfraBillingConstruct(this, `${id}-Billing`, {
+        new MSC_InternalInfraBillingConstruct(this, `${id}-Billing`, {
             billing_queue: props.billing_queue,
             layers: props.layers
         });
@@ -44,7 +44,6 @@ export class MSC_InternalInfraStack extends Stack {
         new MSC_InternalInfraClubConstruct(this, `${id}-Club`, {
             api_gateway: api_gateway,
             club_table: props.club_table,
-            billing_table: internal_infra_billing_construct.billing_table,
             layers: props.layers
         });
 
