@@ -23,10 +23,16 @@ export const handler = async (event: any) => {
                 console.log(`Invalid body provided for club ${body.club_account_id}.`)
             }
 
+            const now = new Date();
+            const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
             if (isRegistrationFee(body)) {
                 await updateItem(
-                    process.env.BILLING_TABLE_NAME as string,
-                    { club_account_id: body.club_account_id },
+                    process.env.MONTHLY_BILLING_TABLE_NAME as string,
+                    { 
+                        club_account_id: body.club_account_id,
+                        year_month: year_month,
+                    },
                     `SET 
                         #total_registered_users = if_not_exists(#total_registered_users, :zero) + :one,
                         #total_amount = if_not_exists(#total_amount, :zero) + #user_registration_fee,

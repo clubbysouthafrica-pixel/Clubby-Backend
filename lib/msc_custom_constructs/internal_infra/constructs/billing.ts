@@ -14,14 +14,15 @@ export class MSC_InternalInfraBillingConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_InternalInfraBillingConstructProps) {
         super(scope, id);
 
-        this.billing_table = new MSC_Table(this, id, {
+        this.billing_table = new MSC_Table(this, `${id}-Monthly`, {
             partitionKey: { "club_account_id": "STRING" },
+            sortKey: {"year_month": "STRING"}
         });
 
         const update_billing = new MSC_Lambda(this, `${id}-UpdateBilling`, {
             code: "internal_infra/billing/update_billing",
             envVariables: {
-                BILLING_TABLE_NAME: this.billing_table.tableName
+                MONTHLY_BILLING_TABLE_NAME: this.billing_table.tableName
             },
             permissions: {
                 [this.billing_table.tableArn]: [
