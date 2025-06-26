@@ -10,7 +10,7 @@ export class MSC_SendEmailConstruct extends Construct {
         super(scope, id);
 
         this.mail_queue = new MSC_Queue(this, `${id}-Mail`, {
-            queue_name: 'Mail'
+            queue_name: 'SendMail'
           });
 
         const send_mail = new MSC_Lambda(this, id, {
