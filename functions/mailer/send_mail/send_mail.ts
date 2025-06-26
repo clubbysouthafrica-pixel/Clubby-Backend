@@ -1,6 +1,6 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
-const sesClient = new SESClient({ region: process.env.REGION });
+const sesClient = new SESClient({ region: process.env.REGION || "us-east-1" });
 
 function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
     const chunks: T[][] = [];
@@ -10,48 +10,71 @@ function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
     return chunks;
 }
 
+function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export const handler = async (event: any) => {
-    console.log("-------------------------------")
+    console.log("-------------------------------");
     console.log(`EVENT @ ${new Date()}: `, event);
+
     try {
         for (const record of event.Records) {
             const body = JSON.parse(record.body);
 
             const email_source = body.email_source as string;
-
             const emails = body.emails as string[];
             const subject = body.subject as string;
             const email_body = body.email_body as string;
 
             const chunkedEmails = chunkArray(emails, 45);
 
-            for (const chunk of chunkedEmails) {
-                const params = {
-                    Source: email_source,
-                    Destination: {
-                        ToAddresses: chunk,
-                    },
-                    Message: {
-                        Subject: {
-                            Data: subject,
-                            Charset: "UTF-8",
+            const rateLimit = 14; // max calls per second
+            const delayMs = 1000; // 1 second delay between batches
+
+            // Process chunked emails in batches of rateLimit
+            for (let i = 0; i < chunkedEmails.length; i += rateLimit) {
+                const batch = chunkedEmails.slice(i, i + rateLimit);
+
+                // Send all emails in this batch in parallel
+                await Promise.all(batch.map(async (chunk) => {
+                    const params = {
+                        Source: email_source,
+                        Destination: {
+                            ToAddresses: chunk,
                         },
-                        Body: {
-                            Text: {
-                                Data: email_body,
+                        Message: {
+                            Subject: {
+                                Data: subject,
                                 Charset: "UTF-8",
                             },
+                            Body: {
+                                Text: {
+                                    Data: email_body,
+                                    Charset: "UTF-8",
+                                },
+                            },
                         },
-                    },
-                };
+                    };
 
-                const command = new SendEmailCommand(params);
-                const response = await sesClient.send(command);
-                console.log("Email sent successfully:", response.MessageId);
+                    const command = new SendEmailCommand(params);
+                    try {
+                        const response = await sesClient.send(command);
+                        console.log("Email sent successfully:", response.MessageId);
+                    } catch (error) {
+                        console.error("Error sending email to chunk:", error);
+                    }
+                }));
+
+                // Wait 1 second before sending the next batch (if any)
+                if (i + rateLimit < chunkedEmails.length) {
+                    await delay(delayMs);
+                }
             }
         }
     } catch (error) {
-        console.error("Error sending email:", error);
+        console.error("Error processing event:", error);
     }
-    console.log("-------------------------------")
+
+    console.log("-------------------------------");
 };
