@@ -158,7 +158,7 @@ export const handler = async (event: any) => {
         );
 
         if (!user) {
-            return createResponse(400, { message: "User does not exist." }, origin);
+            return createResponse(400, { message: `User ${user_id} does not exist.` }, origin);
         }
 
         const billingFields: BillingField[] = [];
