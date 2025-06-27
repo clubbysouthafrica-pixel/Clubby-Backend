@@ -71,7 +71,7 @@ export const handler = async (event: any) => {
       key
     );
 
-    if (user != null && "first_name" in user) {
+    if (user != null && user.onboarded) {
       return createResponse(
         400,
         { message: "User already onboarded." },
