@@ -3,9 +3,35 @@ import {
     deconstructEvent,
     updateItem,
     getItem,
-    sendSqsMessage,
-    FEE_TYPES
 } from "./function_helpers";
+
+async function updateClubsRegistrationBilling(club_account_id: string, fee: number) {
+    const now = new Date();
+    const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    await updateItem(
+        process.env.MONTHLY_BILLING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: year_month,
+        },
+        `SET 
+            #total_registered_users = if_not_exists(#total_registered_users, :zero) + :one,
+            #total_amount = if_not_exists(#total_amount, :zero) + :member_registration_fee,
+            #outstanding_amount = if_not_exists(#outstanding_amount, :zero) + :member_registration_fee
+        `,
+        {
+            "#total_registered_users": "total_registered_users",
+            "#total_amount": "total_amount",
+            "#outstanding_amount": "outstanding_amount",
+        },
+        {
+            ":one": 1,
+            ":zero": 0,
+            ":member_registration_fee": fee,
+        }
+    );
+}
 
 export const handler = async (event: any) => {
 
@@ -55,31 +81,7 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Club does not exist." }, origin);
         }
 
-        const now = new Date();
-        const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-
-        await updateItem(
-            process.env.MONTHLY_BILLING_TABLE_NAME as string,
-            {
-                club_account_id: body.club_account_id,
-                year_month: year_month,
-            },
-            `SET 
-                #total_registered_users = if_not_exists(#total_registered_users, :zero) + :one,
-                #total_amount = if_not_exists(#total_amount, :zero) + :member_registration_fee,
-                #outstanding_amount = if_not_exists(#outstanding_amount, :zero) + :member_registration_fee
-            `,
-            {
-                "#total_registered_users": "total_registered_users",
-                "#total_amount": "total_amount",
-                "#outstanding_amount": "outstanding_amount",
-            },
-            {
-                ":one": 1,
-                ":zero": 0,
-                ":member_registration_fee": club.member_registration_fee,
-            }
-        );
+        await updateClubsRegistrationBilling(body.club_account_id, club.member_registration_fee);
 
         await updateItem(
             process.env.CLUB_MEMBER_TABLE_NAME as string,
