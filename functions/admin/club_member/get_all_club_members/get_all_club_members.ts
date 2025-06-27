@@ -44,7 +44,6 @@ export const handler = async (event: any) => {
             delete meta.member_surname;
 
             if (item.registered) {
-                delete item.registered
                 registered.push({
                     billing_type: item.billing_type,
                     club_name: item.club_name,
@@ -58,7 +57,6 @@ export const handler = async (event: any) => {
                     meta: meta,
                 });
             } else {
-                delete item.registered
                 unregistered.push({
                     billing_type: item.billing_type,
                     club_name: item.club_name,
