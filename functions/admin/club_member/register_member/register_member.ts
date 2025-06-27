@@ -55,25 +55,6 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Club does not exist." }, origin);
         }
 
-        await updateItem(
-            process.env.CLUB_MEMBER_TABLE_NAME as string,
-            {
-                user_id: body.member_id,
-                club_account_id: body.club_account_id,
-            },
-            "SET #reg = :registered, #amount = #amount - :deduct_amount, #registered_on = :registered_on",
-            {
-                "#reg": "registered",
-                "#amount": "outstanding_amount",
-                "#registered_on": "registered_on"
-            },
-            {
-                ":registered": true,
-                ":deduct_amount": registration_billing.amount,
-                ":registered_on": new Date().toISOString()
-            }
-        );
-
         const now = new Date();
         const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -96,9 +77,28 @@ export const handler = async (event: any) => {
             {
                 ":one": 1,
                 ":zero": 0,
-                "user_registration_fee": club.member_registration_fee,
+                ":member_registration_fee": club.member_registration_fee,
             }
-        )
+        );
+
+        await updateItem(
+            process.env.CLUB_MEMBER_TABLE_NAME as string,
+            {
+                user_id: body.member_id,
+                club_account_id: body.club_account_id,
+            },
+            "SET #reg = :registered, #amount = #amount - :deduct_amount, #registered_on = :registered_on",
+            {
+                "#reg": "registered",
+                "#amount": "outstanding_amount",
+                "#registered_on": "registered_on"
+            },
+            {
+                ":registered": true,
+                ":deduct_amount": registration_billing.amount,
+                ":registered_on": new Date().toISOString()
+            }
+        );
 
         return createResponse(200, { message: "User successfully registered." }, origin);
 
