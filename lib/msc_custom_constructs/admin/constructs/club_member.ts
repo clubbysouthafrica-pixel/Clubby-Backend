@@ -7,10 +7,11 @@ import { MSC_Layers } from "../../lambda_layers";
 interface MSC_ClubMemberClubConstructProps {
     api_gateway: MSC_APIGateway;
     club_member_table: MSC_Table;
+    club_table: MSC_Table;
     registration_form_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
-    billing_queue: MSC_Queue,
     layers: MSC_Layers;
+    billing_table: MSC_Table;
 }
 
 export class MSC_ClubMemberClubConstruct extends Construct {
@@ -36,9 +37,13 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             envVariables: {
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                BILLING_QUEUE_URL: props.billing_queue.queueUrl,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
+                CLUB_TABLE_NAME: props.club_table.tableName,
             },
             permissions: {
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
                 [props.registration_form_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
@@ -46,8 +51,8 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                     "dynamodb:UpdateItem",
                     "dynamodb:GetItem"
                 ],
-                [props.billing_queue.queueArn]: [
-                    "sqs:SendMessage"
+                [props.billing_table.tableArn]: [
+                    "dynamodb:UpdateItem"
                 ]
             },
             layers: [props.layers.jwt_layer]

@@ -36,6 +36,7 @@ export class MSC_Stack extends cdk.Stack {
     const admin_stack = new MSC_AdminNestedStack(this, `${stack_id}-AdminStack`, { 
       env: props?.env,
       users_table: tables.users_table, 
+      billing_table: tables.billing_table,
       club_table: tables.club_table,
       club_admin_table: tables.club_admin_table,
       registration_form_table: tables.registration_form_table,
@@ -48,7 +49,6 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_InternalInfraStack(this, `${stack_id}-InternalInfra`, {
       env: props?.env,
-      billing_queue: billing_queue,
       admin_pool: admin_stack.admin_pool,
       layers: layers,
       club_admin_table: tables.club_admin_table,

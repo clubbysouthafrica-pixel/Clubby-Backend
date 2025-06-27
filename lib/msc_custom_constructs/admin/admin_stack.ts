@@ -19,6 +19,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     users_table: MSC_Table;
     club_table: MSC_Table;
     club_admin_table: MSC_Table;
+    billing_table: MSC_Table;
     registration_form_table: MSC_Table;
     club_member_table: MSC_Table;
     billing_queue: MSC_Queue;
@@ -99,10 +100,11 @@ export class MSC_AdminNestedStack extends Stack {
 
         new MSC_ClubMemberClubConstruct(this, `${id}-ClubMember`, {
             api_gateway: api_gateway,
+            club_table: props.club_table,
             club_member_table: props.club_member_table,
             token_authorizer: jwt_construct.token_authorizer,
             registration_form_table: props.registration_form_table,
-            billing_queue: props.billing_queue,
+            billing_table: props.billing_table,
             layers: props.layers
         });
     }
