@@ -185,6 +185,7 @@ export const handler = async (event: any) => {
         const item = {
             club_account_id: body.club_account_id,
             user_id: user_id,
+            member_email: user.email,
             member_first_name: user.first_name,
             member_surname: user.surname,
             registered: false,
