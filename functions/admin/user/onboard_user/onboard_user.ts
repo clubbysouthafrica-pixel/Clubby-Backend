@@ -15,11 +15,6 @@ const isValidDateOfBirth = (dob: string): boolean => {
   );
 };
 
-const isValidEmail = (email: string): boolean => {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
-};
-
 const isValidPhoneNumber = (phone: string): boolean => {
   const regex = /^\+\d{10,15}$/;
   return regex.test(phone);
@@ -56,14 +51,6 @@ export const handler = async (event: any) => {
 
     if (!isValidPhoneNumber(body.phone_number)) {
       return createResponse(400, { message: "Invalid phone number format. Use format like +27727187281" }, origin);
-    }
-
-    if (!isValidEmail(body.email)) {
-      return createResponse(
-        400,
-        { message: "Invalid email format" },
-        origin
-      );
     }
 
     if (!isValidDateOfBirth(body.date_of_birth)) {
