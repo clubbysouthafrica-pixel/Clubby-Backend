@@ -42,6 +42,8 @@ export const handler = async (event: any) => {
             delete meta.registered_on;
             delete meta.member_first_name;
             delete meta.member_surname;
+            delete meta.registered
+            delete meta.member_email
 
             if (item.registered) {
                 registered.push({
