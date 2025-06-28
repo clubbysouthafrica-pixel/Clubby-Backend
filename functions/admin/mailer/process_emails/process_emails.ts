@@ -2,7 +2,6 @@ import {
     createResponse,
     deconstructEvent,
     sendSqsMessage,
-    FEE_TYPES,
     getItem
 } from "./function_helpers";
 

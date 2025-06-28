@@ -1,5 +1,4 @@
 import { createResponse, deconstructEvent, queryItems } from "./function_helpers";
-import { mock_data } from "./mock_data";
 
 export const handler = async (event: any) => {
 
@@ -14,13 +13,12 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_account_id must be STRING type." }, origin);
         }
 
-        const club_members = query_string_params.club_account_id === "club_1751025321875_573497" ? mock_data :
-            await queryItems(
-                process.env.CLUB_MEMBER_TABLE_NAME as string,
-                "club_account_id = :clubId",
-                { ":clubId": query_string_params.club_account_id },
-                process.env.CLUB_ACCOUNT_ID_INDEX as string
-            )
+        const club_members = await queryItems(
+            process.env.CLUB_MEMBER_TABLE_NAME as string,
+            "club_account_id = :clubId",
+            { ":clubId": query_string_params.club_account_id },
+            process.env.CLUB_ACCOUNT_ID_INDEX as string
+        )
 
         if (club_members == null) {
             return createResponse(200, { registered: [], not_registered: [] }, origin);
