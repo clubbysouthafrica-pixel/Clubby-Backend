@@ -4,6 +4,15 @@ import {
     sendSqsMessage,
     getItem
 } from "./function_helpers";
+import { SESClient, GetSendQuotaCommand } from "@aws-sdk/client-ses";
+
+const sesClient = new SESClient({ region: process.env.REGION });
+
+async function getSentLast24Hours(): Promise<number | undefined> {
+    const command = new GetSendQuotaCommand({});
+    const response = await sesClient.send(command);
+    return  response.SentLast24Hours
+}
 
 function validateBody(body: any): string | null {
     if (body?.subject == null || body.email_body == null || body.emails == null || body.club_account_id == null) {
@@ -29,6 +38,24 @@ export const handler = async (event: any) => {
         const invalid_body_message = validateBody(body)
         if (invalid_body_message) {
             return createResponse(400, { message: invalid_body_message }, origin);
+        }
+
+        const sent_last_24_hours = await getSentLast24Hours();
+
+        if (!sent_last_24_hours) {
+            return createResponse(400, { message: "Unable to retrieve current sending usage. Please try again later." }, origin);
+        }
+
+        if (sent_last_24_hours >= Number(process.env.SENDING_LIMIT)) {
+            return createResponse(400, { message: "Daily sending limit reached. Please try again after 24 hours." }, origin);
+        } else if (sent_last_24_hours + body.emails.length >= Number(process.env.SENDING_LIMIT)) {
+            return createResponse(
+                400, 
+                {  
+                    message: `Daily sending limit would be exceeded with this request. Only ${sent_last_24_hours} email(s) can be sent at this time.` 
+                }, 
+                origin
+            );
         }
 
         const club = await getItem(

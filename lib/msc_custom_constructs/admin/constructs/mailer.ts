@@ -20,9 +20,14 @@ export class MSC_MailerConstruct extends Construct {
             code: "admin/mailer/process_emails",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
-                SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl
+                SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
+                REGION: process.env.REGION as string,
+                SENDING_LIMIT: '1',
             },
             permissions: {
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                    "ses:GetSendQuota"
+                ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
