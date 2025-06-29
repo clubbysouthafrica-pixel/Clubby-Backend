@@ -25,7 +25,7 @@ export class MSC_MailerConstruct extends Construct {
                 SENDING_LIMIT: '1',
             },
             permissions: {
-                [`*`]: [
+                ["*"]: [
                     "ses:GetSendQuota"
                 ],
                 [props.club_table.tableArn]: [
