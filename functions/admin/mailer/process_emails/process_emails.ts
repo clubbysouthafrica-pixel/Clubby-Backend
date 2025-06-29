@@ -11,6 +11,7 @@ const sesClient = new SESClient({ region: process.env.REGION });
 async function getSentLast24Hours(): Promise<number | undefined> {
     const command = new GetSendQuotaCommand({});
     const response = await sesClient.send(command);
+    console.log(`@@@ GetSendQuota response: `, JSON.stringify(response));
     return  response.SentLast24Hours
 }
 
