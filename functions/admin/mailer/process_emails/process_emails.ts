@@ -8,11 +8,19 @@ import { SESClient, GetSendQuotaCommand } from "@aws-sdk/client-ses";
 
 const sesClient = new SESClient({ region: process.env.REGION });
 
-async function getSentLast24Hours(): Promise<number | undefined> {
+async function getSentLast24Hours(emails: string[]): Promise<string | null> {
     const command = new GetSendQuotaCommand({});
     const response = await sesClient.send(command);
     console.log(`@@@ GetSendQuota response: `, JSON.stringify(response));
-    return  response.SentLast24Hours
+    
+    if (response.SentLast24Hours === undefined) {
+        return "Unable to retrieve current sending usage. Please try again later."
+    } else if (response.SentLast24Hours >= Number(process.env.SENDING_LIMIT)) {
+        return "Daily sending limit reached. Please try again after 24 hours."
+    } else if (response.SentLast24Hours + emails.length >= Number(process.env.SENDING_LIMIT)) {
+        return `Daily sending limit would be exceeded with this request. Only ${Number(process.env.SENDING_LIMIT) - emails.length} email(s) can be sent at this time.`
+    }
+    return null
 }
 
 function validateBody(body: any): string | null {
@@ -41,22 +49,9 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: invalid_body_message }, origin);
         }
 
-        const sent_last_24_hours = await getSentLast24Hours();
-
-        if (!sent_last_24_hours) {
-            return createResponse(400, { message: "Unable to retrieve current sending usage. Please try again later." }, origin);
-        }
-
-        if (sent_last_24_hours >= Number(process.env.SENDING_LIMIT)) {
-            return createResponse(400, { message: "Daily sending limit reached. Please try again after 24 hours." }, origin);
-        } else if (sent_last_24_hours + body.emails.length >= Number(process.env.SENDING_LIMIT)) {
-            return createResponse(
-                400, 
-                {  
-                    message: `Daily sending limit would be exceeded with this request. Only ${sent_last_24_hours} email(s) can be sent at this time.` 
-                }, 
-                origin
-            );
+        const get_sent_24_hour_message = await getSentLast24Hours(body.emails);
+        if (get_sent_24_hour_message) {
+            return createResponse(500, { message: get_sent_24_hour_message }, origin);
         }
 
         const club = await getItem(
