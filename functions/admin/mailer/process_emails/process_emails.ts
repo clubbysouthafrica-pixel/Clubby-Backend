@@ -15,10 +15,10 @@ async function getSentLast24Hours(emails: string[]): Promise<string | null> {
     
     if (response.SentLast24Hours === undefined) {
         return "Unable to retrieve current sending usage. Please try again later."
-    } else if (response.SentLast24Hours >= Number(process.env.SENDING_LIMIT)) {
+    } else if (response.SentLast24Hours > Number(process.env.SENDING_LIMIT)) {
         return "Daily sending limit reached. Please try again after 24 hours."
-    } else if (response.SentLast24Hours + emails.length >= Number(process.env.SENDING_LIMIT)) {
-        return `Daily sending limit would be exceeded with this request. Only ${Number(process.env.SENDING_LIMIT) - emails.length} email(s) can be sent at this time.`
+    } else if (response.SentLast24Hours + emails.length > Number(process.env.SENDING_LIMIT)) {
+        return `Daily sending limit would be exceeded with this request. Only ${Number(process.env.SENDING_LIMIT) - emails.length + 1} email(s) can be sent at this time.`
     }
     return null
 }
