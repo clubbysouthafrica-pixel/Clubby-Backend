@@ -22,7 +22,7 @@ export class MSC_MailerConstruct extends Construct {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
                 REGION: process.env.REGION as string,
-                SENDING_LIMIT: '1',
+                SENDING_LIMIT: process.env.EMAIL_SENDING_LIMIT as string,
             },
             permissions: {
                 ["*"]: [
