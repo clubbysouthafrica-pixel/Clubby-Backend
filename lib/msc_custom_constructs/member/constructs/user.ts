@@ -44,10 +44,26 @@ export class MSC_MemberUserConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const update_user_details = new MSC_Lambda(this, `${id}-UpdateUserDetails`, {
+            code: "member/user/update_user_details",
+            envVariables: {
+                USERS_TABLE_NAME: props.users_table.tableName,
+                USER_TYPE: "ADMIN"
+            },
+            permissions: {
+                [props.users_table.tableArn]: [
+                    "dynamodb:UpdateItem",
+                    "dynamodb:GetItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const user_resource = props.api_gateway.root.addResource("user");
 
         const get_user_resource = user_resource.addResource("getUser");
         const onboard_user_resource = user_resource.addResource("onboardUser");
+        const update_user_details_resource = user_resource.addResource("updateUserDetails");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -57,5 +73,6 @@ export class MSC_MemberUserConstruct extends Construct {
 
         addCorsEnabledMethod(get_user_resource, get_user, methodOptions, undefined, "GET");
         addCorsEnabledMethod(onboard_user_resource, onboard_user, methodOptions, undefined, "PUT");
+        addCorsEnabledMethod(update_user_details_resource, update_user_details, methodOptions)
     }
 }
