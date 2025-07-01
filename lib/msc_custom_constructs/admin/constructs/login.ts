@@ -6,6 +6,7 @@ import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_AdminLoginConstructProps {
     api_gateway: MSC_APIGateway;
+    users_table: MSC_Table;
     layers: MSC_Layers;
 }
 
@@ -22,11 +23,16 @@ export class MSC_AdminLoginConstruct extends Construct {
             code: "login/sign_in",
             envVariables: {
                 USER_POOL_CLIENT_ID: this.user_pool.userPoolClient.userPoolClientId,
+                USERS_TABLE_NAME: props.users_table.tableName,
+                USER_TYPE: "ADMIN"
             },
             permissions: {
                 [this.user_pool.userPoolArn]: [
                     "cognito-idp:InitiateAuth",
                     "cognito-idp:AdminInitiateAuth"
+                ],
+                [props.users_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]

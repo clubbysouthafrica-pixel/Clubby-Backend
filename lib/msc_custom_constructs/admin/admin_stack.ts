@@ -22,7 +22,6 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     billing_table: MSC_Table;
     registration_form_table: MSC_Table;
     club_member_table: MSC_Table;
-    billing_queue: MSC_Queue;
     image_bucket: MSC_Bucket;
     mail_queue: MSC_Queue;
     layers: MSC_Layers;
@@ -40,7 +39,8 @@ export class MSC_AdminNestedStack extends Stack {
 
         const login_construct = new MSC_AdminLoginConstruct(this, `${id}-Login`, {
             api_gateway: api_gateway,
-            layers: props.layers
+            layers: props.layers,
+            users_table: props.users_table,
         });
 
         this.admin_pool = login_construct.user_pool;

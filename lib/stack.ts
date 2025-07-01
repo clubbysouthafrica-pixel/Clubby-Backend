@@ -15,10 +15,6 @@ export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
     super(scope, stack_id, props);
 
-    const billing_queue = new MSC_Queue(this, `${stack_id}-Billing`, {
-      queue_name: 'Billing'
-    });
-
     const mail_queue = new MSC_Queue(this, `${stack_id}-SendMail`, {
       queue_name: 'SendMail',
     });
@@ -42,7 +38,6 @@ export class MSC_Stack extends cdk.Stack {
       registration_form_table: tables.registration_form_table,
       club_member_table: tables.club_member_table,
       image_bucket: buckets.image_bucket,
-      billing_queue: billing_queue,
       mail_queue: mail_queue,
       layers
     });
