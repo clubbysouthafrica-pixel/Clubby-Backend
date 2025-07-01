@@ -48,7 +48,7 @@ export class MSC_MemberUserConstruct extends Construct {
             code: "member/user/update_user_details",
             envVariables: {
                 USERS_TABLE_NAME: props.users_table.tableName,
-                USER_TYPE: "ADMIN"
+                USER_TYPE: "MEMBER"
             },
             permissions: {
                 [props.users_table.tableArn]: [
