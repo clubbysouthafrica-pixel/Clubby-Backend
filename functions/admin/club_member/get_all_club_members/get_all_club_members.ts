@@ -54,7 +54,8 @@ export const handler = async (event: any) => {
                     member_surname: item.member_surname,
                     registration_submitted_on: item.registration_submitted_on ?? undefined,
                     registered_on: item.registered_on ?? undefined,
-                    meta: meta,
+                    member_email: item.member_email,
+                    meta: meta
                 });
             } else {
                 unregistered.push({
