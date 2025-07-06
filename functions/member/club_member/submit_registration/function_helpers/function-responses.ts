@@ -1,5 +1,5 @@
 const allowedOrigins = [
-    process.env.ALLOWED_ORIGIN as string,
+    "http://localhost:5173"
 ];
 
 export const createResponse = (statusCode: number, data: object, origin: string) => {
