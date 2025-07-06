@@ -54,6 +54,7 @@ export class MSC_AdminNestedStack extends Stack {
 
         new MSC_MailerConstruct(this, `${id}-Mail`, {
             api_gateway: api_gateway,
+            users_table: props.users_table,
             club_table: props.club_table,
             layers: props.layers,
             token_authorizer: jwt_construct.token_authorizer,

@@ -8,6 +8,7 @@ interface MSC_MailerConstructProps {
     api_gateway: MSC_APIGateway;
     layers: MSC_Layers;
     club_table: MSC_Table;
+    users_table: MSC_Table;
     mail_queue: MSC_Queue;
     token_authorizer: TokenAuthorizer;
 }
@@ -23,12 +24,16 @@ export class MSC_MailerConstruct extends Construct {
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
                 REGION: process.env.REGION as string,
                 SENDING_LIMIT: process.env.EMAIL_SENDING_LIMIT as string,
+                USERS_TABLE_NAME: props.users_table.tableName as string,
             },
             permissions: {
                 ["*"]: [
                     "ses:GetSendQuota"
                 ],
                 [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.users_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
                 [props.mail_queue.queueArn]: [
