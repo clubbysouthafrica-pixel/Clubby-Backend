@@ -53,7 +53,7 @@ export class MSC_APIGateway extends RestApi {
         this.addGatewayResponse('UnauthorizedResponse', {
             type: ResponseType.UNAUTHORIZED,
             responseHeaders: {
-                'Access-Control-Allow-Origin': `'${process.env.ALLOWED_ORIGIN}'`,
+                'Access-Control-Allow-Origin': "'http://localhost:5173'",
                 'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
                 'Access-Control-Allow-Methods': "'OPTIONS,POST,GET'",
                 'Access-Control-Allow-Credentials': "'true'",
@@ -63,7 +63,7 @@ export class MSC_APIGateway extends RestApi {
         this.addGatewayResponse('AccessDeniedResponse', {
             type: ResponseType.ACCESS_DENIED,
             responseHeaders: {
-                'Access-Control-Allow-Origin': `'${process.env.ALLOWED_ORIGIN}'`,
+                'Access-Control-Allow-Origin': "'http://localhost:5173'",
                 'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
                 'Access-Control-Allow-Methods': "'OPTIONS,POST,GET'",
                 'Access-Control-Allow-Credentials': "'true'",
