@@ -32,6 +32,22 @@ export class MSC_ImagesConstruct extends Construct {
         props.image_bucket.grantPut(generate_cover_presigned_url);
         props.image_bucket.grantRead(generate_cover_presigned_url);
 
+        const generate_club_profile_presigned_url = new MSC_Lambda(this, `${id}-ClubProfilePresignedURL`, {
+            code: "admin/images/generate_club_profile_presigned_url",
+            envVariables: {
+                IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
+                CLUB_TABLE_NAME: props.club_table.tableName
+            },
+            permissions: {
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+        props.image_bucket.grantPut(generate_club_profile_presigned_url);
+        props.image_bucket.grantRead(generate_club_profile_presigned_url);
+
         const generate_profile_presigned_url = new MSC_Lambda(this, `${id}-UserProfilePresignedURL`, {
             code: "admin/images/generate_user_profile_presigned_url",
             envVariables: {
@@ -45,6 +61,7 @@ export class MSC_ImagesConstruct extends Construct {
         const images_resource = props.api_gateway.root.addResource("images");
 
         const generate_cover_presigned_url_resource = images_resource.addResource("presignedCoverUrl");
+        const generate_club_profile_presigned_url_resource = images_resource.addResource("presignedClubProfileUrl");
         const generate_profile_presigned_url_resource = images_resource.addResource("presignedUserProfileUrl");
 
         const methodOptions: MethodOptions = {
@@ -55,5 +72,6 @@ export class MSC_ImagesConstruct extends Construct {
 
         addCorsEnabledMethod(generate_cover_presigned_url_resource, generate_cover_presigned_url, methodOptions, undefined, "GET");
         addCorsEnabledMethod(generate_profile_presigned_url_resource, generate_profile_presigned_url, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(generate_club_profile_presigned_url_resource, generate_club_profile_presigned_url, methodOptions, undefined, "GET");
     }
 }
