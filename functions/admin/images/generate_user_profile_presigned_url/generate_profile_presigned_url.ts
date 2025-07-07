@@ -9,7 +9,7 @@ export const handler = async (event: any) => {
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
-        const key = `admin_profile/${user_id}_profile`;
+        const key = `admin_user_profile/${user_id}_profile`;
         const contentType = 'image/jpeg';
 
         // Generate PUT URL (upload)

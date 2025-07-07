@@ -27,7 +27,7 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: invalid_params_response }, origin);
         }
 
-        const key = `cover/${query_string_params.club_account_id}_cover`;
+        const key = `club_cover/${query_string_params.club_account_id}_cover`;
         const contentType = 'image/jpeg';
 
         const club = getItem(process.env.CLUB_TABLE_NAME as string, {
