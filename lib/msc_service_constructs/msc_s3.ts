@@ -21,7 +21,8 @@ export class MSC_Bucket extends Bucket {
                     HttpMethods.PUT
                   ],
                   allowedOrigins: ["http://localhost:5173"],
-                  allowedHeaders: ["*"]
+                  allowedHeaders: ["*"],
+                  maxAge: 3600
                 },
               ] : undefined,
             autoDeleteObjects: true
