@@ -17,7 +17,7 @@ export class MSC_ImagesConstruct extends Construct {
         super(scope, id);
 
         const generate_club_cover_presigned_url = new MSC_Lambda(this, `${id}-ClubCoverPresignedURL`, {
-            code: "member/images/generate_cover_presigned_url",
+            code: "member/images/generate_club_cover_presigned_url",
             envVariables: {
                 IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
                 CLUB_TABLE_NAME: props.club_table.tableName
