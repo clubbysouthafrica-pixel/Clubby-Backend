@@ -55,11 +55,16 @@ export class MSC_MemberLoginConstruct extends Construct {
             code: "login/sign_in",
             envVariables: {
                 USER_POOL_CLIENT_ID: this.user_pool.userPoolClient.userPoolClientId,
+                USERS_TABLE_NAME: props.users_table.tableName,
+                USER_TYPE: "MEMBER"
             },
             permissions: {
                 [this.user_pool.userPoolArn]: [
                     "cognito-idp:InitiateAuth",
                     "cognito-idp:AdminInitiateAuth"
+                ],
+                [props.users_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]

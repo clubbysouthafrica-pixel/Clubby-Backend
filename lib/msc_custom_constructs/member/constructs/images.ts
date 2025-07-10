@@ -16,8 +16,8 @@ export class MSC_ImagesConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_ImagesConstructProps) {
         super(scope, id);
 
-        const generate_cover_presigned_url = new MSC_Lambda(this, `${id}-CoverPresignedURL`, {
-            code: "member/images/generate_cover_presigned_url",
+        const generate_club_cover_presigned_url = new MSC_Lambda(this, `${id}-ClubCoverPresignedURL`, {
+            code: "member/images/generate_club_cover_presigned_url",
             envVariables: {
                 IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
                 CLUB_TABLE_NAME: props.club_table.tableName
@@ -29,7 +29,22 @@ export class MSC_ImagesConstruct extends Construct {
             },
             layers: [props.layers.jwt_layer]
         });
-        props.image_bucket.grantRead(generate_cover_presigned_url);
+        props.image_bucket.grantRead(generate_club_cover_presigned_url);
+
+        const generate_club_profile_presigned_url = new MSC_Lambda(this, `${id}-ClubProfilePresignedURL`, {
+            code: "member/images/generate_club_profile_presigned_url",
+            envVariables: {
+                IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
+                CLUB_TABLE_NAME: props.club_table.tableName
+            },
+            permissions: {
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+        props.image_bucket.grantRead(generate_club_profile_presigned_url);
 
         const generate_profile_presigned_url = new MSC_Lambda(this, `${id}-ProfilePresignedURL`, {
             code: "member/images/generate_profile_presigned_url",
@@ -43,7 +58,8 @@ export class MSC_ImagesConstruct extends Construct {
 
         const images_resource = props.api_gateway.root.addResource("images");
 
-        const generate_cover_presigned_url_resource = images_resource.addResource("presignedCoverUrl");
+        const generate_club_cover_presigned_url_resource = images_resource.addResource("presignedClubCoverUrl");
+        const generate_club_profile_presigned_url_resource = images_resource.addResource("presignedClubProfileUrl");
         const generate_profile_presigned_url_resource = images_resource.addResource("presignedProfileUrl");
 
         const methodOptions: MethodOptions = {
@@ -52,7 +68,8 @@ export class MSC_ImagesConstruct extends Construct {
             authorizer: props.token_authorizer
         }
 
-        addCorsEnabledMethod(generate_cover_presigned_url_resource, generate_cover_presigned_url, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(generate_club_cover_presigned_url_resource, generate_club_cover_presigned_url, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(generate_club_profile_presigned_url_resource, generate_club_profile_presigned_url, methodOptions, undefined, "GET");
         addCorsEnabledMethod(generate_profile_presigned_url_resource, generate_profile_presigned_url, methodOptions, undefined, "GET");
     }
 }

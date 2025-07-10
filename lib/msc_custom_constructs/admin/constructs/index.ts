@@ -5,3 +5,4 @@ export { MSC_ClubAdminClubConstruct } from "./club_admin";
 export { MSC_AdminRegistrationFormConstruct } from "./registration_form";
 export { MSC_ClubMemberClubConstruct } from "./club_member";
 export { MSC_ImagesConstruct } from "./images";
+export { MSC_MailerConstruct } from "./mailer";

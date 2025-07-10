@@ -19,36 +19,20 @@ export class MSC_AdminLoginConstruct extends Construct {
             auto_verify: false,
         });
 
-        const sign_up = new MSC_Lambda(this, `${id}-SignUp`, {
-            code: "login/sign_up",
-            envVariables: {
-                USER_POOL_CLIENT_ID: this.user_pool.userPoolClient.userPoolClientId,
-                USERS_TABLE_NAME: props.users_table.tableName,
-                USER_TYPE: "ADMIN",
-                ADMIN_TOKEN: "FHJ289489JDJD"
-            },
-            permissions: {
-                [this.user_pool.userPoolArn]: [
-                    "cognito-idp:SignUp",
-                    "cognito-idp:InitiateAuth",
-                    "cognito-idp:AdminInitiateAuth"
-                ],
-                [props.users_table.tableArn]: [
-                    "dynamodb:PutItem"
-                ]
-            },
-            layers: [props.layers.jwt_layer]
-        });
-
         const sign_in = new MSC_Lambda(this, `${id}-SignIn`, {
             code: "login/sign_in",
             envVariables: {
                 USER_POOL_CLIENT_ID: this.user_pool.userPoolClient.userPoolClientId,
+                USERS_TABLE_NAME: props.users_table.tableName,
+                USER_TYPE: "ADMIN"
             },
             permissions: {
                 [this.user_pool.userPoolArn]: [
                     "cognito-idp:InitiateAuth",
                     "cognito-idp:AdminInitiateAuth"
+                ],
+                [props.users_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
@@ -96,7 +80,6 @@ export class MSC_AdminLoginConstruct extends Construct {
 
         const admin_resource = props.api_gateway.root.addResource("admin");
 
-        const sign_up_resource = admin_resource.addResource("signUp");
         const sign_in_resource = admin_resource.addResource("signIn");
         const refresh_token_resource = admin_resource.addResource("refreshToken");
         const forgot_password_resource = admin_resource.addResource("forgotPassword");
@@ -106,7 +89,6 @@ export class MSC_AdminLoginConstruct extends Construct {
             methodResponses: [],
         }
         
-        addCorsEnabledMethod(sign_up_resource, sign_up, methodOptions);
         addCorsEnabledMethod(sign_in_resource, sign_in, methodOptions);
         addCorsEnabledMethod(refresh_token_resource, refresh_token, methodOptions);
         addCorsEnabledMethod(forgot_password_resource, forgot_password, methodOptions);

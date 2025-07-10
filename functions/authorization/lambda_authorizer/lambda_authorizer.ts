@@ -21,6 +21,12 @@ function getKey(header: any, callback: any) {
 
 export const handler = async (event: any): Promise<APIGatewayAuthorizerResult> => {
     console.log("----------------------------------")
+
+    if (process.env.ENVIRONMENT === 'Stage') {
+        console.log("----------------------------------")
+        return generatePolicy("user", "Allow");
+    }
+
     console.log(`EVENT @ ${new Date()}: `, event);
 
     const token = event.authorizationToken;

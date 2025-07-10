@@ -44,7 +44,7 @@ export class MSC_Lambda extends Function {
 
         super(scope, `${id}-Lambda`, {
             runtime: Runtime.NODEJS_20_X,
-            functionName: `${id}-Lambda`,
+            functionName: id,
             handler: `${props.code}.handler`,
             code: Code.fromAsset(`./dist/${props.code}`),
             timeout: props.timeout ? Duration.seconds(props.timeout) : Duration.seconds(10),

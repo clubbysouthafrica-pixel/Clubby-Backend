@@ -30,15 +30,48 @@ export const handler = async (event: any) => {
         club_members.forEach(item => {
             delete item.club_account_id
 
+            const meta = { ...item };
+            delete meta.billing_type;
+            delete meta.club_name;
+            delete meta.outstanding_amount;
+            delete meta.primary_member;
+            delete meta.registration_submitted_on;
+            delete meta.user_id;
+            delete meta.registered_on;
+            delete meta.member_first_name;
+            delete meta.member_surname;
+            delete meta.registered
+            delete meta.member_email
+
             if (item.registered) {
-                registered.push(item)
+                registered.push({
+                    billing_type: item.billing_type,
+                    outstanding_amount: item.outstanding_amount,
+                    primary_member: item.primary_member,
+                    user_id: item.user_id,
+                    member_first_name: item.member_first_name,
+                    member_surname: item.member_surname,
+                    registration_submitted_on: item.registration_submitted_on ?? undefined,
+                    registered_on: item.registered_on ?? undefined,
+                    member_email: item.member_email,
+                    meta: meta
+                });
             } else {
-                unregistered.push(item)
+                unregistered.push({
+                    billing_type: item.billing_type,
+                    outstanding_amount: item.outstanding_amount,
+                    primary_member: item.primary_member,
+                    member_first_name: item.member_first_name,
+                    member_surname: item.member_surname,
+                    user_id: item.user_id,
+                    registration_submitted_on: item.registration_submitted_on ?? undefined,
+                    meta: meta,
+                });
             }
         })
 
         return createResponse(200, { registered, unregistered }, origin);
-        
+
     } catch (error) {
         console.error("Error:", error);
         return createResponse(500, { message: "Internal Server Error" }, origin);

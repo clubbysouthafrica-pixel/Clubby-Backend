@@ -149,6 +149,18 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: `Registration form does not exist for club: ${body.club_account_id}.` }, origin);
         }
 
+        const user = await getItem(
+            process.env.USERS_TABLE_NAME as string,
+            {
+                user_type: "MEMBER",
+                user_id: user_id as string,
+            }
+        );
+
+        if (!user) {
+            return createResponse(400, { message: `User ${user_id} does not exist.` }, origin);
+        }
+
         const billingFields: BillingField[] = [];
         const standardFields: StandardField[] = [];
 
@@ -173,7 +185,11 @@ export const handler = async (event: any) => {
         const item = {
             club_account_id: body.club_account_id,
             user_id: user_id,
+            member_email: user.email,
+            member_first_name: user.first_name,
+            member_surname: user.surname,
             registered: false,
+            registration_submitted_on: new Date().toISOString(),
             club_name: await getClubName(body.club_account_id),
             outstanding_amount: membership_amount,
             primary_member: user_id,

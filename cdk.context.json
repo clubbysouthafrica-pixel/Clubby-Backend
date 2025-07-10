@@ -1,5 +1,9 @@
 {
   "acknowledged-issue-numbers": [
     32775
-  ]
+  ],
+  "hosted-zone:account=654654602228:domainName=clubby.co.za:region=eu-west-2": {
+    "Id": "/hostedzone/Z07840283KRK54LVZXVN3",
+    "Name": "clubby.co.za."
+  }
 }

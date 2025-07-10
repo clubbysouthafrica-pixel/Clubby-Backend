@@ -3,12 +3,12 @@ import {
   InitiateAuthCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 import jwt from 'jsonwebtoken';
-import { createResponse, deconstructEvent } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem } from "./function_helpers";
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
-  
+
   const { origin, body, query_string_params } = deconstructEvent(event, false);
 
   try {
@@ -30,17 +30,28 @@ export const handler = async (event: any) => {
     console.log('Sign-in successful: ', response);
 
     const idToken = response.AuthenticationResult?.IdToken;
+    if (idToken === undefined) {
+      return createResponse(500, { message: "Cannot process ID Token." }, origin)
+    }
+    const decoded: any = jwt.decode(idToken);
 
-    if (idToken) {
-      const decoded: any = jwt.decode(idToken);
-      console.log("User ID (sub):", decoded?.sub);
-      console.log("Email:", decoded?.email);
+    const user = await getItem(
+      process.env.USERS_TABLE_NAME as string,
+      {
+        user_type: process.env.USER_TYPE as string,
+        user_id: decoded?.sub
+      }
+    )
+
+    if (user == null) {
+      return createResponse(500, { message: "Cannot fetch User from Users table." }, origin)
     }
 
     return createResponse(
       200,
       {
         message: "Sign-in successful",
+        onboarded: user?.onboarded,
         idToken: response.AuthenticationResult?.IdToken,
         accessToken: response.AuthenticationResult?.AccessToken,
         refreshToken: response.AuthenticationResult?.RefreshToken,

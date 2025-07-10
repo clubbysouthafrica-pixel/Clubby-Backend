@@ -15,11 +15,6 @@ const isValidDateOfBirth = (dob: string): boolean => {
   );
 };
 
-const isValidEmail = (email: string): boolean => {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
-};
-
 const isValidPhoneNumber = (phone: string): boolean => {
   const regex = /^\+\d{10,15}$/;
   return regex.test(phone);
@@ -31,7 +26,7 @@ export const handler = async (event: any) => {
 
   try {
 
-    const requiredFields = ["first_name", "surname", "date_of_birth", "email", "phone_number"];
+    const requiredFields = ["first_name", "surname", "date_of_birth", "phone_number"];
     const missingFields = requiredFields.filter((field) => !body?.[field]);
 
     if (missingFields.length > 0) {
@@ -58,14 +53,6 @@ export const handler = async (event: any) => {
       return createResponse(400, { message: "Invalid phone number format. Use format like +27727187281" }, origin);
     }
 
-    if (!isValidEmail(body.email)) {
-      return createResponse(
-        400,
-        { message: "Invalid email format" },
-        origin
-      );
-    }
-
     if (!isValidDateOfBirth(body.date_of_birth)) {
       return createResponse(
         400,
@@ -84,7 +71,7 @@ export const handler = async (event: any) => {
       key
     );
 
-    if (user != null && "first_name" in user) {
+    if (user != null && user.onboarded) {
       return createResponse(
         400,
         { message: "User already onboarded." },
@@ -96,7 +83,7 @@ export const handler = async (event: any) => {
       "first_name",
       "surname",
       "date_of_birth",
-      "email",
+      "country",
       "address_line_1",
       "address_line_2",
       "suburb",
