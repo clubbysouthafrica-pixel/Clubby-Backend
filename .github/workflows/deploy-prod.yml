@@ -10,6 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
 
+    env:
+      ENVIRONMENT: ${{ vars.ENVIRONMENT }}
+      DOMAIN: ${{ vars.DOMAIN }}
+      REGION: ${{ vars.REGION }}
+      ACCOUNT: ${{ vars.ACCOUNT }}
+      MEMBER_CERT_ARN: ${{ vars.MEMBER_CERT_ARN}}
+      ADMIN_CERT_ARN: ${{ vars.ADMIN_CERT_ARN }}
+      INTERNAL_INFRA_CERT_ARN: ${{ vars.INTERNAL_INFRA_CERT_ARN }}
+      EMAIL_SENDING_LIMIT: ${{ vars.EMAIL_SENDING_LIMIT }}
+      ALLOWED_ORIGIN: ${{ vars.ALLOWED_ORIGIN }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
