@@ -4,6 +4,7 @@
 **/node_modules/
 !layer-code/**/package.json
 !layer-code/**/package-lock.json
+!scripts/copy-helpers.js
 
 .cdk.staging
 cdk.out
