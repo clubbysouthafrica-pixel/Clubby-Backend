@@ -1,5 +1,5 @@
 const allowedOrigins = [
-    "https://beta.clubby.co.za"
+    "http://localhost:5173"
 ];
 
 export const createResponse = (statusCode: number, data: object, origin: string) => {

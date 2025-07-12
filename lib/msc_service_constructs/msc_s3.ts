@@ -19,7 +19,7 @@ export class MSC_Bucket extends Bucket {
             HttpMethods.GET,
             HttpMethods.PUT
           ],
-          allowedOrigins: ["https://beta.clubby.co.za"],
+          allowedOrigins: ["http://localhost:5173"],
           allowedHeaders: ["*"],
           maxAge: 3600
         },

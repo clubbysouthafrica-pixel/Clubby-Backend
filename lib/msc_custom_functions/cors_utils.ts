@@ -5,7 +5,7 @@ export function addCorsEnabledMethod(
   resource: any,
   lambda: MSC_Lambda,
   methodOptions: MethodOptions,
-  origin = "https://beta.clubby.co.za",
+  origin = "http://localhost:5173",
   method = 'POST'
 ) {
   const integration = new LambdaIntegration(lambda, {
@@ -38,7 +38,7 @@ export function addCorsEnabledMethod(
   addCorsOptions(resource, origin);
 }
 
-export function addCorsOptions(resource: any, origin = "https://beta.clubby.co.za") {
+export function addCorsOptions(resource: any, origin = "http://localhost:5173") {
   resource.addMethod(
     'OPTIONS',
     new MockIntegration({
