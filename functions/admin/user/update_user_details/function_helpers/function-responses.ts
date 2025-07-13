@@ -1,5 +1,5 @@
 const allowedOrigins = [
-    "https://beta.clubby.co.za"
+    process.env.ALLOWED_ORIGIN
 ];
 
 export const createResponse = (statusCode: number, data: object, origin: string) => {

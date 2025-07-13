@@ -50,6 +50,7 @@ export class MSC_Lambda extends Function {
             timeout: props.timeout ? Duration.seconds(props.timeout) : Duration.seconds(10),
             memorySize: props.memory ?? 1024,
             environment: {
+                ALLOWED_ORIGIN: process.env.ALLOWED_ORIGIN as string,
                 ...props.envVariables,
             },
             role: lambdaRole,
