@@ -36,6 +36,9 @@ jobs:
       - name: Install AWS CDK
         run: npm install -g aws-cdk
       
+      - name: Create Lambda layers
+        run: npm run create-layers
+      
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
