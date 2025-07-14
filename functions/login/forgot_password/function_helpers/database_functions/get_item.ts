@@ -17,6 +17,7 @@ export const getItem = async (
             TableName: table_name,
             Key: marshall(keys)
         });
+        console.log(`@@@ getItem request (Table_Name: ${table_name}): `, JSON.stringify(command));
         const response = await dynamodbClient.send(command);
         console.log(`@@@ getItem response (Table_Name: ${table_name}): `, JSON.stringify(response));
     
