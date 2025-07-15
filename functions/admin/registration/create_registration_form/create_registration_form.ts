@@ -1,4 +1,4 @@
-import { createResponse, deconstructEvent, getItem, addItem } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, addItem, removeItem } from "./function_helpers";
 
 export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
 export type CurrencyType = 'DOLLAR' | 'RAND' | 'EURO' | 'POUND' | 'NEW ZEALAND DOLLAR' | 'AUSTRALIAN DOLLAR'
@@ -52,6 +52,10 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'club_account_id and fields required.' }, origin);
         }
 
+        if (body?.deleteFields != null && (!Array.isArray(body.deleteFields) || !body.deleteFields.every((item: any) => typeof item === 'string'))) {
+            return createResponse(400, { message: "deleteFields must be an array of strings if provided." }, origin);
+        }
+
         if (!Array.isArray(body.fields)) {
             return createResponse(400, { message: "fields must be an array." }, origin);
         }
@@ -98,7 +102,7 @@ export const handler = async (event: any) => {
 
         for (const field of body.fields) {
             const item: any = {
-                club_account_id: body.club_account_id ,
+                club_account_id: body.club_account_id,
                 field_name: field.field_name
             };
 
@@ -119,6 +123,16 @@ export const handler = async (event: any) => {
             await addItem(
                 process.env.REGISTRATION_FORM_TABLE_NAME as string,
                 item
+            )
+        }
+
+        for (const fieldName of body.deleteFields) {
+            await removeItem(
+                process.env.CLUB_ADMIN_TABLE_NAME as string,
+                {
+                    club_account_id: body.club_account_id,
+                    field_name: fieldName as string,
+                }
             )
         }
 
