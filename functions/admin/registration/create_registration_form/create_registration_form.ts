@@ -129,7 +129,7 @@ export const handler = async (event: any) => {
         if (body.deleteFields) {
             for (const fieldName of body.deleteFields) {
                 await removeItem(
-                    process.env.CLUB_ADMIN_TABLE_NAME as string,
+                    process.env.REGISTRATION_FORM_TABLE_NAME as string,
                     {
                         club_account_id: body.club_account_id,
                         field_name: fieldName as string,
