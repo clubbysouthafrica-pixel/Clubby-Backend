@@ -17,8 +17,8 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_AdminRegistrationFormConstructProps) {
         super(scope, id);
 
-        const add_registration_fields = new MSC_Lambda(this, `${id}-AddFields`, {
-            code: "admin/registration/add_registration_fields",
+        const create_registration_form = new MSC_Lambda(this, `${id}-CreateRegistrationForm`, {
+            code: "admin/registration/create_registration_form",
             envVariables: {
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
@@ -53,7 +53,7 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
 
         const registration_resource = props.api_gateway.root.addResource("registration");
 
-        const add_registration_fields_resource = registration_resource.addResource("addRegistrationFields");
+        const create_registration_form_resource = registration_resource.addResource("createRegistrationForm");
         const get_form_resource = registration_resource.addResource("getForm");
 
         const methodOptions: MethodOptions = {
@@ -62,7 +62,7 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
             authorizer: props.token_authorizer
         }
 
-        addCorsEnabledMethod(add_registration_fields_resource, add_registration_fields, methodOptions);
+        addCorsEnabledMethod(create_registration_form_resource, create_registration_form, methodOptions);
         addCorsEnabledMethod(get_form_resource, get_form, methodOptions, undefined, "GET");
     }
 }
