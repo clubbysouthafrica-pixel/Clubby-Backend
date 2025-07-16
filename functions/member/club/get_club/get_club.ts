@@ -24,13 +24,15 @@ export const handler = async (event: any) => {
         });
 
         const member_exists = club_member ? true : false;
+        const registered = club_member?.registered ? true: false;
 
         return createResponse(200, {
             club_account_id: item["club_account_id"],
             club_type: item["club_type"],
             club_name: item["club_name"],
             description: item["description"] ?? undefined,
-            club_member_exists: member_exists
+            club_member_exists: member_exists,
+            registered: registered
         }, origin);
 
     } catch (error) {
