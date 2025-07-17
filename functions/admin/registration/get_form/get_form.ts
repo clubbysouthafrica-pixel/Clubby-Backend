@@ -1,14 +1,14 @@
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { createResponse, deconstructEvent, queryItems } from "./function_helpers";
 
-export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
+export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 interface StandardField {
     field_type: string;
     field_name: string;
     id: string;
-    type: InputType;
+    type: StandardInputTypes;
     options?: string[];
 }
 

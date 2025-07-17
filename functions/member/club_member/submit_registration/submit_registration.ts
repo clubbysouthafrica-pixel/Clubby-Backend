@@ -6,14 +6,14 @@ import {
     getItem
 } from "./function_helpers";
 
-export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
+export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 interface StandardField {
     field_type: "STANDARD";
     field_name: string;
     required: boolean;
-    type: InputType;
+    type: StandardInputTypes;
     options?: string[];
 }
 
