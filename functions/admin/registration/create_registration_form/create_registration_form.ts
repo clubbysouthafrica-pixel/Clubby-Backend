@@ -1,7 +1,7 @@
 import { createResponse, deconstructEvent, getItem, addItem, removeItem } from "./function_helpers";
 
 export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
-export type CurrencyType = 'DOLLAR' | 'RAND' | 'EURO' | 'POUND' | 'NEW ZEALAND DOLLAR' | 'AUSTRALIAN DOLLAR'
+export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 export interface StandardField {
     field_name: string;
@@ -28,14 +28,7 @@ function isStandardField(obj: any): obj is StandardField {
 }
 
 function isBillingField(obj: any): obj is BillingField {
-    const validCurrencies = [
-        'DOLLAR',
-        'RAND',
-        'EURO',
-        'POUND',
-        'NEW ZEALAND DOLLAR',
-        'AUSTRALIAN DOLLAR'
-    ];
+    const validCurrencies = ['ZAR', 'USD', 'GBP'];
     return typeof obj === 'object' &&
         typeof obj.field_name === 'string' &&
         validCurrencies.includes(obj.currency) &&

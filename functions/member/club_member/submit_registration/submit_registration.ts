@@ -7,7 +7,7 @@ import {
 } from "./function_helpers";
 
 export type InputType = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
-export type CurrencyType = 'DOLLAR' | 'RAND' | 'EURO' | 'POUND' | 'NEW ZEALAND DOLLAR' | 'AUSTRALIAN DOLLAR';
+export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 interface StandardField {
     field_type: "STANDARD";
