@@ -51,13 +51,7 @@ export class MSC_MemberClubConstruct extends Construct {
         const get_club_resource = club_resource.addResource("getClub");
         const get_all_clubs_resource = club_resource.addResource("getAllClubs");
 
-        const methodOptions: MethodOptions = {
-            methodResponses: [],
-            authorizationType: AuthorizationType.CUSTOM,
-            authorizer: props.token_authorizer
-        }
-
-        addCorsEnabledMethod(get_club_resource, get_club, methodOptions, undefined, "GET");
-        addCorsEnabledMethod(get_all_clubs_resource, get_all_clubs, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(get_club_resource, get_club, { methodResponses: [] }, undefined, "GET");
+        addCorsEnabledMethod(get_all_clubs_resource, get_all_clubs, { methodResponses: [] }, undefined, "GET");
     }
 }
