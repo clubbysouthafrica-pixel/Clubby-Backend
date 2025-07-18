@@ -54,10 +54,10 @@ export const handler = async (event: any) => {
             expressionAttributeNames["#branch"] = "branch_code";
             expressionAttributeNames["#type"] = "account_type";
 
-            expressionAttributeValues[":bank"] = { S: bankDetails.bank };
-            expressionAttributeValues[":acc"] = { S: bankDetails.account_number };
-            expressionAttributeValues[":branch"] = { S: bankDetails.branch_code };
-            expressionAttributeValues[":type"] = { S: bankDetails.account_type };
+            expressionAttributeValues[":bank"] = bankDetails.bank;
+            expressionAttributeValues[":acc"] = bankDetails.account_number;
+            expressionAttributeValues[":branch"] = bankDetails.branch_code;
+            expressionAttributeValues[":type"] = bankDetails.account_type;
         }
 
         await updateItem(
