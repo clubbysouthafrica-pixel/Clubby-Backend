@@ -41,7 +41,7 @@ export const handler = async (event: any) => {
             club_account_id: body.club_account_id
         }
 
-        let updateExpression = "SET";
+        let updateExpression = "SET ";
         const expressionAttributeNames: Record<string, string> = {};
         const expressionAttributeValues: Record<string, any> = {};
 
@@ -71,8 +71,10 @@ export const handler = async (event: any) => {
 
         return createResponse(200, { message: "Club details updated successfully." }, origin);
 
-    } catch (error) {
-        console.error("Error:", error);
+    } catch (error: any) {
+        if (error.name === "ConditionalCheckFailedException") {
+            console.error("Club does not exist");
+        }
         return createResponse(500, { message: "Internal Server Error" }, origin);
     }
 };
