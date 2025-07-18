@@ -49,7 +49,7 @@ export const handler = async (event: any) => {
             ":description": { S: body.description }
         };
 
-        if (body.bank_details) {
+        if (body?.bank_details) {
             const bankDetails = body.bank_details;
             updateExpression += ", #bank = :bank, #acc = :acc, #branch = :branch, #type = :type";
 
