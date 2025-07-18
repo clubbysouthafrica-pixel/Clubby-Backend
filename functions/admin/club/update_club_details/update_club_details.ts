@@ -41,13 +41,9 @@ export const handler = async (event: any) => {
             club_account_id: body.club_account_id
         }
 
-        let updateExpression = "SET #description = :description";
-        const expressionAttributeNames: Record<string, string> = {
-            "#description": "description"
-        };
-        const expressionAttributeValues: Record<string, any> = {
-            ":description": { S: body.description }
-        };
+        let updateExpression = "SET";
+        const expressionAttributeNames: Record<string, string> = {};
+        const expressionAttributeValues: Record<string, any> = {};
 
         if (body?.bank_details) {
             const bankDetails = body.bank_details;
