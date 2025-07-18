@@ -47,7 +47,7 @@ export const handler = async (event: any) => {
 
         if (body?.bank_details) {
             const bankDetails = body.bank_details;
-            updateExpression += ", #bank = :bank, #acc = :acc, #branch = :branch, #type = :type";
+            updateExpression += "#bank = :bank, #acc = :acc, #branch = :branch, #type = :type";
 
             expressionAttributeNames["#bank"] = "bank";
             expressionAttributeNames["#acc"] = "account_number";
