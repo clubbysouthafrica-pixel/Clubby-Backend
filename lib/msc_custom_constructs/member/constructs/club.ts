@@ -46,12 +46,33 @@ export class MSC_MemberClubConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const get_club_bank_details = new MSC_Lambda(this, `${id}-GetClubBankDetails`, {
+            code: "member/club/get_club_bank_details",
+            envVariables: {
+                CLUB_TABLE_NAME: props.club_table.tableName,
+            },
+            permissions: {
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const club_resource = props.api_gateway.root.addResource("club");
 
         const get_club_resource = club_resource.addResource("getClub");
         const get_all_clubs_resource = club_resource.addResource("getAllClubs");
+        const get_club_bank_details_resource = club_resource.addResource("getClubBankDetails");
+
+        const methodOptions: MethodOptions = {
+            methodResponses: [],
+            authorizationType: AuthorizationType.CUSTOM,
+            authorizer: props.token_authorizer
+        }
 
         addCorsEnabledMethod(get_club_resource, get_club, { methodResponses: [] }, undefined, "GET");
         addCorsEnabledMethod(get_all_clubs_resource, get_all_clubs, { methodResponses: [] }, undefined, "GET");
+        addCorsEnabledMethod(get_club_bank_details_resource, get_club_bank_details, methodOptions, undefined, "GET")
     }
 }
