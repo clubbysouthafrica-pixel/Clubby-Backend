@@ -19,10 +19,10 @@ export const handler = async (event: any) => {
         }
 
         return createResponse(200, {
-            bank: item.bank_details ? item["bank"] : undefined,
-            account_number: item.bank_details ? item["account_number"] : undefined,
-            branch_code: item.bank_details ? item["branch_code"] : undefined,
-            account_type: item.bank_details ? item["account_type"] : undefined
+            bank: item?.bank,
+            account_number: item?.account_number,
+            branch_code: item?.branch_code,
+            account_type: item?.account_type
         }, origin);
 
     } catch (error) {
