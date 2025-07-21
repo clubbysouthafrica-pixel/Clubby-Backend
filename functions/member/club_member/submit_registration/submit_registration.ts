@@ -235,7 +235,7 @@ export const handler = async (event: any) => {
             member_first_name: user.first_name,
             member_surname: user.surname,
             registered: false,
-            payment_reference: generateShortReference(user.first_name, user.surname),
+            registration_payment_reference: generateShortReference(user.first_name, user.surname),
             registration_submitted_on: new Date().toISOString(),
             club_name: await getClubName(body.club_account_id),
             outstanding_amount: membership_amount,
