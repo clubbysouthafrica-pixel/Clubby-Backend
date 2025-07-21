@@ -50,6 +50,7 @@ function isStandardField(obj: any): obj is StandardField {
     return typeof obj === 'object' &&
         typeof obj.field_name === 'string' &&
         typeof obj.id === 'string' &&
+        obj.field_type === 'STANDARD' &&
         typeof obj.required === 'boolean' &&
         validTypes.includes(obj.input_type) &&
         (obj.input_type !== 'DROPDOWN' || (Array.isArray(obj.options) && obj.options.every((o: any) => typeof o === 'string')));
@@ -125,7 +126,7 @@ export const handler = async (event: any) => {
                 if (field.input_type === 'TEXT') {
                     item.amount = field.amount;
                 } else if (field.input_type === 'DROPDOWN') {
-                    item.billingOptions = field.billingOptions;
+                    item.billing_options = field.billingOptions;
                 }
             }
 
