@@ -125,7 +125,7 @@ export const handler = async (event: any) => {
                 if (field.input_type === 'TEXT') {
                     item.amount = field.amount;
                 } else if (field.input_type === 'DROPDOWN') {
-                    item.billingOptions = field.billingOptions;
+                    item.billing_options = field.billingOptions;
                 }
             }
 
