@@ -216,7 +216,6 @@ export const handler = async (event: any) => {
             club_name: await getClubName(body.club_account_id),
             outstanding_amount: membership_amount,
             primary_member: user_id,
-            billing_type: body.billing_type,
             ...body.standard_fields.reduce((acc: Record<string, string>, field: { name: string; value: string }) => {
                 acc[field.name] = field.value;
                 return acc;
