@@ -195,7 +195,7 @@ export const handler = async (event: any) => {
             else standardFields.push(field as StandardField);
         });
 
-        const membership_amount = validateBillingField(billingFields, body.billing_type);
+        const membership_amount = validateBillingField(billingFields, body.billing_fields);
         if (typeof membership_amount === 'string') {
             return createResponse(400, { message: membership_amount }, origin);
         }
