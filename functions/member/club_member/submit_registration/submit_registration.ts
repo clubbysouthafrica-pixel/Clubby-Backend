@@ -27,6 +27,29 @@ interface BillingField {
     amount?: number;
 }
 
+function generateShortReference(
+    firstName: string,
+    lastName: string,
+): string {
+    const initials = `${firstName[0]}${lastName[0]}`.toUpperCase();
+
+    const now = new Date();
+    const mmdd = now.toISOString().slice(5, 10).replace('-', ''); // e.g., "0721"
+
+    let shortCode = '00';
+
+    return `${initials}-${mmdd}-${shortCode}`;
+}
+
+function simpleHash(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+    }
+    return Math.abs(hash);
+}
+
 function validateRequestBody(body: any) {
     if (!body?.club_account_id || !body?.billing_fields || !body?.standard_fields) {
         return 'club_account_id, billing_fields and standard_fields required.';
@@ -212,6 +235,7 @@ export const handler = async (event: any) => {
             member_first_name: user.first_name,
             member_surname: user.surname,
             registered: false,
+            registration_payment_reference: generateShortReference(user.first_name, user.surname),
             registration_submitted_on: new Date().toISOString(),
             club_name: await getClubName(body.club_account_id),
             outstanding_amount: membership_amount,

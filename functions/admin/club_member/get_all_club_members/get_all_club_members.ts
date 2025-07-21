@@ -50,6 +50,7 @@ export const handler = async (event: any) => {
                     primary_member: item.primary_member,
                     user_id: item.user_id,
                     member_first_name: item.member_first_name,
+                    registration_payment_reference: item.registration_payment_reference,
                     member_surname: item.member_surname,
                     registration_submitted_on: item.registration_submitted_on ?? undefined,
                     registered_on: item.registered_on ?? undefined,
