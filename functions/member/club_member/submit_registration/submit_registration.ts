@@ -42,7 +42,7 @@ function validateRequestBody(body: any) {
 
     for (const field of body.billing_fields) {
         if (typeof field !== 'object') return 'All billing_fields indexes must be objects.';
-        if (!field.name || !field.value || typeof field.name !== 'string' || typeof field.value !== 'string') {
+        if (!field.name || !field.value || typeof field.name !== 'string') {
             return 'All billing_fields must have STRING keys: name and value.';
         }
     }
