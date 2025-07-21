@@ -6,14 +6,14 @@ import {
     getItem
 } from "./function_helpers";
 
-export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
+export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 interface StandardField {
     field_type: "STANDARD";
     field_name: string;
     required: boolean;
-    type: StandardInputTypes;
+    input_type: InputTypes;
     options?: string[];
 }
 
@@ -21,28 +21,30 @@ interface BillingField {
     field_type: "BILLING";
     field_name: string;
     currency: CurrencyType;
-    amount: number;
+    required: boolean;
+    input_type: InputTypes;
+    billingOptions: Record<string, any>[];
+    amount?: number;
 }
 
 function validateRequestBody(body: any) {
-    if (!body?.club_account_id || !body?.billing_type || !body?.standard_fields) {
-        return 'club_account_id, billing_field and standard_fields required.';
-    }
-
-    if (typeof body.billing_type !== 'string') {
-        return 'billing_type is required to be an object.';
+    if (!body?.club_account_id || !body?.billing_fields || !body?.standard_fields) {
+        return 'club_account_id, billing_fields and standard_fields required.';
     }
 
     if (!Array.isArray(body.standard_fields) || body.standard_fields.length === 0) {
         return 'standard_fields is required to be an array containing objects.';
     }
 
-    if (body.billing_type == null) {
-        return 'billing_type is required.';
+    if (!Array.isArray(body.billing_fields) || body.billing_fields.length === 0) {
+        return 'billing_fields is required to be an array containing objects.';
     }
 
-    if (typeof body.billing_type !== 'string') {
-        return 'billing_type must be STRING value.';
+    for (const field of body.billing_fields) {
+        if (typeof field !== 'object') return 'All billing_fields indexes must be objects.';
+        if (!field.name || !field.value || typeof field.name !== 'string' || typeof field.value !== 'string') {
+            return 'All billing_fields must have STRING keys: name and value.';
+        }
     }
 
     for (const field of body.standard_fields) {
@@ -55,20 +57,44 @@ function validateRequestBody(body: any) {
     return null;
 }
 
-function validateBillingField(billingFields: BillingField[], billing_type: string): number | null {
-    let amount = null;
-    billingFields.forEach(
-        (field) => {
-            if (field.field_name === billing_type) {
-                amount = field.amount
-            }
+function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string }[]): number | null | string {
+    const requiredFields = billingFields.filter(f => f.required);
+    const fieldNames = submittedFields.map(f => f.name);
+    const allValid = requiredFields.every(req => {
+        if (!fieldNames.includes(req.field_name)) {
+            return false;
         }
-    );
+        return true;
+    });
 
-    if (amount == null) {
-        return null
+    if (!allValid) {
+        const missingField = requiredFields.find(req => !fieldNames.includes(req.field_name));
+        return `The following required field is missing: ${missingField?.field_name}.`;
     }
-    return amount
+
+    const knownFieldNames = billingFields.map(f => f.field_name);
+    for (const field of submittedFields) {
+        if (!knownFieldNames.includes(field.name)) {
+            return `The following provided field does not exist in this club's registration form: ${field.name}.`;
+        }
+    }
+
+    let total_amount = 0;
+    submittedFields.forEach(sub_field => {
+        billingFields.forEach(billing_field => {
+            if (billing_field.input_type === "TEXT" && billing_field.field_name === sub_field.name) {
+                total_amount += billing_field.amount ?? 0;
+            } else if (billing_field.input_type === "DROPDOWN" && billing_field.field_name === sub_field.name) {
+                billing_field.billingOptions.forEach(billing_options_field => {
+                    if (billing_options_field.label === sub_field.value) {
+                        total_amount += billing_options_field.amount;
+                    }
+                })
+            }
+        })
+    })
+
+    return total_amount;
 }
 
 function validateStandardFields(standardFields: StandardField[], submittedFields: { name: string; value: string }[]): string | null {
@@ -170,11 +196,8 @@ export const handler = async (event: any) => {
         });
 
         const membership_amount = validateBillingField(billingFields, body.billing_type);
-        if (membership_amount == null) {
-            const validBillingTypes = billingFields.map(field => field.field_name).join(', ');
-            return createResponse(400, {
-                message: `Invalid billing_type entered. Valid billing types: ${validBillingTypes}`
-            }, origin);
+        if (typeof membership_amount === 'string') {
+            return createResponse(400, { message: membership_amount }, origin);
         }
 
         const standardFieldValidation = validateStandardFields(standardFields, body.standard_fields);
@@ -195,6 +218,10 @@ export const handler = async (event: any) => {
             primary_member: user_id,
             billing_type: body.billing_type,
             ...body.standard_fields.reduce((acc: Record<string, string>, field: { name: string; value: string }) => {
+                acc[field.name] = field.value;
+                return acc;
+            }, {}),
+            ...body.billing_fields.reduce((acc: Record<string, string>, field: { name: string; value: string }) => {
                 acc[field.name] = field.value;
                 return acc;
             }, {})
