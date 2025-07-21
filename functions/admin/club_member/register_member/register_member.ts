@@ -53,6 +53,7 @@ export const handler = async (event: any) => {
                 club_account_id: body.club_account_id,
             }
         );
+
         if (member == null) {
             return createResponse(400, { message: "Member does not exist." }, origin);
         }
@@ -60,18 +61,6 @@ export const handler = async (event: any) => {
         if (member.registered) {
             return createResponse(400, { message: "Member already registered." }, origin);
         }
-
-        const registration_billing = await getItem(
-            process.env.REGISTRATION_FORM_TABLE_NAME as string,
-            {
-                club_account_id: body.club_account_id,
-                field_name: member.billing_type
-            }
-        );
-
-        if (registration_billing == null || !("amount" in registration_billing)) {
-            return createResponse(400, { message: "Invalid billing type provided." }, origin);
-        };
 
         const club = await getItem(
             process.env.CLUB_TABLE_NAME as string,
@@ -89,7 +78,7 @@ export const handler = async (event: any) => {
                 user_id: body.member_id,
                 club_account_id: body.club_account_id,
             },
-            "SET #reg = :registered, #amount = #amount - :deduct_amount, #registered_on = :registered_on",
+            "SET #reg = :registered, #amount = :amount, #registered_on = :registered_on",
             {
                 "#reg": "registered",
                 "#amount": "outstanding_amount",
@@ -97,7 +86,7 @@ export const handler = async (event: any) => {
             },
             {
                 ":registered": true,
-                ":deduct_amount": registration_billing.amount,
+                ":amount": 0,
                 ":registered_on": new Date().toISOString()
             }
         );
