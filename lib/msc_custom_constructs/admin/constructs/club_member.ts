@@ -87,6 +87,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
 
         addCorsEnabledMethod(get_all_club_members_resource, get_all_club_members, methodOptions, undefined, "GET");
         addCorsEnabledMethod(register_member_resource, register_member, methodOptions);
-        addCorsEnabledMethod(register_member_resource, deregister_members, methodOptions);
+        addCorsEnabledMethod(deregister_members_resource, deregister_members, methodOptions);
     }
 }
