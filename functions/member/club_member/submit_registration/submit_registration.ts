@@ -239,6 +239,7 @@ export const handler = async (event: any) => {
             registration_submitted_on: new Date().toISOString(),
             club_name: await getClubName(body.club_account_id),
             outstanding_amount: membership_amount,
+            registration_amount: membership_amount,
             primary_member: user_id,
             ...body.standard_fields.reduce((acc: Record<string, string>, field: { name: string; value: string }) => {
                 acc[field.name] = field.value;
