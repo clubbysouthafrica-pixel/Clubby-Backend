@@ -53,9 +53,13 @@ export class MSC_MemberClubConstruct extends Construct {
             code: "member/club/get_club_bank_details",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName
             },
             permissions: {
                 [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.club_member_table.tableArn]: [
                     "dynamodb:GetItem"
                 ]
             },
