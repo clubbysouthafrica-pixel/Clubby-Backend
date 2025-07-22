@@ -32,6 +32,21 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const deregister_members = new MSC_Lambda(this, `${id}-DeregisterMembers`, {
+            code: "admin/club_member/deregister_members",
+            envVariables: {
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName
+            },
+            permissions: {
+                [props.club_member_table.tableArn]: [
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem"
+                ],
+            },
+            timeout: 29,
+            layers: [props.layers.jwt_layer]
+        });
+
         const register_member = new MSC_Lambda(this, `${id}-RegisterMember`, {
             code: "admin/club_member/register_member",
             envVariables: {
@@ -62,6 +77,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
 
         const get_all_club_members_resource = club_member_resource.addResource("getAllClubMembers");
         const register_member_resource = club_member_resource.addResource("registerMember");
+        const deregister_members_resource = club_member_resource.addResource("deregisterMembers");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -71,5 +87,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
 
         addCorsEnabledMethod(get_all_club_members_resource, get_all_club_members, methodOptions, undefined, "GET");
         addCorsEnabledMethod(register_member_resource, register_member, methodOptions);
+        addCorsEnabledMethod(register_member_resource, deregister_members, methodOptions);
     }
 }
