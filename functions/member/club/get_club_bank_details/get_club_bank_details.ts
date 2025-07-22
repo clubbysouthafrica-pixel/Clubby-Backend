@@ -35,7 +35,7 @@ export const handler = async (event: any) => {
             account_number: item["account_number"],
             branch_code: item["branch_code"],
             account_type: item["account_type"],
-            registration_payment_reference: item["registration_payment_reference"]
+            registration_payment_reference: club_member["registration_payment_reference"]
         }, origin);
 
     } catch (error) {
