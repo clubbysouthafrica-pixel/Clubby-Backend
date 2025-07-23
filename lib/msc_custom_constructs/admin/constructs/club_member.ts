@@ -37,13 +37,16 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             code: "admin/club_member/deregister_members",
             envVariables: {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName
+                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName,
+                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
-                    "dynamodb:Query",
                     "dynamodb:DeleteItem"
                 ],
+                [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
+                    "dynamodb:Query"
+                ]
             },
             timeout: 29,
             layers: [props.layers.jwt_layer]
@@ -56,7 +59,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
-                CLUB_TABLE_NAME: props.club_table.tableName,
+                CLUB_TABLE_NAME: props.club_table.tableName
             },
             permissions: {
                 [props.club_table.tableArn]: [
