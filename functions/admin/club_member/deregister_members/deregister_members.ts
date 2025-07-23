@@ -24,7 +24,7 @@ export const handler = async (event: any) => {
         const club_members = await queryItems(
             process.env.CLUB_MEMBER_TABLE_NAME as string,
             "club_account_id = :clubId",
-            { ":clubId": query_string_params.club_account_id },
+            { ":clubId": body.club_account_id },
             process.env.CLUB_ACCOUNT_ID_INDEX as string
         )
 
