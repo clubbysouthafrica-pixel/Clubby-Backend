@@ -38,6 +38,7 @@ export class MSC_Stack extends cdk.Stack {
       registration_form_table: tables.registration_form_table,
       club_member_table: tables.club_member_table,
       image_bucket: buckets.image_bucket,
+      club_history_bucket: buckets.club_history_bucket,
       mail_queue: mail_queue,
       layers
     });

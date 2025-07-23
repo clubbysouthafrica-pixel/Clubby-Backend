@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Queue } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Layers } from "../../lambda_layers";
@@ -10,6 +10,7 @@ interface MSC_ClubMemberClubConstructProps {
     club_table: MSC_Table;
     registration_form_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
+    club_history_bucket: MSC_Bucket;
     layers: MSC_Layers;
     billing_table: MSC_Table;
 }
@@ -35,7 +36,8 @@ export class MSC_ClubMemberClubConstruct extends Construct {
         const deregister_members = new MSC_Lambda(this, `${id}-DeregisterMembers`, {
             code: "admin/club_member/deregister_members",
             envVariables: {
-                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
@@ -46,6 +48,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             timeout: 29,
             layers: [props.layers.jwt_layer]
         });
+        props.club_history_bucket.grantPut(deregister_members);
 
         const register_member = new MSC_Lambda(this, `${id}-RegisterMember`, {
             code: "admin/club_member/register_member",

@@ -1,9 +1,12 @@
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import {
     createResponse,
     deconstructEvent,
     queryItems,
     removeItem
 } from "./function_helpers";
+
+const s3Client = new S3Client({});
 
 export const handler = async (event: any) => {
 
@@ -24,6 +27,21 @@ export const handler = async (event: any) => {
             { ":clubId": query_string_params.club_account_id },
             process.env.CLUB_ACCOUNT_ID_INDEX as string
         )
+
+        const now = new Date();
+        const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+        const bucket_name = process.env.CLUB_HISTORY_BUCKET_NAME;
+        const uploadParams = {
+            Bucket: bucket_name,
+            Key: `${body.club_account_id}/previous_seasons_club_members/${year_month}.json`,
+            Body: JSON.stringify(club_members),
+            ContentType: "application/json",
+        };
+        const command = new PutObjectCommand(uploadParams);
+        console.log(`@@@ putItem request (Bucket_Name: ${bucket_name}): `, JSON.stringify(command));
+        const response = await s3Client.send(command);
+        console.log(`@@@ putItem response (Bucket_Name: ${bucket_name}): `, JSON.stringify(response));
 
         club_members?.forEach(async club_member => {
             await removeItem(

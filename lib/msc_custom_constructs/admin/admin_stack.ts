@@ -23,6 +23,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     registration_form_table: MSC_Table;
     club_member_table: MSC_Table;
     image_bucket: MSC_Bucket;
+    club_history_bucket: MSC_Bucket;
     mail_queue: MSC_Queue;
     layers: MSC_Layers;
 }
@@ -106,6 +107,7 @@ export class MSC_AdminNestedStack extends Stack {
             token_authorizer: jwt_construct.token_authorizer,
             registration_form_table: props.registration_form_table,
             billing_table: props.billing_table,
+            club_history_bucket: props.club_history_bucket,
             layers: props.layers
         });
     }
