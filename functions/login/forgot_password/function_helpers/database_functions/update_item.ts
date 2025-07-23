@@ -28,7 +28,6 @@ export const updateItem = async (
             ReturnValues: return_values ? "ALL_NEW" : undefined
         });
         console.log(`@@@ updateItems request (Table_Name: ${table_name}): `, JSON.stringify(command));
-
         const response = await dynamodbClient.send(command);
         console.log(`@@@ updateItems response (Table_Name: ${table_name}): `, JSON.stringify(response));
 

@@ -12,6 +12,7 @@ export const scanItems = async (
         const command = new ScanCommand({
             TableName: table_name
         });
+        console.log(`@@@ scanItems request (Table_Name: ${table_name}): `, JSON.stringify(command));
         const response = await dynamodbClient.send(command);
         console.log(`@@@ scanItems response (Table_Name: ${table_name}): `, JSON.stringify(response));
 
