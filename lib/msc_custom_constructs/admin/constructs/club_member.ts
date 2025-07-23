@@ -41,7 +41,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
-                    "dynamodb:UpdateItem",
+                    "dynamodb:Query",
                     "dynamodb:DeleteItem"
                 ],
             },
