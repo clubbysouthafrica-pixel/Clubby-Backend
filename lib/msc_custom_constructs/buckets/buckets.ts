@@ -16,8 +16,8 @@ export class MSC_BucketsConstruct extends Construct {
             enableCors: true
         });
 
-        this.club_history_bucket = new MSC_Bucket(this, `${id}-ClubHistory`, {
-            bucket_name: `${id}-ClubHistory`.toLocaleLowerCase()
+        this.club_history_bucket = new MSC_Bucket(this, `${id}-ClubHistoryReporting`, {
+            bucket_name: `${id}-ClubHistoryReporting`.toLocaleLowerCase()
         });
     }
 }
