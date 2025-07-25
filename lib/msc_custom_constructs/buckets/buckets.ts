@@ -11,8 +11,8 @@ export class MSC_BucketsConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_BucketsProps) {
         super(scope, `${id}-Buckets`);
 
-        this.image_bucket = new MSC_Bucket(this, `${id}-Images`, {
-            bucket_name: `${id}-Images`.toLocaleLowerCase(),
+        this.image_bucket = new MSC_Bucket(this, `${id}-AllImages`, {
+            bucket_name: `${id}-AllImages`.toLocaleLowerCase(),
             enableCors: true
         });
 
