@@ -1,6 +1,6 @@
 import { createResponse, deconstructEvent, getItem, addItem, removeItem } from "./function_helpers";
 
-export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
+export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | "NUMBER";
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 export interface StandardField {
@@ -46,7 +46,7 @@ function isBillingField(obj: any): obj is BillingField {
 }
 
 function isStandardField(obj: any): obj is StandardField {
-    const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE'];
+    const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE', 'NUMBER'];
     return typeof obj === 'object' &&
         typeof obj.field_name === 'string' &&
         typeof obj.id === 'string' &&

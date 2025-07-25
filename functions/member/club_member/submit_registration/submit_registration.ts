@@ -6,7 +6,7 @@ import {
     getItem
 } from "./function_helpers";
 
-export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE';
+export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 interface StandardField {
@@ -39,15 +39,6 @@ function generateShortReference(
     let shortCode = '00';
 
     return `${initials}-${mmdd}-${shortCode}`;
-}
-
-function simpleHash(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = (hash << 5) - hash + str.charCodeAt(i);
-        hash |= 0;
-    }
-    return Math.abs(hash);
 }
 
 function validateRequestBody(body: any) {
