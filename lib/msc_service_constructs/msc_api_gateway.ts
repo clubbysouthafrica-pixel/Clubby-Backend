@@ -14,7 +14,7 @@ export class MSC_APIGateway extends RestApi {
         super(scope, `${id}-APIGateway`, {
             restApiName: `${id}-APIGateway`,
             endpointConfiguration: {
-                types: [EndpointType.EDGE]
+                types: [EndpointType.REGIONAL]
             }
         });
 
@@ -35,7 +35,7 @@ export class MSC_APIGateway extends RestApi {
         const customDomain = new DomainName(this, `${props.domain}-CustomDomain`, {
             domainName: domain_name,
             certificate,
-            endpointType: EndpointType.EDGE,
+            endpointType: EndpointType.REGIONAL,
         });
 
         new BasePathMapping(this, `${props.domain}-BasePathMapping`, {

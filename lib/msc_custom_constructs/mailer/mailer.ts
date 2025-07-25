@@ -14,7 +14,8 @@ export class MSC_MailingStack extends Stack {
         const send_mail = new MSC_Lambda(this, `${id}-SendMail`, {
             code: "mailer/send_mail",
             permissions: {
-                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                // [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                ["*"]: [
                     "ses:SendEmail"
                 ]
             }

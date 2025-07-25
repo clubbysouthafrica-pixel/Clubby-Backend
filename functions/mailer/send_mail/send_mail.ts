@@ -1,6 +1,6 @@
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
-const sesClient = new SESClient({ region: process.env.REGION });
+const sesClient = new SESClient({ region: "eu-west-2" });
 
 function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
     const chunks: T[][] = [];
