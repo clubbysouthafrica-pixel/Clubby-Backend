@@ -40,6 +40,7 @@ export const handler = async (event: any) => {
                 "user_id": user_id as string,
                 "club_account_id": body.club_account_id,
                 "club_type": club.club_type as string,
+                "club_name": club.club_name as string,
                 "access": body.access
             },
             "attribute_not_exists(user_id)"
