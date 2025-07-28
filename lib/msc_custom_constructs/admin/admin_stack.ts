@@ -9,7 +9,8 @@ import {
     MSC_AdminRegistrationFormConstruct,
     MSC_ClubMemberClubConstruct,
     MSC_ImagesConstruct,
-    MSC_MailerConstruct
+    MSC_MailerConstruct,
+    MSC_ReportingConstruct
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
@@ -51,6 +52,13 @@ export class MSC_AdminNestedStack extends Stack {
             user_pool: login_construct.user_pool,
             user_type: "admin",
             layers: props.layers
+        });
+
+        new  MSC_ReportingConstruct(this, `${id}-Reporting`, {
+            api_gateway: api_gateway,
+            club_member_table: props.club_member_table,
+            layers: props.layers,
+            token_authorizer: jwt_construct.token_authorizer
         });
 
         new MSC_MailerConstruct(this, `${id}-Mail`, {
