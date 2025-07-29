@@ -10,7 +10,8 @@ import {
     MSC_ClubMemberClubConstruct,
     MSC_ImagesConstruct,
     MSC_MailerConstruct,
-    MSC_ReportingConstruct
+    MSC_ReportingConstruct,
+    MSC_DeregistrationConstruct
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
@@ -57,6 +58,14 @@ export class MSC_AdminNestedStack extends Stack {
         new  MSC_ReportingConstruct(this, `${id}-Reporting`, {
             api_gateway: api_gateway,
             club_member_table: props.club_member_table,
+            layers: props.layers,
+            token_authorizer: jwt_construct.token_authorizer
+        });
+
+        new MSC_DeregistrationConstruct(this, `${id}-Deregistration`, {
+            api_gateway: api_gateway,
+            club_member_table: props.club_member_table,
+            club_history_bucket: props.club_history_bucket,
             layers: props.layers,
             token_authorizer: jwt_construct.token_authorizer
         });
@@ -115,7 +124,6 @@ export class MSC_AdminNestedStack extends Stack {
             token_authorizer: jwt_construct.token_authorizer,
             registration_form_table: props.registration_form_table,
             billing_table: props.billing_table,
-            club_history_bucket: props.club_history_bucket,
             layers: props.layers
         });
     }

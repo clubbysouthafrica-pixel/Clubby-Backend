@@ -7,3 +7,4 @@ export { MSC_ClubMemberClubConstruct } from "./club_member";
 export { MSC_ImagesConstruct } from "./images";
 export { MSC_MailerConstruct } from "./mailer";
 export { MSC_ReportingConstruct } from "./reporting";
+export { MSC_DeregistrationConstruct } from "./deregistration";
