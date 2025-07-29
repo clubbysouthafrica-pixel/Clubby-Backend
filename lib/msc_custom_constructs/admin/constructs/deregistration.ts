@@ -31,7 +31,7 @@ export class MSC_DeregistrationConstruct extends Construct {
                     "dynamodb:Query"
                 ]
             },
-            timeout: 29,
+            timeout: 600,
             layers: [props.layers.jwt_layer]
         });
         props.club_history_bucket.grantPut(deregister_season);
