@@ -28,6 +28,10 @@ export const handler = async (event: any) => {
             process.env.CLUB_ACCOUNT_ID_INDEX as string
         )
 
+        if (!club_members || club_members.length < 1) {
+            return createResponse(400, { message: "No members exist for this club." }, origin);
+        }
+
         const now = new Date();
         const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -43,15 +47,15 @@ export const handler = async (event: any) => {
         const response = await s3Client.send(command);
         console.log(`@@@ putItem response (Bucket_Name: ${bucket_name}): `, JSON.stringify(response));
 
-        club_members?.forEach(async club_member => {
+        for (const club_member of club_members) {
             await removeItem(
                 process.env.CLUB_MEMBER_TABLE_NAME as string,
                 {
                     "club_account_id": body.club_account_id,
                     "user_id": club_member.user_id
                 }
-            )
-        });
+            );
+        }
 
         return createResponse(200, { message: "Members successfully deregistered." }, origin);
 
