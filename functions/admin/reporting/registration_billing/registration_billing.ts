@@ -52,18 +52,18 @@ export const handler = async (event: any) => {
             if (field.input_type === "DROPDOWN" && field.field_type === "BILLING") {
                 const entry = {
                     table_name: field.field_name,
-                    coloumns: []
+                    rows: []
                 } as any;
 
                 field.billingOptions.forEach((option: any) => {
-                    const coloumn: any = {}
-                    coloumn.coloumn_name = option.label
-                    coloumn.data = {
+                    const row: any = {}
+                    row.row_name = option.label
+                    row.data = {
                         fee_amount: option.amount,
                         paid_to_club: 0,
                         due_to_club: 0
                     }
-                    entry.coloumns.push(coloumn)
+                    entry.rows.push(row)
                 })
                 report.push(entry);
             }
@@ -76,9 +76,9 @@ export const handler = async (event: any) => {
                 Object.keys(member).forEach(key => {
                     report.forEach((table: any) => {
                         if (table.table_name === key) {
-                            table.coloumns.forEach((coloumn: any) => {
-                                if (coloumn.coloumn_name === member[key]) {
-                                    coloumn.data.paid_to_club += coloumn.data.fee_amount
+                            table.rows.forEach((row: any) => {
+                                if (row.row_name === member[key]) {
+                                    row.data.paid_to_club += row.data.fee_amount
                                 }
                             })
                         }
@@ -90,15 +90,15 @@ export const handler = async (event: any) => {
 
                     report.forEach((table: any) => {
                         if (table.table_name === key) {
-                            table.coloumns.forEach((coloumn: any) => {
-                                if (coloumn.coloumn_name === member[key]) {
-                                    if (outstanding_amount < coloumn.data.fee_amount) {
-                                        coloumn.data.due_to_club += outstanding_amount
-                                        coloumn.data.paid_to_club += coloumn.data.fee_amount - outstanding_amount
+                            table.rows.forEach((row: any) => {
+                                if (row.row_name === member[key]) {
+                                    if (outstanding_amount < row.data.fee_amount) {
+                                        row.data.due_to_club += outstanding_amount
+                                        row.data.paid_to_club += row.data.fee_amount - outstanding_amount
                                         outstanding_amount = 0
                                     } else {
-                                        coloumn.data.due_to_club += coloumn.data.fee_amount
-                                        outstanding_amount = outstanding_amount - coloumn.data.fee_amount
+                                        row.data.due_to_club += row.data.fee_amount
+                                        outstanding_amount = outstanding_amount - row.data.fee_amount
                                     }
                                 }
                             })
