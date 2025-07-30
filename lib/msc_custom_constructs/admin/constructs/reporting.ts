@@ -7,6 +7,7 @@ import { MSC_Layers } from "../../lambda_layers";
 interface MSC_ReportingConstructProps {
     api_gateway: MSC_APIGateway;
     club_member_table: MSC_Table;
+    registration_form_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     layers: MSC_Layers;
 }
@@ -29,9 +30,28 @@ export class MSC_ReportingConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const registration_billing = new MSC_Lambda(this, `${id}-RegistrationBilling`, {
+            code: "admin/reporting/registration_billing",
+            envVariables: {
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
+                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
+            },
+            permissions: {
+                [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
+                    "dynamodb:Query"
+                ],
+                [props.registration_form_table.tableArn]: [
+                    "dynamodb:Query"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const reporting_resource = props.api_gateway.root.addResource("reporting");
 
         const general_reporting_resource = reporting_resource.addResource("generalReporting");
+        const registration_billing_resource = reporting_resource.addResource("registrationBilling")
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -40,5 +60,6 @@ export class MSC_ReportingConstruct extends Construct {
         }
 
         addCorsEnabledMethod(general_reporting_resource, general_reporting, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(registration_billing_resource, registration_billing, methodOptions, undefined, "GET");
     }
 }

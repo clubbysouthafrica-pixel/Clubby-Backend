@@ -25,11 +25,13 @@ export const handler = async (event: any) => {
         let total_pending_members = 0;
         let total_registration_fees_due_by_pending_members = 0;
         let total_registration_fees = 0;
+        let total_extra_fees_owed_by_registered_members = 0
 
         club_members?.forEach(member => {
             if (member.registered) {
                 total_registered_members += 1
                 total_registration_fees += member.registration_amount
+                total_extra_fees_owed_by_registered_members += member.outstanding_amount
             } else {
                 total_pending_members += 1
                 total_registration_fees_due_by_pending_members += member.outstanding_amount
@@ -40,7 +42,8 @@ export const handler = async (event: any) => {
             total_registered_members,
             total_pending_members,
             total_registration_fees_due_by_pending_members,
-            total_registration_fees
+            total_registration_fees,
+            total_extra_fees_owed_by_registered_members
         }, origin);
 
     } catch (error: any) {
