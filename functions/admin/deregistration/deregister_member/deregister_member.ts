@@ -40,7 +40,7 @@ export const handler = async (event: any) => {
         const bucket_name = process.env.CLUB_HISTORY_BUCKET_NAME;
         const uploadParams = {
             Bucket: bucket_name,
-            Key: `${body.club_account_id}/previous_seasons_club_members/${year_month}.json`,
+            Key: `${body.club_account_id}/club_members/${year_month}.json`,
             Body: JSON.stringify(club_member),
             ContentType: "application/json",
         };
