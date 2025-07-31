@@ -17,15 +17,21 @@ export const handler = async (event: any) => {
             process.env.CLUB_ACCOUNT_ID_INDEX as string
         );
 
-        if (!club_members) {
-            return createResponse(500, { message: "No club memebrs exist." }, origin);
-        }
-
         let total_registered_members = 0;
         let total_pending_members = 0;
         let total_registration_fees_due_by_pending_members = 0;
         let total_registration_fees = 0;
         let total_extra_fees_owed_by_registered_members = 0
+
+        if (!club_members) {
+            return createResponse(200, {
+                total_registered_members,
+                total_pending_members,
+                total_registration_fees_due_by_pending_members,
+                total_registration_fees,
+                total_extra_fees_owed_by_registered_members
+            }, origin);
+        }
 
         club_members?.forEach(member => {
             if (member.registered) {

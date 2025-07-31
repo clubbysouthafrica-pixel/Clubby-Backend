@@ -18,9 +18,6 @@ export const handler = async (event: any) => {
             { ":clubId": query_string_params.club_account_id },
             process.env.CLUB_ACCOUNT_ID_INDEX as string
         );
-        if (!club_members) {
-            return createResponse(500, { message: "Club does not exist." }, origin);
-        }
 
         const form = await queryItems(
             process.env.REGISTRATION_FORM_TABLE_NAME as string,
@@ -30,7 +27,7 @@ export const handler = async (event: any) => {
             false,
         );
         if (!form) {
-            return createResponse(500, { message: "Registration form does not exist." }, origin);
+            return createResponse(500, { message: "Registration form does not exist for club." }, origin);
         }
 
         const items: any[] = [];
@@ -69,7 +66,9 @@ export const handler = async (event: any) => {
             }
         });
 
-        console.log('REPORT: ', JSON.stringify(report))
+        if (!club_members) {
+            return createResponse(200, { report }, origin);
+        }
 
         club_members.forEach(member => {
             if (member.registered) {
