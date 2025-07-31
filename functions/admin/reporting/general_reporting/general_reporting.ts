@@ -18,7 +18,7 @@ export const handler = async (event: any) => {
         );
 
         if (!club_members) {
-            return createResponse(500, { message: "Club does not exist." }, origin);
+            return createResponse(500, { message: "No club memebrs exist." }, origin);
         }
 
         let total_registered_members = 0;
