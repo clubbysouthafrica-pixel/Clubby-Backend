@@ -3,7 +3,7 @@ import {
     createResponse,
     deconstructEvent,
     queryItems,
-    removeItem
+    updateItem
 } from "./function_helpers";
 
 const s3Client = new S3Client({});
@@ -48,11 +48,23 @@ export const handler = async (event: any) => {
         console.log(`@@@ putItem response (Bucket_Name: ${bucket_name}): `, JSON.stringify(response));
 
         for (const club_member of club_members) {
-            await removeItem(
+            await updateItem(
                 process.env.CLUB_MEMBER_TABLE_NAME as string,
                 {
                     "club_account_id": body.club_account_id,
                     "user_id": club_member.user_id
+                },
+                `SET 
+                    #registered = :registered,
+                    #outstanding_amount = #registration_amount
+                `,
+                {
+                    "#registered": "registered",
+                    "#outstanding_amount": "outstanding_amount",
+                    "#registration_amount": "registration_amount",
+                },
+                {
+                    ":registered": false
                 }
             );
         }

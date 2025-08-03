@@ -39,14 +39,14 @@ export const handler = async (event: any) => {
 
     try {
 
-        if (body?.club_account_id == null || body.member_id == null) {
-            return createResponse(400, { message: "Invalid request. club_account_id, member_id requried in body." }, origin);
+        if (body?.club_account_id == null || body?.member_id == null || body?.payment_amount == null) {
+            return createResponse(400, { message: "Invalid request. club_account_id, member_id, payment_amount requried in body." }, origin);
         }
-        if (typeof body.club_account_id !== 'string' || typeof body.member_id !== 'string') {
-            return createResponse(400, { message: "club_account_id, member_id must be STRING type." }, origin);
+        if (typeof body.club_account_id !== 'string' || typeof body.member_id !== 'string' || typeof body.payment_amount !== 'number' ) {
+            return createResponse(400, { message: "club_account_id, member_id must be STRING type. payment_amount must be NUMBER type." }, origin);
         }
 
-        const member = await getItem(
+        const club_member = await getItem(
             process.env.CLUB_MEMBER_TABLE_NAME as string,
             {
                 user_id: body.member_id,
@@ -54,11 +54,11 @@ export const handler = async (event: any) => {
             }
         );
 
-        if (member == null) {
+        if (club_member == null) {
             return createResponse(400, { message: "Member does not exist." }, origin);
         }
 
-        if (member.registered) {
+        if (club_member.registered) {
             return createResponse(400, { message: "Member already registered." }, origin);
         }
 
@@ -70,6 +70,25 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Club does not exist." }, origin);
         }
 
+        if (club_member.outstanding_amount > body.payment_amount) {
+            await updateItem(
+                process.env.CLUB_MEMBER_TABLE_NAME as string,
+                {
+                    user_id: body.member_id,
+                    club_account_id: body.club_account_id,
+                },
+                "SET #outstanding_amount = #outstanding_amount - :payment_amount",
+                {
+                    "#outstanding_amount": "outstanding_amount"
+                },
+                {
+                    ":payment_amount": body.payment_amount
+                }
+            );
+
+            return createResponse(200, { registered: false, message: "Member outstanding balance updated." }, origin);
+        }
+
         await updateClubsRegistrationBilling(body.club_account_id, club.member_registration_fee);
 
         await updateItem(
@@ -78,20 +97,20 @@ export const handler = async (event: any) => {
                 user_id: body.member_id,
                 club_account_id: body.club_account_id,
             },
-            "SET #reg = :registered, #amount = :amount, #registered_on = :registered_on",
+            "SET #reg = :registered, #outstanding_amount = #outstanding_amount - :payment_amount, #registered_on = :registered_on",
             {
                 "#reg": "registered",
-                "#amount": "outstanding_amount",
+                "#outstanding_amount": "outstanding_amount",
                 "#registered_on": "registered_on"
             },
             {
                 ":registered": true,
-                ":amount": 0,
+                ":payment_amount": body.payment_amount,
                 ":registered_on": new Date().toISOString()
             }
         );
 
-        return createResponse(200, { message: "User successfully registered." }, origin);
+        return createResponse(200, { registered: true, message: "Member outstanding balance updated." }, origin);
 
     } catch (error) {
         console.error("Error:", error);

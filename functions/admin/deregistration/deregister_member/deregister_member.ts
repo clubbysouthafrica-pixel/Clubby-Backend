@@ -1,9 +1,8 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { S3Client } from "@aws-sdk/client-s3";
 import {
     createResponse,
     deconstructEvent,
-    getItem,
-    removeItem
+    updateItem
 } from "./function_helpers";
 
 const s3Client = new S3Client({});
@@ -26,13 +25,25 @@ export const handler = async (event: any) => {
 
  
         for (const user_id of body.user_ids) {
-            await removeItem(
+            await updateItem(
                 process.env.CLUB_MEMBER_TABLE_NAME as string,
                 {
                     "club_account_id": body.club_account_id,
                     "user_id": user_id
+                },
+                `SET 
+                    #registered = :registered,
+                    #outstanding_amount = #registration_amount
+                `,
+                {
+                    "#registered": "registered",
+                    "#outstanding_amount": "outstanding_amount",
+                    "#registration_amount": "registration_amount",
+                },
+                {
+                    ":registered": false
                 }
-            )
+            );
         }
 
         return createResponse(200, { message: "Members successfully deregistered." }, origin);

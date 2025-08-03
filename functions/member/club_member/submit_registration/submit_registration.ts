@@ -247,7 +247,7 @@ export const handler = async (event: any) => {
             item
         )
 
-        return createResponse(200, { message: "Success" }, origin);
+        return createResponse(200, { message: "Registration form successfully submitted." }, origin);
 
     } catch (error: any) {
         console.error('Submit registration error:', error);
