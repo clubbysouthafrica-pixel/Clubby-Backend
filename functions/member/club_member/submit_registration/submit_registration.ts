@@ -176,7 +176,7 @@ export const handler = async (event: any) => {
         }
 
         if (await registrationSubmitted(body.club_account_id, user_id as string)) {
-            return createResponse(400, { message: `Registration already submitted for this user in club: ${body.club_account_id}.` }, origin);
+            return createResponse(400, { message: "Registration form has already been submitted." }, origin);
         }
 
         const form = await queryItems(
@@ -186,7 +186,7 @@ export const handler = async (event: any) => {
         )
 
         if (form == null) {
-            return createResponse(400, { message: `Registration form does not exist for club: ${body.club_account_id}.` }, origin);
+            return createResponse(400, { message: "Registration form does not exist for the club." }, origin);
         }
 
         const user = await getItem(

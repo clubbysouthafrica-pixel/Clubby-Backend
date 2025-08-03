@@ -1,0 +1,61 @@
+import {
+    createResponse,
+    deconstructEvent,
+    queryItems
+} from "./function_helpers";
+
+export const handler = async (event: any) => {
+
+    const { origin, body, query_string_params, user_id } = deconstructEvent(event);
+
+    try {
+
+        const club_members = await queryItems(
+            process.env.CLUB_MEMBER_TABLE_NAME as string,
+            "club_account_id = :clubId",
+            { ":clubId": query_string_params.club_account_id },
+            process.env.CLUB_ACCOUNT_ID_INDEX as string
+        );
+
+        let total_registered_members = 0;
+        let total_pending_members = 0;
+        let total_registration_fees_due_by_pending_members = 0;
+        let total_registration_fees = 0;
+        let total_extra_fees_owed_by_registered_members = 0
+
+        if (!club_members) {
+            return createResponse(200, {
+                total_registered_members,
+                total_pending_members,
+                total_registration_fees_due_by_pending_members,
+                total_registration_fees,
+                total_extra_fees_owed_by_registered_members
+            }, origin);
+        }
+
+        club_members?.forEach(member => {
+            if (member.registered) {
+                total_registered_members += 1
+                total_registration_fees += member.registration_amount
+                total_extra_fees_owed_by_registered_members += member.outstanding_amount
+            } else {
+                total_pending_members += 1
+                total_registration_fees_due_by_pending_members += member.outstanding_amount
+            }
+        });
+
+        return createResponse(200, {
+            total_registered_members,
+            total_pending_members,
+            total_registration_fees_due_by_pending_members,
+            total_registration_fees,
+            total_extra_fees_owed_by_registered_members
+        }, origin);
+
+    } catch (error: any) {
+        console.error('Submit registration error:', error);
+        const message = error?.message || "Internal Server Error";
+        const statusCode = error?.$metadata?.httpStatusCode || 500;
+        return createResponse(statusCode, { message }, origin);
+    }
+};

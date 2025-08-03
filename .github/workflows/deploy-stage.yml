@@ -1,0 +1,57 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - stage
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+
+    env:
+      ENVIRONMENT: ${{ vars.ENVIRONMENT }}
+      DOMAIN: ${{ vars.DOMAIN }}
+      REGION: ${{ vars.REGION }}
+      ACCOUNT: ${{ vars.ACCOUNT }}
+      MEMBER_CERT_ARN: ${{ vars.MEMBER_CERT_ARN}}
+      ADMIN_CERT_ARN: ${{ vars.ADMIN_CERT_ARN }}
+      INTERNAL_INFRA_CERT_ARN: ${{ vars.INTERNAL_INFRA_CERT_ARN }}
+      EMAIL_SENDING_LIMIT: ${{ vars.EMAIL_SENDING_LIMIT }}
+      ALLOWED_ORIGIN: ${{ vars.ALLOWED_ORIGIN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+      
+      - name: Create Lambda layers
+        run: npm run create-layers
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: CDK Deploy
+        run: npm run deploy

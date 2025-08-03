@@ -15,7 +15,7 @@ export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
     super(scope, stack_id, props);
 
-    const mail_queue = new MSC_Queue(this, `${stack_id}-SendMail`, {
+    const mail_queue = new MSC_Queue(this, `SendMail`, {
       queue_name: 'SendMail',
     });
 
@@ -24,12 +24,12 @@ export class MSC_Stack extends cdk.Stack {
 
     const layers = new MSC_Layers(this, stack_id, {});
 
-    new MSC_MailingStack(this, `${stack_id}-MailerStack`, {
+    new MSC_MailingStack(this, `MailerStack`, {
       env: props?.env,
       mail_queue: mail_queue
     });
 
-    const admin_stack = new MSC_AdminNestedStack(this, `${stack_id}-AdminStack`, { 
+    const admin_stack = new MSC_AdminNestedStack(this, `AdminStack`, { 
       env: props?.env,
       users_table: tables.users_table, 
       billing_table: tables.billing_table,
@@ -43,7 +43,7 @@ export class MSC_Stack extends cdk.Stack {
       layers
     });
 
-    new MSC_InternalInfraStack(this, `${stack_id}-InternalInfra`, {
+    new MSC_InternalInfraStack(this, `InternalInfra`, {
       env: props?.env,
       admin_pool: admin_stack.admin_pool,
       layers: layers,
@@ -52,7 +52,7 @@ export class MSC_Stack extends cdk.Stack {
       club_table: tables.club_table
     });
 
-    new MSC_MemberNestedStack(this, `${stack_id}-MemberStack`, {
+    new MSC_MemberNestedStack(this, `MemberStack`, {
       env: props?.env,
       users_table: tables.users_table,
       club_table: tables.club_table,

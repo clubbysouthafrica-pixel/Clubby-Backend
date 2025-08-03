@@ -2,7 +2,8 @@ import { createResponse, ACCESS, getItem, addItem, deconstructEvent } from "./fu
 
 export const handler = async (event: any) => {
 
-    const { origin, body, query_string_params, user_id } = deconstructEvent(event);
+    const origin = event.headers.origin;
+    const body = JSON.parse(event.body);
 
     try {
 
@@ -10,8 +11,8 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'Not authorized for admin signup.' }, origin);
         }
 
-        if (body?.club_account_id == null || body?.access == null) {
-            return createResponse(400, { message: "club_account_id, and access required." }, origin);
+        if (body?.club_account_id == null || body?.access == null || body?.user_id == null) {
+            return createResponse(400, { message: "club_account_id, user_id, and access required." }, origin);
         }
 
         if (!ACCESS.includes(body.access)) {
@@ -20,8 +21,9 @@ export const handler = async (event: any) => {
 
         const user = await getItem(process.env.USERS_TABLE_NAME as string, {
             user_type: "ADMIN",
-            user_id: user_id as string
+            user_id: body.user_id as string
         });
+        
         if (user == null) {
             return createResponse(200, { message: "User not found." }, origin);
         }
@@ -37,7 +39,7 @@ export const handler = async (event: any) => {
         await addItem(
             process.env.CLUB_ADMIN_ACCOUNT_TABLE_NAME as string,
             {
-                "user_id": user_id as string,
+                "user_id": body.user_id as string,
                 "club_account_id": body.club_account_id,
                 "club_type": club.club_type as string,
                 "club_name": club.club_name as string,

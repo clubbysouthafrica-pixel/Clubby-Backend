@@ -9,5 +9,9 @@
   "hosted-zone:account=654654602228:domainName=clubby.co.za:region=af-south-1": {
     "Id": "/hostedzone/Z07840283KRK54LVZXVN3",
     "Name": "clubby.co.za."
+  },
+  "hosted-zone:account=724560470584:domainName=dev.clubby.co.za:region=af-south-1": {
+    "Id": "/hostedzone/Z05531263B366PT6DLP87",
+    "Name": "dev.clubby.co.za."
   }
 }

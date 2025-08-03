@@ -22,7 +22,7 @@ function getKey(header: any, callback: any) {
 export const handler = async (event: any): Promise<APIGatewayAuthorizerResult> => {
     console.log("----------------------------------")
 
-    if (process.env.ENVIRONMENT === 'Stage') {
+    if (process.env.ENVIRONMENT === 'Dev') {
         console.log("----------------------------------")
         return generatePolicy("user", "Allow");
     }

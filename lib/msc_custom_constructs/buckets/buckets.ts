@@ -12,12 +12,12 @@ export class MSC_BucketsConstruct extends Construct {
         super(scope, `${id}-Buckets`);
 
         this.image_bucket = new MSC_Bucket(this, `${id}-AllImages`, {
-            bucket_name: `${id}-AllImages`.toLocaleLowerCase(),
+            bucket_name: `${process.env.ENVIRONMENT as string}-${id}-AllImages`.toLocaleLowerCase(),
             enableCors: true
         });
 
         this.club_history_bucket = new MSC_Bucket(this, `${id}-HistoricalReporting`, {
-            bucket_name: `${id}-HistoricalReporting`.toLocaleLowerCase()
+            bucket_name: `${process.env.ENVIRONMENT as string}-${id}-HistoricalReporting`.toLocaleLowerCase()
         });
     }
 }
