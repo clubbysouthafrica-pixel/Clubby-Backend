@@ -49,6 +49,7 @@ export const handler = async (event: any) => {
             if (field.input_type === "DROPDOWN" && field.field_type === "BILLING") {
                 const entry = {
                     table_name: field.field_name,
+                    report_type: "DROPDOWN",
                     rows: []
                 } as any;
 
@@ -63,6 +64,15 @@ export const handler = async (event: any) => {
                     entry.rows.push(row)
                 })
                 report.push(entry);
+            } else if (field.input_type === "TEXT" && field.field_type === "BILLING") {
+                const entry = {
+                    table_name: field.field_name,
+                    report_type: "TEXT",
+                    fee_amount: field.amount,
+                    paid_to_club: 0,
+                    due_to_club: 0
+                } as any;
+                report.push(entry);
             }
         });
 
@@ -71,15 +81,25 @@ export const handler = async (event: any) => {
         }
 
         club_members.forEach(member => {
+
             if (member.registered) {
+
                 Object.keys(member).forEach(key => {
+
                     report.forEach((table: any) => {
+
                         if (table.table_name === key) {
-                            table.rows.forEach((row: any) => {
-                                if (row.row_name === member[key]) {
-                                    row.data.paid_to_club += row.data.fee_amount
-                                }
-                            })
+
+                            if (table.report_type === "TEXT") {
+                                table.paid_to_club += table.fee_amount
+                            } else {
+                                table.rows.forEach((row: any) => {
+                                    if (row.row_name === member[key]) {
+                                        row.data.paid_to_club += row.data.fee_amount
+                                    }
+                                })
+                            }
+
                         }
                     })
                 })
@@ -89,18 +109,30 @@ export const handler = async (event: any) => {
 
                     report.forEach((table: any) => {
                         if (table.table_name === key) {
-                            table.rows.forEach((row: any) => {
-                                if (row.row_name === member[key]) {
-                                    if (outstanding_amount < row.data.fee_amount) {
-                                        row.data.due_to_club += outstanding_amount
-                                        row.data.paid_to_club += row.data.fee_amount - outstanding_amount
-                                        outstanding_amount = 0
-                                    } else {
-                                        row.data.due_to_club += row.data.fee_amount
-                                        outstanding_amount = outstanding_amount - row.data.fee_amount
-                                    }
+
+                            if (table.report_type === "TEXT") {
+                                if (outstanding_amount < table.fee_amount) {
+                                    table.due_to_club += outstanding_amount
+                                    table.paid_to_club += table.fee_amount - outstanding_amount
+                                    outstanding_amount = 0
+                                } else {
+                                    table.due_to_club += table.fee_amount
+                                    outstanding_amount = outstanding_amount - table.fee_amount
                                 }
-                            })
+                            } else {
+                                table.rows.forEach((row: any) => {
+                                    if (row.row_name === member[key]) {
+                                        if (outstanding_amount < row.data.fee_amount) {
+                                            row.data.due_to_club += outstanding_amount
+                                            row.data.paid_to_club += row.data.fee_amount - outstanding_amount
+                                            outstanding_amount = 0
+                                        } else {
+                                            row.data.due_to_club += row.data.fee_amount
+                                            outstanding_amount = outstanding_amount - row.data.fee_amount
+                                        }
+                                    }
+                                })
+                            }
                         }
                     })
                 })

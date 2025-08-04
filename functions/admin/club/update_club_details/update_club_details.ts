@@ -45,9 +45,12 @@ export const handler = async (event: any) => {
         const expressionAttributeNames: Record<string, string> = {};
         const expressionAttributeValues: Record<string, any> = {};
 
+        const updateParts: string[] = [];
+
         if (body?.bank_details) {
             const bankDetails = body.bank_details;
-            updateExpression += "#bank = :bank, #acc = :acc, #branch = :branch, #type = :type";
+
+            updateParts.push("#bank = :bank", "#acc = :acc", "#branch = :branch", "#type = :type");
 
             expressionAttributeNames["#bank"] = "bank";
             expressionAttributeNames["#acc"] = "account_number";
@@ -59,6 +62,24 @@ export const handler = async (event: any) => {
             expressionAttributeValues[":branch"] = bankDetails.branch_code;
             expressionAttributeValues[":type"] = bankDetails.account_type;
         }
+
+        if (body?.country_of_operation) {
+            updateParts.push("#country = :country");
+            expressionAttributeNames["#country"] = "country_of_operation";
+            expressionAttributeValues[":country"] = body.country_of_operation;
+        }
+
+        if (body?.currency) {
+            updateParts.push("#currency = :currency");
+            expressionAttributeNames["#currency"] = "currency";
+            expressionAttributeValues[":currency"] = body.currency;
+        }
+
+        if (updateParts.length === 0) {
+            return createResponse(400, { message: "Nothing to update." }, origin);
+        }
+
+        updateExpression += updateParts.join(", ");
 
         await updateItem(
             process.env.CLUB_TABLE_NAME as string,

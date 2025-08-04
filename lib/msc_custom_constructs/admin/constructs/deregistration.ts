@@ -25,7 +25,7 @@ export class MSC_DeregistrationConstruct extends Construct {
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
-                    "dynamodb:DeleteItem"
+                    "dynamodb:UpdateItem"
                 ],
                 [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
                     "dynamodb:Query"
@@ -44,7 +44,7 @@ export class MSC_DeregistrationConstruct extends Construct {
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
-                    "dynamodb:DeleteItem"
+                    "dynamodb:UpdateItem"
                 ]
             },
             timeout: 29,
