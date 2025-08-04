@@ -17,7 +17,7 @@ export class MSC_APIGateway extends RestApi {
                 types: [EndpointType.REGIONAL]
             }
         });
-
+        
         const domain_name = `${props.domain}.${(process.env.DOMAIN as string)}`;
         const hosted_zone_domain = process.env.DOMAIN as string;
         const certificate_arn = props.cert_arn;
