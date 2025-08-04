@@ -11,6 +11,12 @@ export interface StandardField {
     options?: string[];
 }
 
+export interface TextField {
+    field_type: 'TEXT';
+    field_name: string;
+    id: string;
+}
+
 export interface BillingOption {
     label: string;
     amount: number;
@@ -56,6 +62,13 @@ function isStandardField(obj: any): obj is StandardField {
         (obj.input_type !== 'DROPDOWN' || (Array.isArray(obj.options) && obj.options.every((o: any) => typeof o === 'string')));
 }
 
+function isTextField(obj: any): obj is TextField {
+    return typeof obj === 'object' && 
+        obj.field_type === 'TEXT' && 
+        typeof obj.field_name === 'string' &&
+        typeof obj.id === 'string'
+}
+
 export const handler = async (event: any) => {
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
@@ -72,19 +85,22 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "fields must be an array." }, origin);
         }
 
-        const invalidFields = body.fields.filter((f: any) => !isStandardField(f) && !isBillingField(f));
+        const invalidFields = body.fields.filter((f: any) => !isStandardField(f) && !isBillingField(f) && !isTextField(f));
         if (invalidFields.length > 0) {
             return createResponse(400, {
-                message: "Invalid fields detected. Check field_type, field_name, required, id, input_type, and billing options/amounts.",
+                message: "Invalid fields detected.",
                 invalidFields
             }, origin);
         }
 
-        const fieldNames = body.fields.map((f: any) => f.field_name);
+        const fieldNames = body.fields
+            .filter((f: any) => f.field_type !== 'TEXT')
+            .map((f: any) => f.field_name);
+
         const duplicates = fieldNames.filter((name: string, index: number) => fieldNames.indexOf(name) !== index);
         if (duplicates.length > 0) {
             return createResponse(400, {
-                message: "Duplicate field_name(s) in request. All field_name(s) must be unique for a club's registration form.",
+                message: "Duplicate field_name(s) in request. All STANDARD and BILLING field_name(s) must be unique for a club's registration form.",
                 duplicates: [...new Set(duplicates)],
             }, origin);
         }
@@ -107,14 +123,15 @@ export const handler = async (event: any) => {
         for (const field of body.fields) {
             const item: any = {
                 club_account_id: body.club_account_id,
-                field_name: field.field_name,
                 id: field.id,
-                required: field.required,
+                field_name: field.field_name,
                 field_type: field.field_type
             };
 
             if (isStandardField(field)) {
                 item.input_type = field.input_type;
+                item.required = field.required;
+
                 if (field.input_type === 'DROPDOWN') {
                     item.options = field.options;
                 }
@@ -122,6 +139,7 @@ export const handler = async (event: any) => {
                 item.input_type = field.input_type;
                 item.currency = field.currency;
                 item.placeholder = field.placeholder;
+                item.required = field.required;
 
                 if (field.input_type === 'TEXT') {
                     item.amount = field.amount;
