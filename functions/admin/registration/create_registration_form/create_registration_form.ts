@@ -1,6 +1,6 @@
 import { createResponse, deconstructEvent, getItem, addItem, removeItem } from "./function_helpers";
 
-export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | "NUMBER";
+export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 export interface StandardField {
