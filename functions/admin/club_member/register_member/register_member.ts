@@ -89,7 +89,7 @@ export const handler = async (event: any) => {
             return createResponse(200, { registered: false, message: "Member outstanding balance updated." }, origin);
         }
 
-        await updateClubsRegistrationBilling(body.club_account_id, club.member_registration_fee);
+        await updateClubsRegistrationBilling(body.club_account_id, club.member_registration_fee_to_club);
 
         await updateItem(
             process.env.CLUB_MEMBER_TABLE_NAME as string,
