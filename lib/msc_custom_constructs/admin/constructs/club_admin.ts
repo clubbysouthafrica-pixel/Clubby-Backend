@@ -8,6 +8,7 @@ interface MSC_ClubAdminClubConstructProps {
     api_gateway: MSC_APIGateway;
     token_authorizer: TokenAuthorizer;
     club_admin_table: MSC_Table;
+    club_table: MSC_Table;
     layers: MSC_Layers;
 }
 
@@ -19,11 +20,14 @@ export class MSC_ClubAdminClubConstruct extends Construct {
             code: "admin/club_admin/get_all_admin_clubs",
             envVariables: {
                 CLUB_ADMIN_TABLE_NAME: props.club_admin_table.tableName,
-                ADMIN_TOKEN: "FHJ289489JDJD"
+                CLUB_TABLE_NAME: props.club_table.tableName
             },
             permissions: {
                 [props.club_admin_table.tableArn]: [
                     "dynamodb:Query"
+                ],
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
