@@ -6,11 +6,12 @@ import {
     getItem
 } from "./function_helpers";
 
-export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER';
+export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 interface StandardField {
     field_type: "STANDARD";
+    field_id: string;
     field_name: string;
     required: boolean;
     input_type: InputTypes;
@@ -19,6 +20,7 @@ interface StandardField {
 
 interface BillingField {
     field_type: "BILLING";
+    field_id: string;
     field_name: string;
     currency: CurrencyType;
     required: boolean;
@@ -56,49 +58,49 @@ function validateRequestBody(body: any) {
 
     for (const field of body.billing_fields) {
         if (typeof field !== 'object') return 'All billing_fields indexes must be objects.';
-        if (!field.name || !field.value || typeof field.name !== 'string') {
-            return 'All billing_fields must have STRING keys: name and value.';
+        if (!field.field_id || !field.value || typeof field.field_id !== 'string') {
+            return 'All billing_fields must have STRING keys: field_id and value.';
         }
     }
 
     for (const field of body.standard_fields) {
         if (typeof field !== 'object') return 'All standard_field indexes must be objects.';
-        if (!field.name || !field.value || typeof field.name !== 'string' || typeof field.value !== 'string') {
-            return 'All standard_fields must have STRING keys: name and value.';
+        if (!field.field_id || !field.value || typeof field.field_id !== 'string') {
+            return 'All standard_fields must have STRING keys: field_id and value.';
         }
     }
 
     return null;
 }
 
-function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string }[]): number | null | string {
+function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string; field_id: string }[]): number | null | string {
     const requiredFields = billingFields.filter(f => f.required);
-    const fieldNames = submittedFields.map(f => f.name);
+    const field_ids = submittedFields.map(f => f.field_id);
     const allValid = requiredFields.every(req => {
-        if (!fieldNames.includes(req.field_name)) {
+        if (!field_ids.includes(req.field_id)) {
             return false;
         }
         return true;
     });
 
     if (!allValid) {
-        const missingField = requiredFields.find(req => !fieldNames.includes(req.field_name));
-        return `The following required field is missing: ${missingField?.field_name}.`;
+        const missingField = requiredFields.find(req => !field_ids.includes(req.field_id));
+        return `The following required field is missing. Field ID: ${missingField?.field_id}.`;
     }
 
-    const knownFieldNames = billingFields.map(f => f.field_name);
+    const known_field_ids = billingFields.map(f => f.field_id);
     for (const field of submittedFields) {
-        if (!knownFieldNames.includes(field.name)) {
-            return `The following provided field does not exist in this club's registration form: ${field.name}.`;
+        if (!known_field_ids.includes(field.field_id)) {
+            return `The following provided field does not exist in this club's registration form. Field ID: ${field.field_id}.`;
         }
     }
 
     let total_amount = 0;
     submittedFields.forEach(sub_field => {
         billingFields.forEach(billing_field => {
-            if (billing_field.input_type === "TEXT" && billing_field.field_name === sub_field.name) {
+            if (billing_field.input_type === "TEXT" && billing_field.field_id === sub_field.field_id) {
                 total_amount += billing_field.amount ?? 0;
-            } else if (billing_field.input_type === "DROPDOWN" && billing_field.field_name === sub_field.name) {
+            } else if (billing_field.input_type === "DROPDOWN" && billing_field.field_id === sub_field.field_id) {
                 billing_field.billingOptions.forEach(billing_options_field => {
                     if (billing_options_field.label === sub_field.value) {
                         total_amount += billing_options_field.amount;
@@ -111,25 +113,25 @@ function validateBillingField(billingFields: BillingField[], submittedFields: { 
     return total_amount;
 }
 
-function validateStandardFields(standardFields: StandardField[], submittedFields: { name: string; value: string }[]): string | null {
+function validateStandardFields(standardFields: StandardField[], submittedFields: { name: string; value: string; field_id: string }[]): string | null {
     const requiredFields = standardFields.filter(f => f.required);
-    const fieldNames = submittedFields.map(f => f.name);
+    const field_ids = submittedFields.map(f => f.field_id);
     const allValid = requiredFields.every(req => {
-        if (!fieldNames.includes(req.field_name)) {
+        if (!field_ids.includes(req.field_id)) {
             return false;
         }
         return true;
     });
 
     if (!allValid) {
-        const missingField = requiredFields.find(req => !fieldNames.includes(req.field_name));
-        return `The following required field is missing: ${missingField?.field_name}.`;
+        const missingField = requiredFields.find(req => !field_ids.includes(req.field_id));
+        return `The following required field is missing. Field ID: ${missingField?.field_id}.`;
     }
 
-    const knownFieldNames = standardFields.map(f => f.field_name);
+    const known_field_ids = standardFields.map(f => f.field_id);
     for (const field of submittedFields) {
-        if (!knownFieldNames.includes(field.name)) {
-            return `The following provided field does not exist in this club's registration form: ${field.name}.`;
+        if (!known_field_ids.includes(field.field_id)) {
+            return `The following provided field does not exist in this club's registration form. Field ID: ${field.field_id}.`;
         }
     }
 
@@ -232,12 +234,16 @@ export const handler = async (event: any) => {
             outstanding_amount: membership_amount,
             registration_amount: membership_amount,
             primary_member: user_id,
-            ...body.standard_fields.reduce((acc: Record<string, string>, field: { name: string; value: string }) => {
-                acc[field.name] = field.value;
+            ...body.standard_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
+                const f = form.find(f => f.field_id === field.field_id);
+                
+                acc[`reg_field_${field.field_id}`] = { field_name: f?.field_name, value: field.value };
                 return acc;
             }, {}),
-            ...body.billing_fields.reduce((acc: Record<string, string>, field: { name: string; value: string }) => {
-                acc[field.name] = field.value;
+            ...body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
+                const f = form.find(f => f.field_id === field.field_id);
+
+                acc[`reg_field_${field.field_id}`] = { field_name: f?.field_name, value: field.value };
                 return acc;
             }, {})
         };
