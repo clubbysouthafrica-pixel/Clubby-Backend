@@ -55,7 +55,7 @@ export const handler = async (event: any) => {
         );
 
         if (club_member == null) {
-            return createResponse(400, { message: "Member does not exist." }, origin);
+            return createResponse(400, { message: "Club does not exist." }, origin);
         }
 
         if (club_member.registered) {

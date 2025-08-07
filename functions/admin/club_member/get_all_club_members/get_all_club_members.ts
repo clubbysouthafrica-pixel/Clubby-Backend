@@ -32,7 +32,6 @@ export const handler = async (event: any) => {
 
             const meta: Record<string, string> = {};
             Object.keys(item).forEach(key => {
-                console.log('KEY: ', key)
                 if (key.includes("reg_field_")) {
                     meta[item[key].field_name] = item[key].value
                 }
