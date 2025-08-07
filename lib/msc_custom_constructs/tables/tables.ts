@@ -45,9 +45,9 @@ export class MSC_TablesConstruct extends Construct {
             sortKey: { "club_account_id": "STRING" }
         });
 
-        this.registration_form_table = new MSC_Table(this, `${id}-RegistrationForm`, {
+        this.registration_form_table = new MSC_Table(this, `${id}-RegistrationForms`, {
             partitionKey: { "club_account_id": "STRING" },
-            sortKey: { "field_name": "STRING" }
+            sortKey: { "field_id": "STRING" }
         });
     }
 }

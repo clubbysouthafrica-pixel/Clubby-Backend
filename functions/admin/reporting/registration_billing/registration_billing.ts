@@ -49,6 +49,7 @@ export const handler = async (event: any) => {
             if (field.input_type === "DROPDOWN" && field.field_type === "BILLING") {
                 const entry = {
                     table_name: field.field_name,
+                    field_id: field.field_id,
                     report_type: "DROPDOWN",
                     rows: []
                 } as any;
@@ -67,6 +68,7 @@ export const handler = async (event: any) => {
             } else if (field.input_type === "TEXT" && field.field_type === "BILLING") {
                 const entry = {
                     table_name: field.field_name,
+                    field_id: field.field_id,
                     report_type: "TEXT",
                     fee_amount: field.amount,
                     paid_to_club: 0,
@@ -88,7 +90,7 @@ export const handler = async (event: any) => {
 
                     report.forEach((table: any) => {
 
-                        if (table.table_name === key) {
+                        if (`reg_field_${table.field_id}` === key) {
 
                             if (table.report_type === "TEXT") {
                                 table.paid_to_club += table.fee_amount
@@ -108,7 +110,7 @@ export const handler = async (event: any) => {
                 Object.keys(member).forEach(key => {
 
                     report.forEach((table: any) => {
-                        if (table.table_name === key) {
+                        if (`reg_field_${table.field_id}` === key) {
 
                             if (table.report_type === "TEXT") {
                                 if (outstanding_amount < table.fee_amount) {
@@ -121,7 +123,7 @@ export const handler = async (event: any) => {
                                 }
                             } else {
                                 table.rows.forEach((row: any) => {
-                                    if (row.row_name === member[key]) {
+                                    if (row.row_name === member[key].value) {
                                         if (outstanding_amount < row.data.fee_amount) {
                                             row.data.due_to_club += outstanding_amount
                                             row.data.paid_to_club += row.data.fee_amount - outstanding_amount

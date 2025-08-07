@@ -1,4 +1,6 @@
 import { createResponse, deconstructEvent, getItem, addItem, removeItem } from "./function_helpers";
+import { randomUUID } from 'crypto';
+import { objectToCloudFormation } from "aws-cdk-lib";
 
 export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
@@ -8,12 +10,14 @@ export interface StandardField {
     id: string;
     input_type: StandardInputTypes;
     required: true | false;
+    field_text: string;
     options?: string[];
 }
 
 export interface TextField {
     field_type: 'TEXT';
-    field_name: string;
+    text_type: 'STANDARD' | 'CONSENT';
+    text: string;
     id: string;
 }
 
@@ -29,6 +33,7 @@ export interface BillingField {
     input_type: 'TEXT' | 'DROPDOWN';
     placeholder?: string;
     required: boolean;
+    field_text: string;
     currency: CurrencyType;
     amount?: number;
     billingOptions?: BillingOption[];
@@ -38,35 +43,45 @@ export interface BillingField {
 function isBillingField(obj: any): obj is BillingField {
     const validCurrencies = ['ZAR', 'USD', 'GBP'];
     const isDropdown = obj.input_type === 'DROPDOWN' && Array.isArray(obj.billingOptions) && obj.billingOptions.every(
-        (opt: any) => typeof opt.label === 'string' && typeof opt.amount === 'number' && typeof opt.id === 'string'
+        (opt: any) => typeof opt.label === 'string' && typeof opt.amount === 'number' && typeof opt.option_order_id === 'string'
     );
     const isText = obj.input_type === 'TEXT' && typeof obj.amount === 'number';
 
-    return typeof obj === 'object' &&
-        obj.field_type === 'BILLING' &&
-        typeof obj.field_name === 'string' &&
-        typeof obj.id === 'string' &&
+    return obj.field_type === 'BILLING' &&
         validCurrencies.includes(obj.currency) &&
-        typeof obj.required === 'boolean' &&
-        (isDropdown || isText);
+        (isDropdown || isText) &&
+        typeof obj === 'object' &&
+        typeof obj.field_text === 'string' &&
+        typeof obj.field_name === 'string' &&
+        typeof obj.page_index === 'number' &&
+        typeof obj.page_header === 'string' &&
+        typeof obj.field_order_id === 'string' &&
+        typeof obj.required === 'boolean'
 }
 
 function isStandardField(obj: any): obj is StandardField {
-    const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE', 'NUMBER'];
-    return typeof obj === 'object' &&
-        typeof obj.field_name === 'string' &&
-        typeof obj.id === 'string' &&
-        obj.field_type === 'STANDARD' &&
-        typeof obj.required === 'boolean' &&
+    const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE', 'NUMBER', 'RADIO'];
+
+    return obj.field_type === 'STANDARD' &&
         validTypes.includes(obj.input_type) &&
-        (obj.input_type !== 'DROPDOWN' || (Array.isArray(obj.options) && obj.options.every((o: any) => typeof o === 'string')));
+        (obj.input_type !== 'DROPDOWN' || (Array.isArray(obj.options) && obj.options.every((o: any) => typeof o === 'string'))) &&
+        typeof obj === 'object' &&
+        typeof obj.field_text === 'string' &&
+        typeof obj.field_name === 'string' &&
+        typeof obj.field_order_id === 'string' &&
+        typeof obj.page_index === 'number' &&
+        typeof obj.page_header === 'string' &&
+        typeof obj.required === 'boolean'
 }
 
 function isTextField(obj: any): obj is TextField {
-    return typeof obj === 'object' && 
-        obj.field_type === 'TEXT' && 
-        typeof obj.field_name === 'string' &&
-        typeof obj.id === 'string'
+    return obj.field_type === 'TEXT' &&
+        (obj.text_type === 'STANDARD' || obj.text_type === 'CONSENT') &&
+        typeof obj === 'object' &&
+        typeof obj.page_index === 'number' &&
+        typeof obj.page_header === 'string' &&
+        typeof obj.field_order_id === 'string' &&
+        typeof obj.field_text === 'string'
 }
 
 export const handler = async (event: any) => {
@@ -100,7 +115,7 @@ export const handler = async (event: any) => {
         const duplicates = fieldNames.filter((name: string, index: number) => fieldNames.indexOf(name) !== index);
         if (duplicates.length > 0) {
             return createResponse(400, {
-                message: "Duplicate field_name(s) in request. All STANDARD and BILLING field_name(s) must be unique for a club's registration form.",
+                message: "Duplicate field names. All STANDARD and BILLING field names must be unique.",
                 duplicates: [...new Set(duplicates)],
             }, origin);
         }
@@ -122,15 +137,19 @@ export const handler = async (event: any) => {
 
         for (const field of body.fields) {
             const item: any = {
+                field_id: randomUUID(),
                 club_account_id: body.club_account_id,
-                id: field.id,
-                field_name: field.field_name,
-                field_type: field.field_type
+                page_index: field.page_index,
+                page_header: field.page_header,
+                field_order_id: field.field_order_id,
+                field_type: field.field_type,
+                field_text: field.field_text
             };
 
             if (isStandardField(field)) {
                 item.input_type = field.input_type;
                 item.required = field.required;
+                item.field_name = field.field_name
 
                 if (field.input_type === 'DROPDOWN') {
                     item.options = field.options;
@@ -140,6 +159,7 @@ export const handler = async (event: any) => {
                 item.currency = field.currency;
                 item.placeholder = field.placeholder;
                 item.required = field.required;
+                item.field_name = field.field_name
 
                 if (field.input_type === 'TEXT') {
                     item.amount = field.amount;
