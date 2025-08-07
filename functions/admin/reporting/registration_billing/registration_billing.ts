@@ -96,7 +96,7 @@ export const handler = async (event: any) => {
                                 table.paid_to_club += table.fee_amount
                             } else {
                                 table.rows.forEach((row: any) => {
-                                    if (row.row_name === member[key]) {
+                                    if (row.row_name === member[key].value) {
                                         row.data.paid_to_club += row.data.fee_amount
                                     }
                                 })
