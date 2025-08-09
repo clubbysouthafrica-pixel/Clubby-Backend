@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Bucket, MSC_Table, MSC_Queue } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Queue } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Layers } from "../../lambda_layers";
@@ -8,6 +8,7 @@ interface MSC_MailerConstructProps {
     api_gateway: MSC_APIGateway;
     layers: MSC_Layers;
     club_table: MSC_Table;
+    billing_table: MSC_Table;
     users_table: MSC_Table;
     mail_queue: MSC_Queue;
     token_authorizer: TokenAuthorizer;
@@ -21,6 +22,7 @@ export class MSC_MailerConstruct extends Construct {
             code: "admin/mailer/process_emails",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
                 REGION: process.env.REGION as string,
                 SENDING_LIMIT: process.env.EMAIL_SENDING_LIMIT as string,
@@ -31,6 +33,9 @@ export class MSC_MailerConstruct extends Construct {
                     "ses:GetSendQuota"
                 ],
                 [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.billing_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
                 [props.users_table.tableArn]: [

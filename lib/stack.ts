@@ -26,7 +26,9 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_MailingStack(this, `MailerStack`, {
       env: props?.env,
-      mail_queue: mail_queue
+      mail_queue: mail_queue,
+      billing_table: tables.billing_table,
+      layers: layers,
     });
 
     const admin_stack = new MSC_AdminNestedStack(this, `AdminStack`, { 

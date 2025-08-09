@@ -37,6 +37,43 @@ function validateBody(body: any): string | null {
     return null;
 }
 
+async function get_club_email_sending_limit(club_account_id: string, emails: string[]): Promise<string | Record<string,string | number>> {
+    const club = await getItem(
+        process.env.CLUB_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id
+        }
+    );
+
+    if (!club) {
+        return "Club does not exist."
+    }
+
+    const now = new Date();
+    const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const monthly_bill = await getItem(
+        process.env.MONTHLY_BILLING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: year_month
+        }
+    )
+
+    const emails_sent = monthly_bill?.total_emails ?? 0;
+
+    if (emails_sent + emails.length > club.maximum_monthly_emails) {
+        return `Monthly email limit reached. Available emails: ${club?.maximum_monthly_emails - emails_sent}.`
+    }
+
+    const email_free_limit_difference = club.free_email_limit - (emails_sent + emails.length);
+
+    return {
+        email_source: club.verified_identity,
+        free_email_limit: email_free_limit_difference > 0 ? email_free_limit_difference : 0,
+        email_fee: club.fee_per_email_to_club
+    }
+} 
+
 
 export const handler = async (event: any) => {
 
@@ -54,30 +91,28 @@ export const handler = async (event: any) => {
             return createResponse(500, { message: get_sent_24_hour_message }, origin);
         }
 
-        const club = await getItem(
-            process.env.CLUB_TABLE_NAME as string,
-            { club_account_id: body.club_account_id }
-        );
+        const club_sending_limit = await get_club_email_sending_limit(body.club_account_id, body.emails);
 
-        if (!club) {
-            return createResponse(400, { message: "Club does not exist." }, origin);
+        if (typeof club_sending_limit === 'string') {
+            return createResponse(400, { message: club_sending_limit }, origin);
         }
 
         await sendSqsMessage(
             process.env.SEND_EMAIL_QUEUE_URL as string,
             {
-                email_source: club.verified_identity,
                 emails: body.emails,
                 subject: body.subject,
-                email_body: body.email_body
+                email_body: body.email_body,
+                club_account_id: body.club_account_id,
+                ...club_sending_limit
             },
             "Bulk_Email"
         );
 
         return createResponse(200, { message: "Emails successfully queued." }, origin);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error:", error);
-        return createResponse(500, { message: "Internal Server Error" }, origin);
+        return createResponse(500, { message: error.message }, origin);
     }
 };

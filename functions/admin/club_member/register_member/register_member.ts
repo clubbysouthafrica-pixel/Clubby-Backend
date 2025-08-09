@@ -18,12 +18,14 @@ async function updateClubsRegistrationBilling(club_account_id: string, fee: numb
         `SET 
             #total_registered_users = if_not_exists(#total_registered_users, :zero) + :one,
             #total_amount = if_not_exists(#total_amount, :zero) + :member_registration_fee,
-            #outstanding_amount = if_not_exists(#outstanding_amount, :zero) + :member_registration_fee
+            #outstanding_amount = if_not_exists(#outstanding_amount, :zero) + :member_registration_fee,
+            #registration_amount = if_not_exists(#registration_amount, :zero) + :member_registration_fee
         `,
         {
             "#total_registered_users": "total_registered_users",
             "#total_amount": "total_amount",
             "#outstanding_amount": "outstanding_amount",
+            "#registration_amount": "registration_amount"
         },
         {
             ":one": 1,
