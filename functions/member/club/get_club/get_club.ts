@@ -1,4 +1,33 @@
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createResponse, deconstructEvent, getItem } from "./function_helpers";
+
+const s3_client = new S3Client({ region: process.env.REGION });
+
+async function getClubImageUrls(get_images: string, club_account_id: string): Promise<Record<string, string>> {
+    if (get_images !== 'true') {
+        return {}
+    }
+
+    const cover_key = `club_cover/${club_account_id}_cover`;
+    const getCoverCommand = new GetObjectCommand({
+        Bucket: process.env.IMAGE_BUCKET_NAME,
+        Key: cover_key,
+    });
+    const get_cover_url = await getSignedUrl(s3_client, getCoverCommand, { expiresIn: 60 * 5 });
+
+    const profile_key = `club_profile/${club_account_id}_cover`;
+    const getProfileCommand = new GetObjectCommand({
+        Bucket: process.env.IMAGE_BUCKET_NAME,
+        Key: profile_key,
+    });
+    const get_profile_url = await getSignedUrl(s3_client, getProfileCommand, { expiresIn: 60 * 5 });
+
+    return {
+        club_cover_url: get_cover_url,
+        club_profile_url: get_profile_url
+    }
+}
 
 export const handler = async (event: any) => {
 
@@ -35,7 +64,8 @@ export const handler = async (event: any) => {
             club_name: item["club_name"],
             description: item["description"] ?? undefined,
             club_member_exists: member_exists,
-            registered: registered
+            registered: registered,
+            ...await getClubImageUrls(query_string_params?.get_club_images, query_string_params.club_account_id)
         }, origin);
 
     } catch (error) {
