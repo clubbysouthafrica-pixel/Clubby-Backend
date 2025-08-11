@@ -19,17 +19,9 @@ export const handler = async (event: any) => {
             });
             const get_cover_url = await getSignedUrl(s3_client, getCoverCommand, { expiresIn: 60 * 5 });
         
-            const profile_key = `club_cover/${item.club_account_id}_profile`;
-            const getProfileCommand = new GetObjectCommand({
-                Bucket: process.env.IMAGE_BUCKET_NAME,
-                Key: profile_key,
-            });
-            const get_profile_url = await getSignedUrl(s3_client, getProfileCommand, { expiresIn: 60 * 5 });
-        
             return {
                 club_name: item.club_name,
                 club_cover_url: get_cover_url,
-                club_profile_url: get_profile_url,
                 club_account_id: item.club_account_id,
                 club_type: item.club_type
             };
