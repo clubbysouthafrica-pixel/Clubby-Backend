@@ -76,6 +76,7 @@ export class MSC_AdminNestedStack extends Stack {
             users_table: props.users_table,
             club_table: props.club_table,
             layers: props.layers,
+            billing_table: props.billing_table,
             token_authorizer: jwt_construct.token_authorizer,
             mail_queue: props.mail_queue
         });

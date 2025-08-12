@@ -21,6 +21,7 @@ export class MSC_MemberClubConstruct extends Construct {
             code: "member/club/get_club",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
+                IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName
             },
             permissions: {
@@ -33,6 +34,7 @@ export class MSC_MemberClubConstruct extends Construct {
             },
             layers: [props.layers.jwt_layer]
         });
+        props.image_bucket.grantRead(get_club);
 
         const get_all_clubs = new MSC_Lambda(this, `${id}-GetAllClubs`, {
             code: "member/club/get_all_clubs",
