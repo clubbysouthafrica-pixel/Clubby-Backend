@@ -141,6 +141,8 @@ export const handler = async (event: any) => {
             }
         });
 
+        report.forEach((r: any) => delete r.report_type);
+
         return createResponse(200, { report }, origin);
 
     } catch (error: any) {
