@@ -1,5 +1,4 @@
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { ClusterInstance } from "aws-cdk-lib/aws-rds";
 import {
     createResponse,
     deconstructEvent,
