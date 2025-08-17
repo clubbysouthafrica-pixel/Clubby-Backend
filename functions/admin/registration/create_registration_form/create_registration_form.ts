@@ -6,6 +6,7 @@ export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBE
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 export interface StandardField {
+    field_id?: string;
     field_name: string;
     id: string;
     input_type: StandardInputTypes;
@@ -15,8 +16,10 @@ export interface StandardField {
 }
 
 export interface TextField {
+    field_id?: string;
     field_type: 'TEXT';
     text_type: 'STANDARD' | 'CONSENT';
+    input_type: 'CHECKBOX' | 'DISPLAY';
     text: string;
     id: string;
 }
@@ -28,6 +31,7 @@ export interface BillingOption {
 }
 
 export interface BillingField {
+    field_id?: string;
     field_name: string;
     id: string;
     input_type: 'TEXT' | 'DROPDOWN';
@@ -53,8 +57,6 @@ function isBillingField(obj: any): obj is BillingField {
         typeof obj === 'object' &&
         typeof obj.field_text === 'string' &&
         typeof obj.field_name === 'string' &&
-        typeof obj.page_index === 'number' &&
-        typeof obj.page_header === 'string' &&
         typeof obj.field_order_id === 'string' &&
         typeof obj.required === 'boolean'
 }
@@ -69,17 +71,14 @@ function isStandardField(obj: any): obj is StandardField {
         typeof obj.field_text === 'string' &&
         typeof obj.field_name === 'string' &&
         typeof obj.field_order_id === 'string' &&
-        typeof obj.page_index === 'number' &&
-        typeof obj.page_header === 'string' &&
         typeof obj.required === 'boolean'
 }
 
 function isTextField(obj: any): obj is TextField {
     return obj.field_type === 'TEXT' &&
         (obj.text_type === 'STANDARD' || obj.text_type === 'CONSENT') &&
+        (obj.input_type === 'CHECKBOX' || obj.input_type === 'DISPLAY') &&
         typeof obj === 'object' &&
-        typeof obj.page_index === 'number' &&
-        typeof obj.page_header === 'string' &&
         typeof obj.field_order_id === 'string' &&
         typeof obj.field_text === 'string'
 }
@@ -88,42 +87,62 @@ export const handler = async (event: any) => {
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
-        if (!body?.club_account_id || !body?.fields) {
-            return createResponse(400, { message: 'club_account_id and fields required.' }, origin);
+        if (!body?.club_account_id || !body?.pages) {
+            return createResponse(400, { message: 'club_account_id and pages required.' }, origin);
         }
 
-        if (body.deleteFields != null && (!Array.isArray(body.deleteFields) || !body.deleteFields.every((item: any) => typeof item === 'string'))) {
+        if (!Array.isArray(body.pages)) {
+            return createResponse(400, { message: "pages must be an array." }, origin);
+        }
+
+        if (
+            body.deleteFields != null &&
+            (!Array.isArray(body.deleteFields) ||
+                !body.deleteFields.every((item: any) => typeof item === 'string'))
+        ) {
             return createResponse(400, { message: "deleteFields must be an array of strings if provided." }, origin);
         }
 
-        if (!Array.isArray(body.fields)) {
-            return createResponse(400, { message: "fields must be an array." }, origin);
-        }
+        const allFields = body.pages.flatMap((page: any) => {
+            if (typeof page.page_index !== 'number' || typeof page.page_header !== 'string') {
+                throw new Error("Each page must have a valid page_index (number) and page_header (string).");
+            }
+            if (!Array.isArray(page.fields)) {
+                throw new Error("Each page must have a fields array.");
+            }
 
-        const invalidFields = body.fields.filter((f: any) => !isStandardField(f) && !isBillingField(f) && !isTextField(f));
+            return page.fields.map((field: any) => ({
+                ...field,
+                page_index: page.page_index,
+                page_header: page.page_header
+            }));
+        });
+
+        const invalidFields = allFields.filter(
+            (f: any) => !isStandardField(f) && !isBillingField(f) && !isTextField(f)
+        );
         if (invalidFields.length > 0) {
-            return createResponse(400, {
-                message: "Invalid fields detected.",
-                invalidFields
-            }, origin);
+            return createResponse(400, { message: "Invalid fields detected.", invalidFields }, origin);
         }
 
-        const fieldNames = body.fields
+        const fieldNames = allFields
             .filter((f: any) => f.field_type !== 'TEXT')
             .map((f: any) => f.field_name);
 
-        const duplicates = fieldNames.filter((name: string, index: number) => fieldNames.indexOf(name) !== index);
+        const duplicates = fieldNames.filter(
+            (name: string, index: number) => fieldNames.indexOf(name) !== index
+        );
         if (duplicates.length > 0) {
             return createResponse(400, {
                 message: "Duplicate field names. All STANDARD and BILLING field names must be unique.",
-                duplicates: [...new Set(duplicates)],
+                duplicates: [...new Set(duplicates)]
             }, origin);
         }
 
         const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
             club_account_id: body.club_account_id
         });
-        if (club == null) {
+        if (!club) {
             return createResponse(400, { message: "Club not found." }, origin);
         }
 
@@ -131,13 +150,13 @@ export const handler = async (event: any) => {
             club_account_id: body.club_account_id,
             user_id: user_id as string,
         });
-        if (club_admin == null) {
+        if (!club_admin) {
             return createResponse(400, { message: "User not associated with club." }, origin);
         }
 
-        for (const field of body.fields) {
+        for (const field of allFields) {
             const item: any = {
-                field_id: randomUUID(),
+                field_id: field?.field_id ?? randomUUID(),
                 club_account_id: body.club_account_id,
                 page_index: field.page_index,
                 page_header: field.page_header,
@@ -149,8 +168,7 @@ export const handler = async (event: any) => {
             if (isStandardField(field)) {
                 item.input_type = field.input_type;
                 item.required = field.required;
-                item.field_name = field.field_name
-
+                item.field_name = field.field_name;
                 if (field.input_type === 'DROPDOWN') {
                     item.options = field.options;
                 }
@@ -159,8 +177,7 @@ export const handler = async (event: any) => {
                 item.currency = field.currency;
                 item.placeholder = field.placeholder;
                 item.required = field.required;
-                item.field_name = field.field_name
-
+                item.field_name = field.field_name;
                 if (field.input_type === 'TEXT') {
                     item.amount = field.amount;
                 } else if (field.input_type === 'DROPDOWN') {
@@ -173,13 +190,10 @@ export const handler = async (event: any) => {
 
         if (body.deleteFields) {
             for (const fieldName of body.deleteFields) {
-                await removeItem(
-                    process.env.REGISTRATION_FORM_TABLE_NAME as string,
-                    {
-                        club_account_id: body.club_account_id,
-                        field_name: fieldName,
-                    }
-                );
+                await removeItem(process.env.REGISTRATION_FORM_TABLE_NAME as string, {
+                    club_account_id: body.club_account_id,
+                    field_name: fieldName
+                });
             }
         }
 
