@@ -7,6 +7,8 @@ import { MSC_Layers } from "../../lambda_layers";
 interface MSC_ReportingConstructProps {
     api_gateway: MSC_APIGateway;
     club_member_table: MSC_Table;
+    club_table: MSC_Table;
+    billing_table: MSC_Table;
     registration_form_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     layers: MSC_Layers;
@@ -48,10 +50,29 @@ export class MSC_ReportingConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const mcs_billing = new MSC_Lambda(this, `${id}-McsBilling`, {
+            code: "admin/reporting/mcs_billing",
+            envVariables: {
+                MONTHLY_BILLING_TABLE_NAME : props.billing_table.tableName,
+                CLUB_TABLE_NAME: props.club_table.tableName,
+                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
+            },
+            permissions: {
+                [`${props.billing_table.tableArn}/index/ClubAccountIDIndex`]: [
+                    "dynamodb:Query"
+                ],
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const reporting_resource = props.api_gateway.root.addResource("reporting");
 
         const general_reporting_resource = reporting_resource.addResource("generalReporting");
         const registration_billing_resource = reporting_resource.addResource("registrationBilling")
+        const mcs_billing_resource = reporting_resource.addResource("mcsBilling");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -61,5 +82,6 @@ export class MSC_ReportingConstruct extends Construct {
 
         addCorsEnabledMethod(general_reporting_resource, general_reporting, methodOptions, undefined, "GET");
         addCorsEnabledMethod(registration_billing_resource, registration_billing, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(mcs_billing_resource, mcs_billing, methodOptions, undefined, "GET");
     }
 }
