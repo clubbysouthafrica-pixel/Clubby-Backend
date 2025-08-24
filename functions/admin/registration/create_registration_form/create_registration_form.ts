@@ -18,7 +18,6 @@ export interface StandardField {
 export interface TextField {
     field_id?: string;
     field_type: 'TEXT';
-    text_type: 'STANDARD' | 'CONSENT';
     input_type: 'CHECKBOX' | 'DISPLAY';
     text: string;
     id: string;
@@ -76,7 +75,6 @@ function isStandardField(obj: any): obj is StandardField {
 
 function isTextField(obj: any): obj is TextField {
     return obj.field_type === 'TEXT' &&
-        (obj.text_type === 'STANDARD' || obj.text_type === 'CONSENT') &&
         (obj.input_type === 'CHECKBOX' || obj.input_type === 'DISPLAY') &&
         typeof obj === 'object' &&
         typeof obj.field_order_id === 'string' &&
