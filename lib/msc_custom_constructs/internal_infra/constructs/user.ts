@@ -4,21 +4,22 @@ import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { MethodOptions } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Layers } from "../../lambda_layers";
 
-interface MSC_InternalInfraAdminSignupConstructProps {
+interface MSC_InternalInfraUserConstructProps {
     api_gateway: MSC_APIGateway;
     admin_pool: MSC_Cognito;
     users_table: MSC_Table;
     layers: MSC_Layers;
 }
 
-export class MSC_InternalInfraAdminSignupConstruct extends Construct {
-    constructor(scope: Construct, id: string, props: MSC_InternalInfraAdminSignupConstructProps) {
+export class MSC_InternalInfraUserConstruct extends Construct {
+    constructor(scope: Construct, id: string, props: MSC_InternalInfraUserConstructProps) {
         super(scope, id);
 
-        const sign_up = new MSC_Lambda(this, `${id}-SignUp`, {
-            code: "login/sign_up",
+        const create_admin = new MSC_Lambda(this, `${id}-CreateAdmin`, {
+            code: "internal_infra/user/create_admin",
             envVariables: {
                 USER_POOL_CLIENT_ID: props.admin_pool.userPoolClient.userPoolClientId,
+                USER_POOL_ID: props.admin_pool.userPoolId,
                 USERS_TABLE_NAME: props.users_table.tableName,
                 USER_TYPE: "ADMIN",
                 ADMIN_TOKEN: "FHJ289489JDJD"
@@ -27,7 +28,9 @@ export class MSC_InternalInfraAdminSignupConstruct extends Construct {
                 [props.admin_pool.userPoolArn]: [
                     "cognito-idp:SignUp",
                     "cognito-idp:InitiateAuth",
-                    "cognito-idp:AdminInitiateAuth"
+                    "cognito-idp:AdminInitiateAuth",
+                    "cognito-idp:AdminConfirmSignUp",
+                    "cognito-idp:AdminUpdateUserAttributes"
                 ],
                 [props.users_table.tableArn]: [
                     "dynamodb:PutItem"
@@ -36,14 +39,14 @@ export class MSC_InternalInfraAdminSignupConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
-        const admin_resource = props.api_gateway.root.addResource("admin");
+        const admin_resource = props.api_gateway.root.addResource("user");
 
-        const sign_up_resource = admin_resource.addResource("signUp");
+        const create_admin_resource = admin_resource.addResource("createAdmin");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
         }
         
-        addCorsEnabledMethod(sign_up_resource, sign_up, methodOptions);
+        addCorsEnabledMethod(create_admin_resource, create_admin, methodOptions);
     }
 }

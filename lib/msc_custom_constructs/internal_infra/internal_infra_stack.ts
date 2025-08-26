@@ -4,7 +4,7 @@ import { MSC_APIGateway, MSC_Cognito, MSC_Queue } from '../../msc_service_constr
 import {
     MSC_InternalInfraClubConstruct,
     MSC_InternalInfraClubAdminConstruct,
-    MSC_InternalInfraAdminSignupConstruct
+    MSC_InternalInfraUserConstruct
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs";
 import { MSC_Layers } from '../lambda_layers';
@@ -26,7 +26,7 @@ export class MSC_InternalInfraStack extends Stack {
             cert_arn: process.env.INTERNAL_INFRA_CERT_ARN as string
         });
 
-        new MSC_InternalInfraAdminSignupConstruct(this, `${id}-AdminSignup`, {
+        new MSC_InternalInfraUserConstruct(this, `${id}-User`, {
             admin_pool: props.admin_pool,
             api_gateway: api_gateway,
             layers: props.layers,
