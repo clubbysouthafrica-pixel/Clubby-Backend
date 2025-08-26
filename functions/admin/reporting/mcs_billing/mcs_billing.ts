@@ -18,9 +18,6 @@ export const handler = async (event: any) => {
             { ":clubId": query_string_params.club_account_id },
             process.env.CLUB_ACCOUNT_ID_INDEX as string
         );
-        if (!monthly_billing) {
-            return createResponse(200, { report: [] }, origin);
-        }
 
         const club = await getItem(
             process.env.CLUB_TABLE_NAME as string,
@@ -34,11 +31,10 @@ export const handler = async (event: any) => {
         report["MCS charge per registration"] = club.member_registration_fee_to_club
         report["Total free emails per month"] = club.free_email_limit
         report["MCS charge per email"] = club.fee_per_email_to_club
+        report["MCS total outstanding amount"] = 0
 
-        let total_amount_outstanding = 0
-
-        monthly_billing.forEach(month => {
-            total_amount_outstanding += month?.outstanding_amount ?? 0
+        monthly_billing?.forEach(month => {
+            report["MCS total outstanding amount"] += month?.outstanding_amount ?? 0
 
             report[month.year_month] = {}
             report[month.year_month]["MCS monthly outstanding amount"] = month.outstanding_amount
@@ -52,8 +48,6 @@ export const handler = async (event: any) => {
             report[month.year_month]["Emails"]["Total emails sent"] = month?.total_emails ?? 0
             report[month.year_month]["Emails"]["MCS email charge"] = month?.email_amount ?? 0
         });
-
-        report["MCS total outstanding amount"] = total_amount_outstanding
 
         return createResponse(200, { report }, origin);
 
