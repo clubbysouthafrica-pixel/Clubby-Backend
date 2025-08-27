@@ -23,7 +23,11 @@ export class MSC_TablesConstruct extends Construct {
 
         this.billing_table = new MSC_Table(this, `${id}-MonthlyBilling`, {
             partitionKey: { "club_account_id": "STRING" },
-            sortKey: { "year_month": "STRING" }
+            sortKey: { "year_month": "STRING" },
+            gsi: {
+                indexName: "ClubAccountIDIndex",
+                partitionKey: { name: "club_account_id", type: AttributeType.STRING }
+            }
         });
 
         this.users_table = new MSC_Table(this, `${id}-Users`, {

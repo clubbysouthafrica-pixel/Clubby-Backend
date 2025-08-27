@@ -12,12 +12,6 @@ export const handler = async (event: any) => {
 
   try {
 
-    if (process.env.ADMIN_TOKEN != null) {
-      if (body?.admin_token == null || body.admin_token !== process.env.ADMIN_TOKEN) {
-        return createResponse(400, { message: 'Not authorized for admin signup.' }, origin);
-      }
-    }
-
     if (body?.username == null || body?.password == null) {
       return createResponse(400, { message: 'Username and password required.' }, origin);
     }
@@ -43,17 +37,6 @@ export const handler = async (event: any) => {
         "onboarded": false
       }
     )
-
-    if (process.env.ADMIN_TOKEN != null) {
-      return createResponse(
-        200,
-        {
-          message: "Sign up successful. Remember to authenticate the admin in Cognito.",
-          deliveryDetails: cognitoResponse.CodeDeliveryDetails
-        },
-        origin
-      );
-    }
 
     return createResponse(
       200,

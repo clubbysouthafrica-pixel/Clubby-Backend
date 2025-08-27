@@ -4,24 +4,6 @@ import { createResponse, deconstructEvent, queryItems } from "./function_helpers
 export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
-interface StandardField {
-    field_type: string;
-    field_name: string;
-    id: string;
-    type: StandardInputTypes;
-    required: true | false;
-    options?: string[];
-}
-
-interface BillingField {
-    field_type: string;
-    field_name: string;
-    currency: CurrencyType;
-    amount: number;
-}
-
-type RegistrationForm = StandardField | BillingField;
-
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -29,7 +11,7 @@ export const handler = async (event: any) => {
     try {
 
         if (query_string_params?.club_account_id == null) {
-            return createResponse(400, { message: 'club_account_id required in query string params.' }, origin);
+            return createResponse(400, { message: 'club_account_id required.' }, origin);
         }
 
         const form = await queryItems(
@@ -44,19 +26,35 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: `Registration form does not exist for club: ${query_string_params.club_account_id}.` }, origin);
         }
 
-        const items: RegistrationForm[] = [];
+        const pages: Record<string, any>[] = [];
+
         form.forEach((item) => {
             const set = unmarshall(item);
             delete set.club_account_id;
 
             if (item.field_type.S === "STANDARD" && item.input_type.S === "DROPDOWN") {
-                set["options"] = item.options.L.map((item: {S: string}) => item.S);
+                set["options"] = item.options.L.map((opt: { S: string }) => opt.S);
             }
 
-            items.push(set as RegistrationForm);
+            let page = pages.find(p => p.page_index === set.page_index);
+
+            if (!page) {
+                page = {
+                    page_index: set.page_index,
+                    page_header: set.page_header,
+                    fields: []
+                };
+                pages.push(page);
+            }
+
+            page.fields.push({
+                ...set,
+                page_index: undefined,
+                page_header: undefined
+            });
         });
 
-        return createResponse(200, { items }, origin);
+        return createResponse(200, { pages }, origin);
 
 
     } catch (error: any) {
