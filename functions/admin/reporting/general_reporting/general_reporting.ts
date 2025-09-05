@@ -70,11 +70,16 @@ export const handler = async (event: any) => {
                     }
                 }
 
+                const difference = member.registration_amount - member.outstanding_amount
+
                 report[year_month].total_pending_members = report[year_month]?.total_pending_members ? report[year_month].total_pending_members + 1 : 1
                 report[year_month].total_registration_fees_due_by_pending_members = report[year_month]?.total_registration_fees_due_by_pending_members ? report[year_month].total_registration_fees_due_by_pending_members + member.outstanding_amount : member.outstanding_amount
+                report[year_month].total_registration_fees = report[year_month]?.total_registration_fees ? report[year_month].total_registration_fees + difference : difference
 
                 report.total_pending_members = report?.total_pending_members ? report.total_pending_members + 1 : 1
                 report.total_registration_fees_due_by_pending_members = report?.total_registration_fees_due_by_pending_members ? report.total_registration_fees_due_by_pending_members + member.outstanding_amount : member.outstanding_amount
+
+                report.total_registration_fees = report?.total_registration_fees ? report.total_registration_fees + difference : difference
             }
         });
 

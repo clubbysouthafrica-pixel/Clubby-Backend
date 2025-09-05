@@ -39,9 +39,7 @@ export const handler = async (event: any) => {
 
             if (item.registered) {
                 registered.push({
-                    billing_type: item.billing_type,
                     outstanding_amount: item.outstanding_amount,
-                    primary_member: item.primary_member,
                     user_id: item.user_id,
                     member_first_name: item.member_first_name,
                     member_surname: item.member_surname,
@@ -52,10 +50,8 @@ export const handler = async (event: any) => {
                 });
             } else {
                 unregistered.push({
-                    billing_type: item.billing_type,
                     outstanding_amount: item.outstanding_amount,
                     registration_payment_reference: item.registration_payment_reference,
-                    primary_member: item.primary_member,
                     member_first_name: item.member_first_name,
                     member_surname: item.member_surname,
                     user_id: item.user_id,

@@ -237,13 +237,13 @@ export const handler = async (event: any) => {
             ...body.standard_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
                 const f = form.find(f => f.field_id === field.field_id);
                 
-                acc[`reg_field_${field.field_id}`] = { field_id: f?.field_id, value: field.value, field_name: f?.field_name };
+                acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
                 return acc;
             }, {}),
             ...body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
                 const f = form.find(f => f.field_id === field.field_id);
 
-                acc[`reg_field_${field.field_id}`] = { field_id: f?.field_id, value: field.value, field_name: f?.field_name };
+                acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
                 return acc;
             }, {})
         };

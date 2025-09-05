@@ -18,6 +18,7 @@ export class MSC_InternalInfraClubConstruct extends Construct {
             code: "internal_infra/club/create_club",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
+                DOMAIN: process.env.DOMAIN as string,
                 ADMIN_TOKEN: "FHJ289489JDJD"
             },
             permissions: {

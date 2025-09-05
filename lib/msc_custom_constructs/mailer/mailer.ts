@@ -18,6 +18,7 @@ export class MSC_MailingStack extends Stack {
             code: "mailer/send_mail",
             envVariables: {
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
+                ENVIRONMENT: process.env.ENVIRONMENT as string
             },
             permissions: {
                 // [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
