@@ -1,5 +1,12 @@
-import * as cdk from 'aws-cdk-lib';
-import { UserPool, UserPoolClient, AccountRecovery, UserPoolClientIdentityProvider } from 'aws-cdk-lib/aws-cognito';
+import { CfnOutput } from 'aws-cdk-lib';
+import { 
+  UserPool, 
+  UserPoolClient, 
+  AccountRecovery, 
+  UserPoolClientIdentityProvider, 
+  VerificationEmailStyle,
+  CfnUserPool
+} from 'aws-cdk-lib/aws-cognito';
 import { Construct } from 'constructs';
 
 export interface MSC_CognitoProps {
@@ -13,6 +20,11 @@ export class MSC_Cognito extends UserPool {
     super(scope, `${id}-UserPool`, {
       userPoolName: `${id}-UserPool`,
       selfSignUpEnabled: true,
+      userVerification: {
+        emailSubject: "Verify your email for Clubby",
+        emailBody: "Thanks for signing up! Your verification code is {####}",
+        emailStyle: VerificationEmailStyle.CODE,
+      },
       signInAliases: { email: true },
       autoVerify: { email: props?.auto_verify ?? true },
       passwordPolicy: {
@@ -24,6 +36,8 @@ export class MSC_Cognito extends UserPool {
       },
       accountRecovery: AccountRecovery.EMAIL_ONLY,
     });
+
+    const domain = process.env.DOMAIN ?? "";
 
     this.userPoolClient = new UserPoolClient(this, `${id}-UserPoolClient`, {
       userPool: this,
@@ -37,12 +51,14 @@ export class MSC_Cognito extends UserPool {
       preventUserExistenceErrors: true,
     });
 
-    new cdk.CfnOutput(this, 'UserPoolId', {
-      value: this.userPoolId,
-    });
+    const cfnUserPool = this.node.defaultChild as CfnUserPool;
+    cfnUserPool.emailConfiguration = {
+      emailSendingAccount: "DEVELOPER",
+      from: `clubby-no-reply@${domain}`,
+      sourceArn: `arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/${domain}`,
+    };
 
-    new cdk.CfnOutput(this, 'UserPoolClientId', {
-      value: this.userPoolClient.userPoolClientId,
-    });
+    new CfnOutput(this, 'UserPoolId', { value: this.userPoolId });
+    new CfnOutput(this, 'UserPoolClientId', { value: this.userPoolClient.userPoolClientId });
   }
 }

@@ -1,4 +1,4 @@
-import { createResponse, ACCESS, getItem, addItem, deconstructEvent } from "./function_helpers";
+import { createResponse, ACCESS, getItem, addItem } from "./function_helpers";
 
 export const handler = async (event: any) => {
 
@@ -25,7 +25,7 @@ export const handler = async (event: any) => {
         });
         
         if (user == null) {
-            return createResponse(200, { message: "User not found." }, origin);
+            return createResponse(404, { message: "User not found." }, origin);
         }
 
 
@@ -33,7 +33,7 @@ export const handler = async (event: any) => {
             club_account_id: body.club_account_id
         })
         if (club == null) {
-            return createResponse(200, { message: "Club not found." }, origin);
+            return createResponse(404, { message: "Club not found." }, origin);
         }
 
         await addItem(

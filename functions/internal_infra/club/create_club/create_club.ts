@@ -18,12 +18,12 @@ export const handler = async (event: any) => {
             body?.club_type == null || 
             body?.club_name == null || 
             body?.member_registration_fee_to_club == null || 
-            body?.verified_identity == null ||
+            body?.club_from_email == null ||
             body?.maximum_monthly_emails == null || 
             body?.fee_per_email_to_club == null ||
             body?.free_email_limit == null
         ) {
-            return createResponse(400, { message: 'club_type, member_registration_fee_to_club, verified_identity, maximum_monthly_emails, fee_per_email_to_club, free_email_limit and club_name required.' }, origin);
+            return createResponse(400, { message: 'club_type, member_registration_fee_to_club, club_from_email, maximum_monthly_emails, fee_per_email_to_club, free_email_limit and club_name required.' }, origin);
         }
 
         if (!CLUB_TYPES.includes(body.club_type)) {
@@ -41,11 +41,18 @@ export const handler = async (event: any) => {
 
         const club_account_id = generate_club_Id(body.club_name);
 
+        let club_email = ""
+        if (body.club_from_email.includes('@')) {
+            club_email = body.club_from_email
+        } else {
+            club_email = `${body.club_from_email}-no-reply@${process.env.DOMAIN}`
+        }
+
         await addItem(
             process.env.CLUB_TABLE_NAME as string,
             {
                 "club_type": body.club_type,
-                "verified_identity": body.verified_identity,
+                "club_from_email": club_email,
                 "club_name": body.club_name,
                 "club_account_id": club_account_id,
                 "member_registration_fee_to_club": body.member_registration_fee_to_club,
