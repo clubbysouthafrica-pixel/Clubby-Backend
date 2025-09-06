@@ -19,11 +19,19 @@ export class MSC_InternalInfraClubConstruct extends Construct {
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 DOMAIN: process.env.DOMAIN as string,
+                CLUB_FROM_EMAIL_INDEX: "ClubFromEmailIndex",
+                CLUB_NAME_INDEX: "ClubNameIndex",
                 ADMIN_TOKEN: "FHJ289489JDJD"
             },
             permissions: {
                 [props.club_table.tableArn]: [
                     "dynamodb:PutItem"
+                ],
+                [`${props.club_table.tableArn}/index/ClubFromEmailIndex`]: [
+                    "dynamodb:Query"
+                ],
+                [`${props.club_table.tableArn}/index/ClubNameIndex`]: [
+                    "dynamodb:Query"
                 ]
             },
             layers: [props.layers.jwt_layer]

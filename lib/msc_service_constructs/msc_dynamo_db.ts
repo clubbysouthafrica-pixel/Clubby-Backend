@@ -5,8 +5,8 @@ import { marshall } from '@aws-sdk/util-dynamodb';
 
 interface MSC_GSI {
     indexName: string;
-    partitionKey: {name: string, type: AttributeType};
-    sortKey?: {name: string, type: AttributeType};
+    partitionKey: { name: string, type: AttributeType };
+    sortKey?: { name: string, type: AttributeType };
 }
 
 interface MSC_TablePros {
@@ -14,7 +14,7 @@ interface MSC_TablePros {
     sortKey?: Record<string, "STRING" | "NUMBER">;
     billingMode?: BillingMode;
     removalPolicy?: RemovalPolicy;
-    gsi?: MSC_GSI;
+    gsi?: MSC_GSI[];
 }
 
 export class MSC_Table extends Table {
@@ -43,12 +43,12 @@ export class MSC_Table extends Table {
             removalPolicy: props.removalPolicy ?? RemovalPolicy.DESTROY,
         });
 
-        if (props.gsi) {
+        props.gsi?.forEach(gsi => {
             this.addGlobalSecondaryIndex({
-                indexName: props.gsi.indexName,
-                partitionKey: props.gsi.partitionKey,
-                sortKey: props.gsi?.sortKey ?? undefined
+                indexName: gsi.indexName,
+                partitionKey: gsi.partitionKey,
+                sortKey: gsi?.sortKey ?? undefined
             })
-        }
+        })
     }
 }
