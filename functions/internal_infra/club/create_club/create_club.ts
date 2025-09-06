@@ -21,9 +21,10 @@ export const handler = async (event: any) => {
             body?.club_from_email == null ||
             body?.maximum_monthly_emails == null || 
             body?.fee_per_email_to_club == null ||
-            body?.free_email_limit == null
+            body?.free_email_limit == null ||
+            body?.support_email == null
         ) {
-            return createResponse(400, { message: 'club_type, member_registration_fee_to_club, club_from_email, maximum_monthly_emails, fee_per_email_to_club, free_email_limit and club_name required.' }, origin);
+            return createResponse(400, { message: 'club_type, member_registration_fee_to_club, club_from_email, maximum_monthly_emails, fee_per_email_to_club, free_email_limit, support_email and club_name required.' }, origin);
         }
 
         if (!CLUB_TYPES.includes(body.club_type)) {
@@ -71,6 +72,7 @@ export const handler = async (event: any) => {
         await addItem(
             process.env.CLUB_TABLE_NAME as string,
             {
+                "support_email": body.support_email,
                 "club_type": body.club_type,
                 "club_from_email": club_email,
                 "club_name": body.club_name,
