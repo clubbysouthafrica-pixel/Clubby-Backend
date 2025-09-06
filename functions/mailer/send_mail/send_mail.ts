@@ -72,6 +72,7 @@ export const handler = async (event: any) => {
                 const batch = chunkedEmails.slice(i, i + rateLimit);
 
                 await Promise.all(batch.map(async (chunk) => {
+                    const footer = `\n\n---\nPlease do not reply to this email. For further support, contact us at ${body.support_email}`;
                     const params = {
                         Source: email_source,
                         Destination: {
@@ -84,7 +85,7 @@ export const handler = async (event: any) => {
                             },
                             Body: {
                                 Text: {
-                                    Data: email_body,
+                                    Data: email_source === body.support_email ? email_body : `${email_body}\n\n${footer}`,
                                     Charset: "UTF-8",
                                 },
                             },
