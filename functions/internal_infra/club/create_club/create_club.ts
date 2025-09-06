@@ -1,4 +1,4 @@
-import { createResponse, CLUB_TYPES, addItem, deconstructEvent } from "./function_helpers";
+import { createResponse, CLUB_TYPES, addItem, deconstructEvent, queryItems } from "./function_helpers";
 
 function generate_club_Id(club_name: string): string {
     return `club_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
@@ -37,6 +37,16 @@ export const handler = async (event: any) => {
             typeof body.free_email_limit !== 'number'
         ) {
             return createResponse(400, { message: "member_registration_fee_to_club, maximum_monthly_emails, fee_per_email_to_club, free_email_limit must be of type number." }, origin)
+        }
+
+        const club_name = await queryItems(
+            process.env.CLUB_TABLE_NAME as string,
+            "club_name = :club_name",
+            { ":club_name": body.club_name },
+            process.env.CLUB_NAME_INDEX as string
+        );
+        if (club_name) {
+            return createResponse(400, {message: `Club Name, ${body.club_name}, is already associated with a club.`}, origin);
         }
 
         const club_account_id = generate_club_Id(body.club_name);

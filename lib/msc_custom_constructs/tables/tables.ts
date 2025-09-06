@@ -18,16 +18,26 @@ export class MSC_TablesConstruct extends Construct {
         super(scope, `${id}-Tables`);
 
         this.club_table = new MSC_Table(this, `${id}-Club`, {
-            partitionKey: { "club_account_id": "STRING" }
+            partitionKey: { "club_account_id": "STRING" },
+            gsi: [
+                // {
+                //     indexName: "ClubFromEmailIndex",
+                //     partitionKey: { name: "club_from_email", type: AttributeType.STRING }
+                // },
+                {
+                    indexName: "ClubNameIndex",
+                    partitionKey: { name: "club_name", type: AttributeType.STRING }
+                }
+            ]
         });
 
         this.billing_table = new MSC_Table(this, `${id}-MonthlyBilling`, {
             partitionKey: { "club_account_id": "STRING" },
             sortKey: { "year_month": "STRING" },
-            gsi: {
+            gsi: [{
                 indexName: "ClubAccountIDIndex",
                 partitionKey: { name: "club_account_id", type: AttributeType.STRING }
-            }
+            }]
         });
 
         this.users_table = new MSC_Table(this, `${id}-Users`, {
@@ -38,10 +48,10 @@ export class MSC_TablesConstruct extends Construct {
         this.club_member_table = new MSC_Table(this, `${id}-ClubMember`, {
             partitionKey: { "user_id": "STRING" },
             sortKey: { "club_account_id": "STRING" },
-            gsi: {
+            gsi: [{
                 indexName: "ClubAccountIDIndex",
                 partitionKey: { name: "club_account_id", type: AttributeType.STRING }
-            }
+            }]
         });
 
         this.club_admin_table = new MSC_Table(this, `${id}-ClubAdmin`, {
