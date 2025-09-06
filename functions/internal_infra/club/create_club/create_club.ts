@@ -46,7 +46,7 @@ export const handler = async (event: any) => {
             process.env.CLUB_NAME_INDEX as string
         );
         if (club_name) {
-            return createResponse(400, {message: `Club Name, ${body.club_name}, is already associated with a club.`}, origin);
+            return createResponse(400, {message: `Club name, ${body.club_name}, is already associated with a club.`}, origin);
         }
 
         const club_account_id = generate_club_Id(body.club_name);
@@ -56,6 +56,16 @@ export const handler = async (event: any) => {
             club_email = body.club_from_email
         } else {
             club_email = `${body.club_from_email}-no-reply@${process.env.DOMAIN}`
+        }
+
+        const club_from_email = await queryItems(
+            process.env.CLUB_TABLE_NAME as string,
+            "club_from_email = :club_from_email",
+            { ":club_from_email": club_email },
+            process.env.CLUB_FROM_EMAIL_INDEX as string
+        );
+        if (club_from_email) {
+            return createResponse(400, {message: `Club from email, ${club_email}, is already associated with a club.`}, origin);
         }
 
         await addItem(

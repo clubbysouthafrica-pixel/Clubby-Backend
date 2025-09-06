@@ -20,10 +20,10 @@ export class MSC_TablesConstruct extends Construct {
         this.club_table = new MSC_Table(this, `${id}-Club`, {
             partitionKey: { "club_account_id": "STRING" },
             gsi: [
-                // {
-                //     indexName: "ClubFromEmailIndex",
-                //     partitionKey: { name: "club_from_email", type: AttributeType.STRING }
-                // },
+                {
+                    indexName: "ClubFromEmailIndex",
+                    partitionKey: { name: "club_from_email", type: AttributeType.STRING }
+                },
                 {
                     indexName: "ClubNameIndex",
                     partitionKey: { name: "club_name", type: AttributeType.STRING }
