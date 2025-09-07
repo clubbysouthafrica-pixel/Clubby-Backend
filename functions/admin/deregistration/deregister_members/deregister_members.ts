@@ -47,7 +47,7 @@ export const handler = async (event: any) => {
                 },
                 `SET 
                     #registered = :registered,
-                    #outstanding_amount = #registration_amount
+                    #outstanding_amount = #registration_amount,
                     #resubmission_required = :resubmission_required
                 `,
                 {
