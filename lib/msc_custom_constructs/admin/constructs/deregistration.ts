@@ -50,7 +50,7 @@ export class MSC_DeregistrationConstruct extends Construct {
             timeout: 360,
             layers: [props.layers.jwt_layer]
         });
-        props.club_history_bucket.grantPut(deregister_season);
+        props.club_history_bucket.grantPut(deregister_members);
 
         const deregistration_resource = props.api_gateway.root.addResource("deregistration");
 
