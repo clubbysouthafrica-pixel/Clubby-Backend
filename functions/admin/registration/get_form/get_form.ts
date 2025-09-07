@@ -30,7 +30,11 @@ export const handler = async (event: any) => {
 
         form.forEach((item) => {
             const set = unmarshall(item);
+
+            if (!set.visible) return
+
             delete set.club_account_id;
+            delete set.visible;
 
             if (item.field_type.S === "STANDARD" && item.input_type.S === "DROPDOWN") {
                 set["options"] = item.options.L.map((opt: { S: string }) => opt.S);

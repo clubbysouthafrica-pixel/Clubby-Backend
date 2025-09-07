@@ -161,6 +161,8 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
 
     if (club_member == null) {
         return false;
+    } else if (club_member.resubmission_required) {
+        return false;
     }
 
     return true;
@@ -206,7 +208,12 @@ export const handler = async (event: any) => {
         const billingFields: BillingField[] = [];
         const standardFields: StandardField[] = [];
 
-        form.forEach(field => {
+        form.forEach((field, index) => {
+            if (!field.visible) {
+                form.splice(index, 1);
+                return
+            }
+
             if (field.field_type === 'BILLING') billingFields.push(field as BillingField);
             else standardFields.push(field as StandardField);
         });
@@ -223,6 +230,7 @@ export const handler = async (event: any) => {
 
         const item = {
             club_account_id: body.club_account_id,
+            resubmission_required: false,
             user_id: user_id,
             member_email: user.email,
             member_first_name: user.first_name,

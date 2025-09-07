@@ -1,6 +1,5 @@
-import { createResponse, deconstructEvent, getItem, addItem, removeItem } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, addItem, updateItem } from "./function_helpers";
 import { randomUUID } from 'crypto';
-import { objectToCloudFormation } from "aws-cdk-lib";
 
 export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
@@ -155,6 +154,7 @@ export const handler = async (event: any) => {
         for (const field of allFields) {
             const item: any = {
                 field_id: field?.field_id ?? randomUUID(),
+                visible: true,
                 club_account_id: body.club_account_id,
                 page_index: field.page_index,
                 page_header: field.page_header,
@@ -187,11 +187,21 @@ export const handler = async (event: any) => {
         }
 
         if (body.deleteFields) {
-            for (const fieldName of body.deleteFields) {
-                await removeItem(process.env.REGISTRATION_FORM_TABLE_NAME as string, {
-                    club_account_id: body.club_account_id,
-                    field_name: fieldName
-                });
+            for (const field_id of body.deleteFields) {
+                await updateItem(
+                    process.env.REGISTRATION_FORM_TABLE_NAME as string, 
+                    {
+                        club_account_id: body.club_account_id,
+                        field_id: field_id
+                    },
+                    "SET #visible = :visible",
+                    {
+                        "#visible": "visible"
+                    },
+                    {
+                        ":visible": false
+                    }
+                );
             }
         }
 

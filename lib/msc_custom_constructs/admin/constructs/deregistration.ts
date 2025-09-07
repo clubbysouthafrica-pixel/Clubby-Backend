@@ -36,26 +36,27 @@ export class MSC_DeregistrationConstruct extends Construct {
         });
         props.club_history_bucket.grantPut(deregister_season);
 
-        const deregister_member = new MSC_Lambda(this, `${id}-DeregisterMember`, {
-            code: "admin/deregistration/deregister_member",
+        const deregister_members = new MSC_Lambda(this, `${id}-DeregisterMembers`, {
+            code: "admin/deregistration/deregister_members",
             envVariables: {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
-                    "dynamodb:UpdateItem"
+                    "dynamodb:UpdateItem",
+                    "dynamodb:GetItem"
                 ]
             },
-            timeout: 29,
+            timeout: 360,
             layers: [props.layers.jwt_layer]
         });
-        props.club_history_bucket.grantPut(deregister_season);
+        props.club_history_bucket.grantPut(deregister_members);
 
         const deregistration_resource = props.api_gateway.root.addResource("deregistration");
 
         const deregister_season_resource = deregistration_resource.addResource("season");
-        const deregister_member_resource = deregistration_resource.addResource("member");
+        const deregister_members_resource = deregistration_resource.addResource("members");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -64,6 +65,6 @@ export class MSC_DeregistrationConstruct extends Construct {
         }
 
         addCorsEnabledMethod(deregister_season_resource, deregister_season, methodOptions);
-        addCorsEnabledMethod(deregister_member_resource, deregister_member, methodOptions);
+        addCorsEnabledMethod(deregister_members_resource, deregister_members, methodOptions);
     }
 }

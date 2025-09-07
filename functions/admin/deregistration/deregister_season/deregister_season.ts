@@ -32,13 +32,12 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "No members exist for this club." }, origin);
         }
 
-        const now = new Date();
-        const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        const season_id = Date.now()
 
         const bucket_name = process.env.CLUB_HISTORY_BUCKET_NAME;
         const uploadParams = {
             Bucket: bucket_name,
-            Key: `${body.club_account_id}/club_members/${year_month}.json`,
+            Key: `${body.club_account_id}/club_members/${season_id}.json`,
             Body: JSON.stringify(club_members),
             ContentType: "application/json",
         };
