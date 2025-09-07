@@ -44,8 +44,7 @@ export class MSC_DeregistrationConstruct extends Construct {
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
-                    "dynamodb:UpdateItem",
-                    "dynamodb:GetItem"
+                    "dynamodb:UpdateItem"
                 ]
             },
             timeout: 360,

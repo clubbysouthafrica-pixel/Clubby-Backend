@@ -32,7 +32,7 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "No members exist for this club." }, origin);
         }
 
-        const season_id = Math.floor(Date.now() / 1000); 
+        const season_id = Date.now()
 
         const bucket_name = process.env.CLUB_HISTORY_BUCKET_NAME;
         const uploadParams = {
