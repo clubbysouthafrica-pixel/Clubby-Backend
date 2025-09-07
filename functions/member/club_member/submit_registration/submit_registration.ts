@@ -206,7 +206,12 @@ export const handler = async (event: any) => {
         const billingFields: BillingField[] = [];
         const standardFields: StandardField[] = [];
 
-        form.forEach(field => {
+        form.forEach((field, index) => {
+            if (!field.visible) {
+                form.splice(index, 1);
+                return
+            }
+
             if (field.field_type === 'BILLING') billingFields.push(field as BillingField);
             else standardFields.push(field as StandardField);
         });
