@@ -69,8 +69,8 @@ export const handler = async (event: any) => {
 
         return createResponse(200, { message: "Successfully deregistered members" }, origin);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error:", error);
-        return createResponse(500, { message: "Internal Server Error" }, origin);
+        return createResponse(500, { message: error.message }, origin);
     }
 };
