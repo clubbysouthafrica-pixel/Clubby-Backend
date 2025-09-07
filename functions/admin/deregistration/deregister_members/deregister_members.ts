@@ -34,14 +34,17 @@ export const handler = async (event: any) => {
                 `SET 
                     #registered = :registered,
                     #outstanding_amount = #registration_amount
+                    #resubmission_required = :resubmission_required
                 `,
                 {
                     "#registered": "registered",
                     "#outstanding_amount": "outstanding_amount",
                     "#registration_amount": "registration_amount",
+                    "#resubmission_required": "resubmission_required"
                 },
                 {
-                    ":registered": false
+                    ":registered": false,
+                    ":resubmission_required": true
                 },
                 undefined,
                 true
