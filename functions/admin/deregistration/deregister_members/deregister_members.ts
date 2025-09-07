@@ -67,7 +67,7 @@ export const handler = async (event: any) => {
         console.log(`@@@ putItem response (Bucket_Name: ${bucket_name}): `, JSON.stringify(response));
 
 
-        return createResponse(200, { message: club_members }, origin);
+        return createResponse(200, { message: "Successfully deregistered members" }, origin);
 
     } catch (error) {
         console.error("Error:", error);
