@@ -2,6 +2,7 @@ import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import {
     createResponse,
     deconstructEvent,
+    getItem,
     updateItem
 } from "./function_helpers";
 
@@ -25,7 +26,20 @@ export const handler = async (event: any) => {
 
         const club_members = [];
         for (const user_id of body.user_ids) {
-            const member = await updateItem(
+            const member = await getItem(
+                process.env.CLUB_MEMBER_TABLE_NAME as string,
+                {
+                    "club_account_id": body.club_account_id,
+                    "user_id": user_id
+                },
+            )
+            if (!member) {
+                console.log(`User, ${user_id}, does not exist as a club member for club, ${body.club_account_id}.`)
+                continue
+            }
+            club_members.push(member);
+
+            await updateItem(
                 process.env.CLUB_MEMBER_TABLE_NAME as string,
                 {
                     "club_account_id": body.club_account_id,
@@ -45,15 +59,8 @@ export const handler = async (event: any) => {
                 {
                     ":registered": false,
                     ":resubmission_required": true
-                },
-                undefined,
-                true
+                }
             );
-            if (!member) {
-                console.log(`User, ${user_id}, does not exist as a club member for club, ${body.club_account_id}.`)
-                continue
-            }
-            club_members.push(member);
         }
 
         const season_id = Date.now()
