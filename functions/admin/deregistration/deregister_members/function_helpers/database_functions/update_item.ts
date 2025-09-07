@@ -31,8 +31,8 @@ export const updateItem = async (
         const response = await dynamodbClient.send(command);
         console.log(`@@@ updateItems response (Table_Name: ${table_name}): `, JSON.stringify(response));
 
-        if (return_values) {
-            return response;
+        if (return_values && response.Attributes) {
+            return unmarshall(response.Attributes);
         }
 
         return null

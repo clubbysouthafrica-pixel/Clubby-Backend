@@ -23,9 +23,9 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "user_id must be ARRAY type." }, origin);
         }
 
- 
+        const club_members = [];
         for (const user_id of body.user_ids) {
-            await updateItem(
+            const member = await updateItem(
                 process.env.CLUB_MEMBER_TABLE_NAME as string,
                 {
                     "club_account_id": body.club_account_id,
@@ -42,11 +42,18 @@ export const handler = async (event: any) => {
                 },
                 {
                     ":registered": false
-                }
+                },
+                undefined,
+                true
             );
+            if (!member) {
+                console.log(`User, ${user_id}, does not exist as a club member for club, ${body.club_account_id}.`)
+                continue
+            }
+            club_members.push(member);
         }
 
-        return createResponse(200, { message: "Members successfully deregistered." }, origin);
+        return createResponse(200, { message: club_members }, origin);
 
     } catch (error) {
         console.error("Error:", error);
