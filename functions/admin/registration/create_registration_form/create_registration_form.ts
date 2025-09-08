@@ -10,7 +10,7 @@ export interface StandardField {
     id: string;
     input_type: StandardInputTypes;
     required: true | false;
-    field_text: string;
+    placeholder: string;
     options?: string[];
 }
 
@@ -19,6 +19,7 @@ export interface TextField {
     field_type: 'TEXT';
     input_type: 'CHECKBOX' | 'DISPLAY';
     text: string;
+    field_text: string;
     id: string;
 }
 
@@ -33,9 +34,8 @@ export interface BillingField {
     field_name: string;
     id: string;
     input_type: 'TEXT' | 'DROPDOWN';
-    placeholder?: string;
+    placeholder: string;
     required: boolean;
-    field_text: string;
     currency: CurrencyType;
     amount?: number;
     billingOptions?: BillingOption[];
@@ -53,7 +53,7 @@ function isBillingField(obj: any): obj is BillingField {
         validCurrencies.includes(obj.currency) &&
         (isDropdown || isText) &&
         typeof obj === 'object' &&
-        typeof obj.field_text === 'string' &&
+        typeof obj.placeholder === 'string' &&
         typeof obj.field_name === 'string' &&
         typeof obj.field_order_id === 'string' &&
         typeof obj.required === 'boolean'
@@ -66,7 +66,7 @@ function isStandardField(obj: any): obj is StandardField {
         validTypes.includes(obj.input_type) &&
         (obj.input_type !== 'DROPDOWN' || (Array.isArray(obj.options) && obj.options.every((o: any) => typeof o === 'string'))) &&
         typeof obj === 'object' &&
-        typeof obj.field_text === 'string' &&
+        typeof obj.placeholder === 'string' &&
         typeof obj.field_name === 'string' &&
         typeof obj.field_order_id === 'string' &&
         typeof obj.required === 'boolean'
@@ -159,14 +159,14 @@ export const handler = async (event: any) => {
                 page_index: field.page_index,
                 page_header: field.page_header,
                 field_order_id: field.field_order_id,
-                field_type: field.field_type,
-                field_text: field.field_text
+                field_type: field.field_type
             };
 
             if (isStandardField(field)) {
                 item.input_type = field.input_type;
                 item.required = field.required;
                 item.field_name = field.field_name;
+                item.placeholder = field.placeholder;
                 if (field.input_type === 'DROPDOWN') {
                     item.options = field.options;
                 }
@@ -181,6 +181,8 @@ export const handler = async (event: any) => {
                 } else if (field.input_type === 'DROPDOWN') {
                     item.billingOptions = field.billingOptions;
                 }
+            } else if (isTextField(field)) {
+                item.field_text = field.field_text;
             }
 
             await addItem(process.env.REGISTRATION_FORM_TABLE_NAME as string, item);
