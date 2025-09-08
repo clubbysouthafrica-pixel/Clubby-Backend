@@ -42,14 +42,12 @@ export interface BillingField {
 }
 
 function isBillingField(obj: any): obj is BillingField {
-    const validCurrencies = ['ZAR', 'USD', 'GBP'];
     const isDropdown = obj.input_type === 'DROPDOWN' && Array.isArray(obj.billingOptions) && obj.billingOptions.every(
         (opt: any) => typeof opt.label === 'string' && typeof opt.amount === 'number' && typeof opt.option_order_id === 'string'
     );
     const isText = obj.input_type === 'TEXT' && typeof obj.amount === 'number';
 
     return obj.field_type === 'BILLING' &&
-        validCurrencies.includes(obj.currency) &&
         (isDropdown || isText) &&
         typeof obj === 'object' &&
         typeof obj.placeholder === 'string' &&
