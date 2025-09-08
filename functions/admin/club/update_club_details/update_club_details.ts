@@ -47,7 +47,7 @@ export const handler = async (event: any) => {
 
         const updateParts: string[] = [];
 
-        if (body?.bank_details) {
+        if (body?.bank_details && body.bank_details.length > 0) {
             const bankDetails = body.bank_details;
 
             updateParts.push("#bank = :bank", "#acc = :acc", "#branch = :branch", "#type = :type");
