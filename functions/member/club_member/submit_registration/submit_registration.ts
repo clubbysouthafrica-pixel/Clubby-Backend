@@ -48,11 +48,11 @@ function validateRequestBody(body: any) {
         return 'club_account_id, billing_fields and standard_fields required.';
     }
 
-    if (!Array.isArray(body.standard_fields) || body.standard_fields.length === 0) {
+    if (body.standard_fields.length > 0 && !Array.isArray(body.standard_fields)) {
         return 'standard_fields is required to be an array containing objects.';
     }
 
-    if (!Array.isArray(body.billing_fields) || body.billing_fields.length === 0) {
+    if (body.billing_fields.length > 0 && !Array.isArray(body.billing_fields)) {
         return 'billing_fields is required to be an array containing objects.';
     }
 
