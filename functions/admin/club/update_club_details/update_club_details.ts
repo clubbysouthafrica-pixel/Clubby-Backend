@@ -8,7 +8,7 @@ function validateBody(body: Record<string, string>): string | null {
         return "Invalid body. Required attribute types: club_account_id (string)."
     }
 
-    if (body?.bank_details) {
+    if (body?.bank_details && body.bank_details.length > 0) {
         if (typeof body.bank_details !== 'object') {
             return "Invalid body. Required attribute types: bank_details (object)."
         }
@@ -76,7 +76,7 @@ export const handler = async (event: any) => {
         }
 
         if (updateParts.length === 0) {
-            return createResponse(400, { message: "Nothing to update." }, origin);
+            return createResponse(200, { message: "Nothing to update." }, origin);
         }
 
         updateExpression += updateParts.join(", ");
