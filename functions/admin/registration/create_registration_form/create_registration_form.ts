@@ -168,7 +168,6 @@ export const handler = async (event: any) => {
                 }
             } else if (isBillingField(field)) {
                 item.input_type = field.input_type;
-                item.currency = field.currency;
                 item.placeholder = field.placeholder;
                 item.required = field.required;
                 item.field_name = field.field_name;
@@ -184,7 +183,7 @@ export const handler = async (event: any) => {
             await addItem(process.env.REGISTRATION_FORM_TABLE_NAME as string, item);
         }
 
-        if (body.deleteFields) {
+        if (body.deleteFields && body.deleteFields.length > 0) {
             for (const field_id of body.deleteFields) {
                 await updateItem(
                     process.env.REGISTRATION_FORM_TABLE_NAME as string, 
@@ -198,7 +197,8 @@ export const handler = async (event: any) => {
                     },
                     {
                         ":visible": false
-                    }
+                    },
+                    "attribute_exists(id)"
                 );
             }
         }
