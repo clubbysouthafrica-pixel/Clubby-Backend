@@ -8,7 +8,7 @@ function validateBody(body: Record<string, string>): string | null {
         return "Invalid body. Required attribute types: club_account_id (string)."
     }
 
-    if (body?.bank_details && body.bank_details.length > 0) {
+    if (body?.bank_details) {
         if (typeof body.bank_details !== 'object') {
             return "Invalid body. Required attribute types: bank_details (object)."
         }
@@ -47,7 +47,7 @@ export const handler = async (event: any) => {
 
         const updateParts: string[] = [];
 
-        if (body?.bank_details && body.bank_details.length > 0) {
+        if (body?.bank_details) {
             const bankDetails = body.bank_details;
 
             updateParts.push("#bank = :bank", "#acc = :acc", "#branch = :branch", "#type = :type");
