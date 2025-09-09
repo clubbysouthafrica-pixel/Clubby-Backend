@@ -73,7 +73,7 @@ function validateRequestBody(body: any) {
     return null;
 }
 
-function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string; field_id: string }[]): number | null | string {
+function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string; field_id: string; option_order_id?: string }[]): number | null | string {
     const requiredFields = billingFields.filter(f => f.required);
     const field_ids = submittedFields.map(f => f.field_id);
     const allValid = requiredFields.every(req => {
@@ -102,7 +102,7 @@ function validateBillingField(billingFields: BillingField[], submittedFields: { 
                 total_amount += billing_field.amount ?? 0;
             } else if (billing_field.input_type === "DROPDOWN" && billing_field.field_id === sub_field.field_id) {
                 billing_field.billingOptions.forEach(billing_options_field => {
-                    if (billing_options_field.label === sub_field.value) {
+                    if (billing_options_field.option_order_id === sub_field?.option_order_id) {
                         total_amount += billing_options_field.amount;
                     }
                 })
@@ -244,14 +244,19 @@ export const handler = async (event: any) => {
             primary_member: user_id,
             ...body.standard_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
                 const f = form.find(f => f.field_id === field.field_id);
-                
+
                 acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
                 return acc;
             }, {}),
-            ...body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
+            ...body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: { 
+                value: string; field_id: string; option_order_id?: string; label?: string; 
+            }) => {
                 const f = form.find(f => f.field_id === field.field_id);
 
                 acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
+                if (f?.input_type === "DROPDOWN" && field?.label) {
+                    acc[`reg_field_${field.field_id}`].label_value = field.label
+                }
                 return acc;
             }, {})
         };
