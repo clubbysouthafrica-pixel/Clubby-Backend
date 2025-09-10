@@ -33,53 +33,63 @@ export const handler = async (event: any) => {
             total_registered_members: 0,
             total_pending_members: 0,
             total_registration_fees_due_by_pending_members: 0,
-            total_registration_fees: 0,
+            total_registration_fees_paid: 0,
             total_extra_fees_owed_by_registered_members: 0
         }
 
         club_members?.forEach(member => {
             if (member.registered) {
+                if (!report.data) {
+                    report.data = []
+                }
                 const year_month = member.registered_on.slice(0, 7);
 
-                if (!report[year_month]) {
-                    report[year_month] = {
+                let index = report.data.findIndex((item: any) => item.date === year_month);
+                if (index < 0) {
+                    report.data.push({
+                        date: year_month,
                         total_registered_members: 0,
                         total_pending_members: 0,
                         total_registration_fees_due_by_pending_members: 0,
-                        total_registration_fees: 0,
-                        total_extra_fees_owed_by_registered_members: 0
-                    }
+                        total_registration_fees_paid: member.registration_amount,
+                        total_extra_fees_owed_by_registered_members: member.outstanding_amount,
+                    });
+                    index = report.data.length - 1;
                 }
 
-                report[year_month].total_registered_members = report[year_month]?.total_registered_members ? report[year_month].total_registered_members + 1 : 1
-                report[year_month].total_registration_fees = report[year_month]?.total_registration_fees ? report[year_month].total_registration_fees + member.registration_amount : member.registration_amount
-                report[year_month].total_extra_fees_owed_by_registered_members = report[year_month]?.total_extra_fees_owed_by_registered_members ? report[year_month].total_extra_fees_owed_by_registered_members + member.outstanding_amount : member.outstanding_amount
+                report.data[index].total_registered_members = report.data[index]?.total_registered_members ? report.data[index].total_registered_members + 1 : 1
+                report.data[index].total_registration_fees_paid = report.data[index]?.total_registration_fees_paid ? report.data[index].total_registration_fees_paid + member.registration_amount : member.registration_amount
+                report.data[index].total_extra_fees_owed_by_registered_members = report.data[index]?.total_extra_fees_owed_by_registered_members ? report.data[index].total_extra_fees_owed_by_registered_members + member.outstanding_amount : member.outstanding_amount
                 report.total_registered_members = report?.total_registered_members ? report.total_registered_members + 1 : 1
-                report.total_registration_fees = report?.total_registration_fees ? report.total_registration_fees + member.registration_amount : member.registration_amount
+                report.total_registration_fees_paid = report?.total_registration_fees_paid ? report.total_registration_fees_paid + member.registration_amount : member.registration_amount
                 report.total_extra_fees_owed_by_registered_members = report?.total_extra_fees_owed_by_registered_members ? report.total_extra_fees_owed_by_registered_members + member.outstanding_amount : member.outstanding_amount
             } else {
+                if (!report.data) {
+                    report.data = []
+                }
                 const year_month = member.registration_submitted_on.slice(0, 7);
 
-                if (!report[year_month]) {
-                    report[year_month] = {
+                let index = report.data.findIndex((item: any) => item.date === year_month);
+                if (index < 0) {
+                    report.data.push({
+                        date: year_month,
                         total_registered_members: 0,
                         total_pending_members: 0,
                         total_registration_fees_due_by_pending_members: 0,
-                        total_registration_fees: 0,
-                        total_extra_fees_owed_by_registered_members: 0
-                    }
+                        total_registration_fees_paid: 0,
+                        total_extra_fees_owed_by_registered_members: 0,
+                    });
+                    index = report.data.length - 1;
                 }
 
                 const difference = member.registration_amount - member.outstanding_amount
 
-                report[year_month].total_pending_members = report[year_month]?.total_pending_members ? report[year_month].total_pending_members + 1 : 1
-                report[year_month].total_registration_fees_due_by_pending_members = report[year_month]?.total_registration_fees_due_by_pending_members ? report[year_month].total_registration_fees_due_by_pending_members + member.outstanding_amount : member.outstanding_amount
-                report[year_month].total_registration_fees = report[year_month]?.total_registration_fees ? report[year_month].total_registration_fees + difference : difference
-
+                report.data[index].total_pending_members = report.data[index]?.total_pending_members ? report.data[index].total_pending_members + 1 : 1
+                report.data[index].total_registration_fees_due_by_pending_members = report.data[index]?.total_registration_fees_due_by_pending_members ? report.data[index].total_registration_fees_due_by_pending_members + member.outstanding_amount : member.outstanding_amount
+                report.data[index].total_registration_fees_paid= report.data[index]?.total_registration_fees_paid? report.data[index].total_registration_fees_paid+ difference : difference
                 report.total_pending_members = report?.total_pending_members ? report.total_pending_members + 1 : 1
                 report.total_registration_fees_due_by_pending_members = report?.total_registration_fees_due_by_pending_members ? report.total_registration_fees_due_by_pending_members + member.outstanding_amount : member.outstanding_amount
-
-                report.total_registration_fees = report?.total_registration_fees ? report.total_registration_fees + difference : difference
+                report.total_registration_fees_paid= report?.total_registration_fees_paid? report.total_registration_fees_paid+ difference : difference
             }
         });
 
