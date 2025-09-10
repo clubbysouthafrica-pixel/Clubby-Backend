@@ -55,6 +55,7 @@ export const handler = async (event: any) => {
         const registered = club_member ? (club_member?.registered ? true : false) : false;
 
         return createResponse(200, {
+            currency: item.currency,
             club_account_id: item["club_account_id"],
             club_type: item["club_type"],
             club_name: item["club_name"],

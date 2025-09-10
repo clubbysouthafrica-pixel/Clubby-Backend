@@ -138,7 +138,7 @@ function validateStandardFields(standardFields: StandardField[], submittedFields
     return null;
 }
 
-async function getClubName(club_account_id: string): Promise<string | null> {
+async function getClubDetails(club_account_id: string): Promise<Record<string, string> | null> {
     const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
         club_account_id: club_account_id
     });
@@ -147,7 +147,7 @@ async function getClubName(club_account_id: string): Promise<string | null> {
         return null
     }
 
-    return club.club_name as string;
+    return { club_name: club.club_name, currency: club.currency };
 }
 
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
@@ -238,7 +238,7 @@ export const handler = async (event: any) => {
             registered: false,
             registration_payment_reference: generateShortReference(user.first_name, user.surname),
             registration_submitted_on: new Date().toISOString(),
-            club_name: await getClubName(body.club_account_id),
+            ...await getClubDetails(body.club_account_id),
             outstanding_amount: membership_amount,
             registration_amount: membership_amount,
             primary_member: user_id,
@@ -248,8 +248,8 @@ export const handler = async (event: any) => {
                 acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
                 return acc;
             }, {}),
-            ...body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: { 
-                value: string; field_id: string; option_order_id?: string; label?: string; 
+            ...body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: {
+                value: string; field_id: string; option_order_id?: string; label?: string;
             }) => {
                 const f = form.find(f => f.field_id === field.field_id);
 

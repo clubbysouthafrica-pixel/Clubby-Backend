@@ -20,6 +20,7 @@ export const handler = async (event: any) => {
             const get_cover_url = await getSignedUrl(s3_client, getCoverCommand, { expiresIn: 60 * 5 });
         
             return {
+                currency: item.currency,
                 club_name: item.club_name,
                 club_cover_url: get_cover_url,
                 club_account_id: item.club_account_id,
