@@ -17,16 +17,6 @@ export const handler = async (event: any) => {
             process.env.CLUB_ACCOUNT_ID_INDEX as string
         );
 
-        if (!club_members) {
-            return createResponse(200, {
-                total_registered_members: 0,
-                total_pending_members: 0,
-                total_registration_fees_due_by_pending_members: 0,
-                total_registration_fees: 0,
-                total_extra_fees_owed_by_registered_members: 0
-            }, origin);
-        }
-
         let report: Record<string, any> = {}
 
         report = {
@@ -93,7 +83,7 @@ export const handler = async (event: any) => {
             }
         });
 
-        return createResponse(200, { report }, origin);
+        return createResponse(200, report, origin);
 
     } catch (error: any) {
         console.error('Submit registration error:', error);

@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import {
     createResponse,
     deconstructEvent,
@@ -222,6 +223,9 @@ export const handler = async (event: any) => {
         if (typeof membership_amount === 'string') {
             return createResponse(400, { message: membership_amount }, origin);
         }
+        if (!membership_amount) {
+            return createResponse(500, { message: "Issue processing registration form." }, origin);
+        }
 
         const standardFieldValidation = validateStandardFields(standardFields, body.standard_fields);
         if (standardFieldValidation) {
@@ -264,6 +268,19 @@ export const handler = async (event: any) => {
         await addItem(
             process.env.CLUB_MEMBER_TABLE_NAME as string,
             item
+        );
+
+        await addItem(
+            process.env.TRANSACTIONS_TABLE_NAME as string,
+            {
+                club_account_id: body.club_account_id,
+                transaction_id: randomUUID(),
+                user_id: user_id as string,
+                date: new Date().getTime(),
+                amount: membership_amount,
+                description: "Registration submission",
+                type: "REQUEST"
+            }
         )
 
         return createResponse(200, { message: "Registration form successfully submitted." }, origin);

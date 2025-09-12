@@ -18,6 +18,7 @@ export interface MSC_MemberNestedStackProps extends StackProps {
     club_table: MSC_Table;
     club_member_table: MSC_Table;
     registration_form_table: MSC_Table;
+    transactions_table: MSC_Table;
     image_bucket: MSC_Bucket;
     layers: MSC_Layers;
 }
@@ -57,6 +58,7 @@ export class MSC_MemberNestedStack extends Stack {
             users_table: props.users_table,
             club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
+            transactions_table: props.transactions_table,
             image_bucket: props.image_bucket,
             layers: props.layers
         });

@@ -6,6 +6,7 @@ import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_ClubMemberClubConstructProps {
     api_gateway: MSC_APIGateway;
+    transactions_table: MSC_Table;
     club_member_table: MSC_Table;
     club_table: MSC_Table;
     registration_form_table: MSC_Table;
@@ -38,7 +39,8 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
-                CLUB_TABLE_NAME: props.club_table.tableName
+                CLUB_TABLE_NAME: props.club_table.tableName,
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
             },
             permissions: {
                 [props.club_table.tableArn]: [
@@ -53,6 +55,9 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 ],
                 [props.billing_table.tableArn]: [
                     "dynamodb:UpdateItem"
+                ],
+                [props.transactions_table.tableArn]: [
+                    "dynamodb:PutItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
