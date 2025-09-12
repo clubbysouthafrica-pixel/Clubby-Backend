@@ -90,6 +90,19 @@ export const handler = async (event: any) => {
                 }
             );
 
+            await addItem(
+                process.env.TRANSACTIONS_TABLE_NAME as string,
+                {
+                    club_account_id: body.club_account_id,
+                    transaction_id: randomUUID(),
+                    user_id: user_id as string,
+                    date: new Date().getTime(),
+                    amount: body.payment_amount,
+                    description: "Registration payment",
+                    type: "PAYMENT"
+                }
+            )
+
             return createResponse(200, { registered: false, message: "Member outstanding balance updated." }, origin);
         }
 
