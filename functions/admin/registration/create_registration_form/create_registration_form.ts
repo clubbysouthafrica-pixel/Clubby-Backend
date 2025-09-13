@@ -185,21 +185,25 @@ export const handler = async (event: any) => {
 
         if (body.deleteFields && body.deleteFields.length > 0) {
             for (const field_id of body.deleteFields) {
-                await updateItem(
-                    process.env.REGISTRATION_FORM_TABLE_NAME as string, 
-                    {
-                        club_account_id: body.club_account_id,
-                        field_id: field_id
-                    },
-                    "SET #visible = :visible",
-                    {
-                        "#visible": "visible"
-                    },
-                    {
-                        ":visible": false
-                    },
-                    "attribute_exists(field_id)"
-                );
+                try {
+                    await updateItem(
+                        process.env.REGISTRATION_FORM_TABLE_NAME as string,
+                        {
+                            club_account_id: body.club_account_id,
+                            field_id: field_id
+                        },
+                        "SET #visible = :visible",
+                        {
+                            "#visible": "visible"
+                        },
+                        {
+                            ":visible": false
+                        },
+                        "attribute_exists(field_id)"
+                    );
+                } catch (error: any) {
+                    console.log(`Could not delete field, ${field_id}.`);
+                }
             }
         }
 
