@@ -198,7 +198,7 @@ export const handler = async (event: any) => {
                     {
                         ":visible": false
                     },
-                    "attribute_exists(id)"
+                    "attribute_exists(field_id)"
                 );
             }
         }
