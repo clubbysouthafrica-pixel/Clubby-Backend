@@ -9,6 +9,7 @@ interface MSC_ClubMemberConstructProps {
     club_member_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     registration_form_table: MSC_Table;
+    transactions_table: MSC_Table;
     club_table: MSC_Table,
     users_table: MSC_Table;
     image_bucket: MSC_Bucket;
@@ -25,7 +26,8 @@ export class MSC_ClubMemberConstruct extends Construct {
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 USERS_TABLE_NAME: props.users_table.tableName,
-                CLUB_TABLE_NAME: props.club_table.tableName
+                CLUB_TABLE_NAME: props.club_table.tableName,
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName
             },
             permissions: {
                 [props.registration_form_table.tableArn]: [
@@ -40,6 +42,9 @@ export class MSC_ClubMemberConstruct extends Construct {
                 ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [props.transactions_table.tableArn]: [
+                    "dynamodb:PutItem"
                 ]
             },
             layers: [props.layers.jwt_layer]

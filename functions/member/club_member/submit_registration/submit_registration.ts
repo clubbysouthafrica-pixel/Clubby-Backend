@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import {
     createResponse,
     deconstructEvent,
@@ -48,11 +49,11 @@ function validateRequestBody(body: any) {
         return 'club_account_id, billing_fields and standard_fields required.';
     }
 
-    if (!Array.isArray(body.standard_fields) || body.standard_fields.length === 0) {
+    if (body.standard_fields.length > 0 && !Array.isArray(body.standard_fields)) {
         return 'standard_fields is required to be an array containing objects.';
     }
 
-    if (!Array.isArray(body.billing_fields) || body.billing_fields.length === 0) {
+    if (body.billing_fields.length > 0 && !Array.isArray(body.billing_fields)) {
         return 'billing_fields is required to be an array containing objects.';
     }
 
@@ -73,7 +74,7 @@ function validateRequestBody(body: any) {
     return null;
 }
 
-function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string; field_id: string }[]): number | null | string {
+function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string; field_id: string; option_order_id?: string }[]): number | null | string {
     const requiredFields = billingFields.filter(f => f.required);
     const field_ids = submittedFields.map(f => f.field_id);
     const allValid = requiredFields.every(req => {
@@ -102,7 +103,7 @@ function validateBillingField(billingFields: BillingField[], submittedFields: { 
                 total_amount += billing_field.amount ?? 0;
             } else if (billing_field.input_type === "DROPDOWN" && billing_field.field_id === sub_field.field_id) {
                 billing_field.billingOptions.forEach(billing_options_field => {
-                    if (billing_options_field.label === sub_field.value) {
+                    if (billing_options_field.option_order_id === sub_field?.option_order_id) {
                         total_amount += billing_options_field.amount;
                     }
                 })
@@ -138,7 +139,7 @@ function validateStandardFields(standardFields: StandardField[], submittedFields
     return null;
 }
 
-async function getClubName(club_account_id: string): Promise<string | null> {
+async function getClubDetails(club_account_id: string): Promise<Record<string, string> | null> {
     const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
         club_account_id: club_account_id
     });
@@ -147,7 +148,7 @@ async function getClubName(club_account_id: string): Promise<string | null> {
         return null
     }
 
-    return club.club_name as string;
+    return { club_name: club.club_name, currency: club.currency };
 }
 
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
@@ -222,6 +223,9 @@ export const handler = async (event: any) => {
         if (typeof membership_amount === 'string') {
             return createResponse(400, { message: membership_amount }, origin);
         }
+        if (!membership_amount) {
+            return createResponse(500, { message: "Issue processing registration form." }, origin);
+        }
 
         const standardFieldValidation = validateStandardFields(standardFields, body.standard_fields);
         if (standardFieldValidation) {
@@ -238,20 +242,25 @@ export const handler = async (event: any) => {
             registered: false,
             registration_payment_reference: generateShortReference(user.first_name, user.surname),
             registration_submitted_on: new Date().toISOString(),
-            club_name: await getClubName(body.club_account_id),
+            ...await getClubDetails(body.club_account_id),
             outstanding_amount: membership_amount,
             registration_amount: membership_amount,
             primary_member: user_id,
             ...body.standard_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
                 const f = form.find(f => f.field_id === field.field_id);
-                
+
                 acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
                 return acc;
             }, {}),
-            ...body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
+            ...body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: {
+                value: string; field_id: string; option_order_id?: string; label?: string;
+            }) => {
                 const f = form.find(f => f.field_id === field.field_id);
 
                 acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
+                if (f?.input_type === "DROPDOWN" && field?.label) {
+                    acc[`reg_field_${field.field_id}`].label_value = field.label
+                }
                 return acc;
             }, {})
         };
@@ -259,6 +268,19 @@ export const handler = async (event: any) => {
         await addItem(
             process.env.CLUB_MEMBER_TABLE_NAME as string,
             item
+        );
+
+        await addItem(
+            process.env.TRANSACTIONS_TABLE_NAME as string,
+            {
+                club_account_id: body.club_account_id,
+                transaction_id: randomUUID(),
+                user_id: user_id as string,
+                date: new Date().getTime(),
+                amount: membership_amount,
+                description: "Registration submission",
+                type: "REQUEST"
+            }
         )
 
         return createResponse(200, { message: "Registration form successfully submitted." }, origin);

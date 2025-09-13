@@ -76,7 +76,7 @@ export const handler = async (event: any) => {
         }
 
         if (updateParts.length === 0) {
-            return createResponse(400, { message: "Nothing to update." }, origin);
+            return createResponse(200, { message: "Nothing to update." }, origin);
         }
 
         updateExpression += updateParts.join(", ");

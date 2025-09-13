@@ -5,10 +5,6 @@ import { createResponse, deconstructEvent, getItem } from "./function_helpers";
 const s3_client = new S3Client({ region: process.env.REGION });
 
 async function getClubImageUrls(get_images: string, club_account_id: string): Promise<Record<string, string>> {
-    if (get_images !== 'true') {
-        return {}
-    }
-
     const cover_key = `club_cover/${club_account_id}_cover`;
     const getCoverCommand = new GetObjectCommand({
         Bucket: process.env.IMAGE_BUCKET_NAME,
@@ -59,6 +55,7 @@ export const handler = async (event: any) => {
         const registered = club_member ? (club_member?.registered ? true : false) : false;
 
         return createResponse(200, {
+            currency: item.currency,
             club_account_id: item["club_account_id"],
             club_type: item["club_type"],
             club_name: item["club_name"],

@@ -106,7 +106,7 @@ export const handler = async (event: any) => {
                     // DROPDOWN fields
                     if (table.rows) {
                         table.rows.forEach((row: any) => {
-                            if (row.row_name !== member[key].value) return;
+                            if (row.row_name !== member[key].label_value) return;
 
                             // Monthly bucket
                             if (!row.data[year_month]) {

@@ -19,6 +19,7 @@ import { MSC_Layers } from '../lambda_layers';
 
 export interface MSC_AdminNestedStackProps extends StackProps {
     users_table: MSC_Table;
+    transactions_table: MSC_Table;
     club_table: MSC_Table;
     club_admin_table: MSC_Table;
     billing_table: MSC_Table;
@@ -124,6 +125,7 @@ export class MSC_AdminNestedStack extends Stack {
 
         new MSC_ClubMemberClubConstruct(this, `${id}-ClubMember`, {
             api_gateway: api_gateway,
+            transactions_table: props.transactions_table,
             club_table: props.club_table,
             club_member_table: props.club_member_table,
             token_authorizer: jwt_construct.token_authorizer,
