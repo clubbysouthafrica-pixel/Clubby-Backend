@@ -57,7 +57,7 @@ function isBillingField(obj: any): obj is BillingField {
 }
 
 function isStandardField(obj: any): obj is StandardField {
-    const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE', 'NUMBER', 'RADIO'];
+    const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE', 'NUMBER', 'CHECKBOX'];
 
     return obj.field_type === 'STANDARD' &&
         validTypes.includes(obj.input_type) &&
