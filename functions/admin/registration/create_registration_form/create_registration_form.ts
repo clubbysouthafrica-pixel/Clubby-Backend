@@ -52,7 +52,7 @@ function isBillingField(obj: any): obj is BillingField {
         typeof obj === 'object' &&
         typeof obj.placeholder === 'string' &&
         typeof obj.field_name === 'string' &&
-        typeof obj.field_order_id === 'string' &&
+        typeof obj.field_order_id === 'number' &&
         typeof obj.required === 'boolean'
 }
 
@@ -65,14 +65,14 @@ function isStandardField(obj: any): obj is StandardField {
         typeof obj === 'object' &&
         typeof obj.placeholder === 'string' &&
         typeof obj.field_name === 'string' &&
-        typeof obj.field_order_id === 'string' &&
+        typeof obj.field_order_id === 'number' &&
         typeof obj.required === 'boolean'
 }
 
 function isTextField(obj: any): obj is TextField {
     return obj.field_type === 'TEXT' &&
         typeof obj === 'object' &&
-        typeof obj.field_order_id === 'string' &&
+        typeof obj.field_order_id === 'number' &&
         typeof obj.field_text === 'string'
 }
 

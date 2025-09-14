@@ -59,14 +59,14 @@ function validateRequestBody(body: any) {
 
     for (const field of body.billing_fields) {
         if (typeof field !== 'object') return 'All billing_fields indexes must be objects.';
-        if (!field.field_id || !field.value || typeof field.field_id !== 'string') {
+        if (!field.field_id || field.value === undefined || field.value == null || typeof field.field_id !== 'string') {
             return 'All billing_fields must have STRING keys: field_id and value.';
         }
     }
 
     for (const field of body.standard_fields) {
         if (typeof field !== 'object') return 'All standard_field indexes must be objects.';
-        if (!field.field_id || !field.value || typeof field.field_id !== 'string') {
+        if (!field.field_id || field.value === undefined || field.value == null || typeof field.field_id !== 'string') {
             return 'All standard_fields must have STRING keys: field_id and value.';
         }
     }
