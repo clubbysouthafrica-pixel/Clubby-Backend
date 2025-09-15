@@ -279,7 +279,7 @@ export const handler = async (event: any) => {
                 date: new Date().getTime(),
                 amount: membership_amount,
                 description: "Registration submission",
-                type: "REQUEST"
+                type: "PAYMENT PENDING"
             }
         )
 
