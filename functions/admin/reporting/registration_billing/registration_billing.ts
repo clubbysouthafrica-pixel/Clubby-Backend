@@ -25,7 +25,7 @@ export const handler = async (event: any) => {
         );
 
         if (!form) {
-            return createResponse(500, { message: "Registration form does not exist for club." }, origin);
+            return createResponse(200, { report: [] }, origin);
         }
 
         const items = form.map(item => {
@@ -39,7 +39,6 @@ export const handler = async (event: any) => {
             return set;
         });
 
-        // Build initial report
         const report: any[] = [];
 
         items.forEach(field => {
