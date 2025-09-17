@@ -52,12 +52,12 @@ function isBillingField(obj: any): obj is BillingField {
         typeof obj === 'object' &&
         typeof obj.placeholder === 'string' &&
         typeof obj.field_name === 'string' &&
-        typeof obj.field_order_id === 'string' &&
+        typeof obj.field_order_id === 'number' &&
         typeof obj.required === 'boolean'
 }
 
 function isStandardField(obj: any): obj is StandardField {
-    const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE', 'NUMBER', 'RADIO'];
+    const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE', 'NUMBER', 'CHECKBOX'];
 
     return obj.field_type === 'STANDARD' &&
         validTypes.includes(obj.input_type) &&
@@ -65,14 +65,14 @@ function isStandardField(obj: any): obj is StandardField {
         typeof obj === 'object' &&
         typeof obj.placeholder === 'string' &&
         typeof obj.field_name === 'string' &&
-        typeof obj.field_order_id === 'string' &&
+        typeof obj.field_order_id === 'number' &&
         typeof obj.required === 'boolean'
 }
 
 function isTextField(obj: any): obj is TextField {
     return obj.field_type === 'TEXT' &&
         typeof obj === 'object' &&
-        typeof obj.field_order_id === 'string' &&
+        typeof obj.field_order_id === 'number' &&
         typeof obj.field_text === 'string'
 }
 
@@ -185,21 +185,25 @@ export const handler = async (event: any) => {
 
         if (body.deleteFields && body.deleteFields.length > 0) {
             for (const field_id of body.deleteFields) {
-                await updateItem(
-                    process.env.REGISTRATION_FORM_TABLE_NAME as string, 
-                    {
-                        club_account_id: body.club_account_id,
-                        field_id: field_id
-                    },
-                    "SET #visible = :visible",
-                    {
-                        "#visible": "visible"
-                    },
-                    {
-                        ":visible": false
-                    },
-                    "attribute_exists(id)"
-                );
+                try {
+                    await updateItem(
+                        process.env.REGISTRATION_FORM_TABLE_NAME as string,
+                        {
+                            club_account_id: body.club_account_id,
+                            field_id: field_id
+                        },
+                        "SET #visible = :visible",
+                        {
+                            "#visible": "visible"
+                        },
+                        {
+                            ":visible": false
+                        },
+                        "attribute_exists(field_id)"
+                    );
+                } catch (error: any) {
+                    console.log(`Could not delete field, ${field_id}.`);
+                }
             }
         }
 

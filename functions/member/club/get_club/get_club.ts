@@ -12,7 +12,7 @@ async function getClubImageUrls(get_images: string, club_account_id: string): Pr
     });
     const get_cover_url = await getSignedUrl(s3_client, getCoverCommand, { expiresIn: 60 * 5 });
 
-    const profile_key = `club_profile/${club_account_id}_cover`;
+    const profile_key = `club_profile/${club_account_id}_profile`;
     const getProfileCommand = new GetObjectCommand({
         Bucket: process.env.IMAGE_BUCKET_NAME,
         Key: profile_key,

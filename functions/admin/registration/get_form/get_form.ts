@@ -21,12 +21,11 @@ export const handler = async (event: any) => {
             undefined,
             false,
         )
+        const pages: Record<string, any>[] = [];
 
         if (form == null) {
-            return createResponse(400, { message: `Registration form does not exist for club: ${query_string_params.club_account_id}.` }, origin);
+            return createResponse(200, { pages }, origin);
         }
-
-        const pages: Record<string, any>[] = [];
 
         form.forEach((item) => {
             const set = unmarshall(item);

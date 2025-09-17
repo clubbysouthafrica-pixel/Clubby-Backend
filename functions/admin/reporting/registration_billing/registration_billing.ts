@@ -25,7 +25,7 @@ export const handler = async (event: any) => {
         );
 
         if (!form) {
-            return createResponse(500, { message: "Registration form does not exist for club." }, origin);
+            return createResponse(200, { report: [] }, origin);
         }
 
         const items = form.map(item => {
@@ -39,7 +39,6 @@ export const handler = async (event: any) => {
             return set;
         });
 
-        // Build initial report
         const report: any[] = [];
 
         items.forEach(field => {
@@ -50,7 +49,8 @@ export const handler = async (event: any) => {
                     table_name: field.field_name,
                     field_id: field.field_id,
                     fee_amount: field.amount,
-                    data: { total: { paid_to_club: 0, due_to_club: 0 } }
+                    total: { paid_to_club: 0, due_to_club: 0 },
+                    data: []
                 });
             } else if (field.input_type === "DROPDOWN") {
                 report.push({
@@ -58,7 +58,8 @@ export const handler = async (event: any) => {
                     field_id: field.field_id,
                     rows: field.billingOptions.map((option: any) => ({
                         row_name: option.label,
-                        data: { total: { fee_amount: option.amount, paid_to_club: 0, due_to_club: 0 } }
+                        total: { fee_amount: option.amount, paid_to_club: 0, due_to_club: 0 },
+                        data: []
                     }))
                 });
             }
@@ -68,7 +69,6 @@ export const handler = async (event: any) => {
             return createResponse(200, { report }, origin);
         }
 
-        // Process each member
         club_members.forEach(member => {
             const year_month = (member.registered ? member.registered_on : member.registration_submitted_on).slice(0, 7);
             let outstanding_amount = member.outstanding_amount;
@@ -77,68 +77,67 @@ export const handler = async (event: any) => {
                 report.forEach((table: any) => {
                     if (`reg_field_${table.field_id}` !== key) return;
 
-                    // TEXT fields
                     if (table.fee_amount !== undefined) {
-                        // Monthly bucket
-                        if (!table.data![year_month]) table.data![year_month] = { paid_to_club: 0, due_to_club: 0 };
-                        // Total bucket
-                        if (!table.data!["total"]) table.data!["total"] = { paid_to_club: 0, due_to_club: 0 };
+                        let index = table.data.findIndex((item: any) => item.date === year_month);
+                        if (index < 0) {
+                            table.data.push({ date: year_month, paid_to_club: 0, due_to_club: 0 })
+                            index = table.data.length - 1
+                        }
+                        
+        
+                        if (!table!["total"]) table!["total"] = { paid_to_club: 0, due_to_club: 0 };
 
                         const fee = table.fee_amount;
                         if (member.registered) {
-                            table.data![year_month].paid_to_club += fee;
-                            table.data!["total"].paid_to_club += fee;
+                            table.data[index].paid_to_club += fee;
+                            table!["total"].paid_to_club += fee;
                         } else {
                             if (outstanding_amount < fee) {
-                                table.data![year_month].due_to_club += outstanding_amount;
-                                table.data![year_month].paid_to_club += fee - outstanding_amount;
-                                table.data!["total"].due_to_club += outstanding_amount;
-                                table.data!["total"].paid_to_club += fee - outstanding_amount;
+                                table.data[index].due_to_club += outstanding_amount;
+                                table.data[index].paid_to_club += fee - outstanding_amount;
+                                table!["total"].due_to_club += outstanding_amount;
+                                table!["total"].paid_to_club += fee - outstanding_amount;
                                 outstanding_amount = 0;
                             } else {
-                                table.data![year_month].due_to_club += fee;
-                                table.data!["total"].due_to_club += fee;
+                                table.data[index].due_to_club += fee;
+                                table!["total"].due_to_club += fee;
                                 outstanding_amount -= fee;
                             }
                         }
                     }
 
-                    // DROPDOWN fields
                     if (table.rows) {
                         table.rows.forEach((row: any) => {
                             if (row.row_name !== member[key].label_value) return;
 
-                            // Monthly bucket
-                            if (!row.data[year_month]) {
-                                row.data[year_month] = {
-                                    fee_amount: row.data.total.fee_amount,
-                                    paid_to_club: 0,
-                                    due_to_club: 0
-                                };
+                            let index = row.data.findIndex((item: any) => item.date === year_month);
+                            if (index < 0) {
+                                row.data.push({ date: year_month, paid_to_club: 0, due_to_club: 0 })
+                                index = row.data.length - 1
                             }
-                            // Total bucket
-                            if (!row.data["total"]) {
-                                row.data["total"] = {
-                                    fee_amount: row.data.total.fee_amount,
+   
+                            if (!row["total"]) {
+                                row["total"] = {
+                                    fee_amount: row.total.fee_amount,
                                     paid_to_club: 0,
                                     due_to_club: 0
                                 };
                             }
 
-                            const fee = row.data.total.fee_amount;
+                            const fee = row.total.fee_amount;
                             if (member.registered) {
-                                row.data[year_month].paid_to_club += fee;
-                                row.data["total"].paid_to_club += fee;
+                                row.data[index].paid_to_club += fee;
+                                row["total"].paid_to_club += fee;
                             } else {
                                 if (outstanding_amount < fee) {
-                                    row.data[year_month].due_to_club += outstanding_amount;
-                                    row.data[year_month].paid_to_club += fee - outstanding_amount;
-                                    row.data["total"].due_to_club += outstanding_amount;
-                                    row.data["total"].paid_to_club += fee - outstanding_amount;
+                                    row.data[index].due_to_club += outstanding_amount;
+                                    row.data[index].paid_to_club += fee - outstanding_amount;
+                                    row["total"].due_to_club += outstanding_amount;
+                                    row["total"].paid_to_club += fee - outstanding_amount;
                                     outstanding_amount = 0;
                                 } else {
-                                    row.data[year_month].due_to_club += fee;
-                                    row.data["total"].due_to_club += fee;
+                                    row.data[index].due_to_club += fee;
+                                    row["total"].due_to_club += fee;
                                     outstanding_amount -= fee;
                                 }
                             }

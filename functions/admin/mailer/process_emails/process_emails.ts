@@ -65,13 +65,12 @@ async function get_club_email_sending_limit(club_account_id: string, emails: str
         return `Monthly email limit reached. Available emails: ${club?.maximum_monthly_emails - emails_sent}.`
     }
 
-    const email_free_limit_difference = club.free_email_limit - (emails_sent + emails.length);
-
     return {
         support_email: club.support_email,
         email_source: club.club_from_email,
-        free_email_limit: email_free_limit_difference > 0 ? email_free_limit_difference : 0,
-        email_fee: club.fee_per_email_to_club
+        free_email_limit: club.free_email_limit,
+        email_fee: club.fee_per_email_to_club,
+        emails_sent: emails_sent
     }
 } 
 

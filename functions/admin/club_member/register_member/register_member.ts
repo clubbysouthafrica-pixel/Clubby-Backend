@@ -99,7 +99,7 @@ export const handler = async (event: any) => {
                     date: new Date().getTime(),
                     amount: body.payment_amount,
                     description: "Registration payment",
-                    type: "PAYMENT"
+                    type: "PAYMENT CONFIRMED"
                 }
             )
 
