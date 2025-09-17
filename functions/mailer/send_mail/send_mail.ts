@@ -102,14 +102,12 @@ export const handler = async (event: any) => {
         support_email
       } = body;
 
-      // --- Step 1: Precompute billing ---
       const totalEmails = emails.length;
       const paidEmails = Math.max(totalEmails - free_email_limit, 0);
       const totalAmount = paidEmails * email_fee;
 
       await updateClubsEmailBilling(club_account_id, totalEmails, totalAmount);
 
-      // --- Step 2: Actually send the emails ---
       const chunkedEmails = chunkArray(emails, 45);
       await sendChunkedEmails(email_source, support_email, subject, email_body, chunkedEmails as string[][]);
     }
