@@ -3,7 +3,8 @@ import {
     createResponse,
     deconstructEvent,
     getItem,
-    queryItems
+    queryItems,
+    formatAmount
 } from "./function_helpers";
 
 export const handler = async (event: any) => {
@@ -27,7 +28,22 @@ export const handler = async (event: any) => {
             return createResponse(500, { message: "Club does not exist." }, origin);
         }
 
-        const report: Record<string, any> = {};
+        const report: Record<string, any> = {
+            Registrations: {
+                registration_month_data: [],
+                "Total registration charge": 0,
+                "Registered users": 0,
+                "Charge per registration": formatAmount(club.member_registration_fee_to_club, club.currency)
+            },
+            Emails: {
+                email_month_data: [],
+                "Total email charge": 0,
+                "Total emails sent": 0,
+                "Monthly free emails": club.free_email_limit,
+                "Charge per email": club.fee_per_email_to_club
+            },
+            total_outstanding_amount: 0
+        };
         report["MCS charge per registration"] = club.member_registration_fee_to_club
         report["Total free emails per month"] = club.free_email_limit
         report["MCS charge per email"] = club.fee_per_email_to_club
@@ -35,6 +51,23 @@ export const handler = async (event: any) => {
 
         monthly_billing?.forEach(month => {
             report["MCS total outstanding amount"] += month?.outstanding_amount ?? 0
+            report.total_outstanding_amount += month?.outstanding_amount ?? 0
+
+            const registration_month_data = {
+                name: month.year_month ?? 0,
+                users: month?.total_registered_users ?? 0,
+                charge: month?.registration_amount ?? 0
+            }
+            report.Registrations.registration_month_data.push(registration_month_data)
+
+            if (month?.total_emails) {
+                const email_month_data = {
+                    name: month.year_month ?? 0,
+                    emails: month?.total_emails,
+                    charge: month?.email_amount
+                }
+                report.Emails.email_month_data.push(email_month_data)
+            }
 
             report[month.year_month] = {}
             report[month.year_month]["MCS monthly outstanding amount"] = month.outstanding_amount
