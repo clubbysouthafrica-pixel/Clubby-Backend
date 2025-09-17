@@ -30,35 +30,32 @@ export const handler = async (event: any) => {
 
         const report: Record<string, any> = {
             Registrations: {
-                registration_month_data: [],
+                month_data: [],
                 "Total registration charge": 0,
-                "Registered users": 0,
+                "Total registered users": 0,
                 "Charge per registration": formatAmount(club.member_registration_fee_to_club, club.currency)
             },
             Emails: {
-                email_month_data: [],
+                month_data: [],
                 "Total email charge": 0,
                 "Total emails sent": 0,
                 "Monthly free emails": club.free_email_limit,
-                "Charge per email": club.fee_per_email_to_club
+                "Charge per email": formatAmount(club.fee_per_email_to_club, club.currency)
             },
-            total_outstanding_amount: 0
+            total_outstanding_amount: 0,
+            total_charge: 0
         };
-        report["MCS charge per registration"] = club.member_registration_fee_to_club
-        report["Total free emails per month"] = club.free_email_limit
-        report["MCS charge per email"] = club.fee_per_email_to_club
-        report["MCS total outstanding amount"] = 0
 
         monthly_billing?.forEach(month => {
-            report["MCS total outstanding amount"] += month?.outstanding_amount ?? 0
             report.total_outstanding_amount += month?.outstanding_amount ?? 0
+            report.total_charge += month.total_amount
 
             const registration_month_data = {
                 name: month.year_month ?? 0,
                 users: month?.total_registered_users ?? 0,
                 charge: month?.registration_amount ?? 0
             }
-            report.Registrations.registration_month_data.push(registration_month_data)
+            report.Registrations.month_data.push(registration_month_data)
 
             if (month?.total_emails) {
                 const email_month_data = {
@@ -66,21 +63,25 @@ export const handler = async (event: any) => {
                     emails: month?.total_emails,
                     charge: month?.email_amount
                 }
-                report.Emails.email_month_data.push(email_month_data)
+                report.Emails.month_data.push(email_month_data)
             }
 
-            report[month.year_month] = {}
-            report[month.year_month]["MCS monthly outstanding amount"] = month.outstanding_amount
-            report[month.year_month]["MCS total monthly charge"] = month.total_amount
+            report.Registrations["Total registration charge"] += month?.registration_amount ?? 0
+            report.Registrations["Total registered users"] += month?.total_registered_users ?? 0
 
-            report[month.year_month]["Registration"] = {}
-            report[month.year_month]["Registration"]["Total registered users"] = month?.total_registered_users ?? 0
-            report[month.year_month]["Registration"]["MCS registration charge"] = month?.registration_amount ?? 0
+            report.Emails["Total email charge"] += month?.email_amount ?? 0
+            report.Emails["Total emails sent"] += month?.total_emails ?? 0
 
-            report[month.year_month]["Emails"] = {}
-            report[month.year_month]["Emails"]["Total emails sent"] = month?.total_emails ?? 0
-            report[month.year_month]["Emails"]["MCS email charge"] = month?.email_amount ?? 0
+            if (!report.overall_month_data) {
+                report.overall_month_data = {}
+            }
+            report.overall_month_data[month.year_month] = {}
+            report.overall_month_data[month.year_month].outstanding_amount = month.outstanding_amount
+            report.overall_month_data[month.year_month].total_amount = month.total_amount
         });
+
+        report.Registrations["Total registration charge"] = formatAmount(report.Registrations["Total registration charge"], club.currency)
+        report.Emails["Total email charge"] = formatAmount(report.Emails["Total email charge"], club.currency)
 
         return createResponse(200, { report }, origin);
 
