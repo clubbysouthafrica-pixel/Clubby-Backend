@@ -41,8 +41,8 @@ export const handler = async (event: any) => {
                         total_registered_members: 0,
                         total_pending_members: 0,
                         total_registration_fees_due_by_pending_members: 0,
-                        total_registration_fees_paid: member.registration_amount,
-                        total_extra_fees_owed_by_registered_members: member.outstanding_amount,
+                        total_registration_fees_paid: 0,
+                        total_extra_fees_owed_by_registered_members: 0,
                     });
                     index = report.data.length - 1;
                 }

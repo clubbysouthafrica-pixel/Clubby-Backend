@@ -60,6 +60,10 @@ export const handler = async (event: any) => {
             club_type: item["club_type"],
             club_name: item["club_name"],
             description: item["description"] ?? undefined,
+            address: item["address"] ?? undefined,
+            support_email: item["support_email"],
+            country_of_operation: item["country_of_operation"],
+            joined: item["joined"],
             club_member_exists: member_exists,
             registered: registered,
             ...await getClubImageUrls(query_string_params?.get_club_images, query_string_params.club_account_id)
