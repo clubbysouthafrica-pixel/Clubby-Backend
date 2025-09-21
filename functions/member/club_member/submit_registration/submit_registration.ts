@@ -209,7 +209,7 @@ export const handler = async (event: any) => {
         const billingFields: BillingField[] = [];
         const standardFields: StandardField[] = [];
 
-        form.forEach((field, index) => {
+        form.forEach(field => {
             if (!field.visible) {
                 return
             }
