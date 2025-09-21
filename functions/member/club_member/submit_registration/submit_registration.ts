@@ -211,7 +211,6 @@ export const handler = async (event: any) => {
 
         form.forEach((field, index) => {
             if (!field.visible) {
-                form.splice(index, 1);
                 return
             }
 
