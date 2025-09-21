@@ -30,13 +30,6 @@ export const handler = async (event: any) => {
         club_members.forEach(item => {
             delete item.club_account_id
 
-            const meta: Record<string, string> = {};
-            Object.keys(item).forEach(key => {
-                if (key.includes("reg_field_")) {
-                    meta[item[key].field_name] = item[key].value
-                }
-            })
-
             const meta_billing: any = [];
             const meta_standard: any = [];
             Object.keys(item).forEach(key => {
@@ -56,7 +49,6 @@ export const handler = async (event: any) => {
                     registration_submitted_on: item.registration_submitted_on ?? undefined,
                     registered_on: item.registered_on ?? undefined,
                     member_email: item.member_email,
-                    meta: meta,
                     meta_standard: meta_standard,
                     meta_billing: meta_billing
                 });
@@ -68,7 +60,6 @@ export const handler = async (event: any) => {
                     member_surname: item.member_surname,
                     user_id: item.user_id,
                     registration_submitted_on: item.registration_submitted_on ?? undefined,
-                    meta: meta,
                     meta_standard: meta_standard,
                     meta_billing: meta_billing
                 });
