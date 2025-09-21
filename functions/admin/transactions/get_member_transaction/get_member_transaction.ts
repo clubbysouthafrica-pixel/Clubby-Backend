@@ -15,7 +15,7 @@ export const handler = async (event: any) => {
 
         const transactions = await queryItems(
             process.env.TRANSACTIONS_TABLE_NAME as string,
-            "club_account_id = :clubId, user_id = :userId",
+            "club_account_id = :clubId AND user_id = :userId",
             {
                 ":clubId": query_string_params.club_account_id,
                 ":userId": query_string_params.user_id

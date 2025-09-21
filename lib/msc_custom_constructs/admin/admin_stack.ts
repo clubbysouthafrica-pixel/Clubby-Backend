@@ -11,7 +11,8 @@ import {
     MSC_ImagesConstruct,
     MSC_MailerConstruct,
     MSC_ReportingConstruct,
-    MSC_DeregistrationConstruct
+    MSC_DeregistrationConstruct,
+    MSC_TransactionsConstruct
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
@@ -55,6 +56,13 @@ export class MSC_AdminNestedStack extends Stack {
             user_type: "admin",
             layers: props.layers
         });
+
+        new MSC_TransactionsConstruct(this, `${id}-Transactions`, {
+            api_gateway: api_gateway,
+            layers: props.layers,
+            token_authorizer: jwt_construct.token_authorizer,
+            transactions_table: props.transactions_table
+        })
 
         new  MSC_ReportingConstruct(this, `${id}-Reporting`, {
             api_gateway: api_gateway,

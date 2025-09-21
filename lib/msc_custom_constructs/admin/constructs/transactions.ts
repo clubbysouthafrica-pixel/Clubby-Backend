@@ -15,8 +15,8 @@ export class MSC_TransactionsConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_TransactionsConstructProps) {
         super(scope, id);
 
-        const get_user_transactions = new MSC_Lambda(this, `${id}-GetUserTransaction`, {
-            code: "member/transactions/get_user_transaction",
+        const get_member_transactions = new MSC_Lambda(this, `${id}-GetMemberTransaction`, {
+            code: "admin/transactions/get_member_transaction",
             envVariables: {
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_USER_ID_INDEX: "UserIDIndex"
@@ -31,7 +31,7 @@ export class MSC_TransactionsConstruct extends Construct {
 
         const transactions = props.api_gateway.root.addResource("transactions");
 
-        const get_user_transactions_resource = transactions.addResource("user");
+        const get_member_transactions_resource = transactions.addResource("member");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -39,6 +39,6 @@ export class MSC_TransactionsConstruct extends Construct {
             authorizer: props.token_authorizer
         }
 
-        addCorsEnabledMethod(get_user_transactions_resource, get_user_transactions, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(get_member_transactions_resource, get_member_transactions, methodOptions, undefined, "GET");
     }
 }
