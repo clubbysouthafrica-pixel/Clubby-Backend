@@ -249,7 +249,14 @@ export const handler = async (event: any) => {
             ...body.standard_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
                 const f = form.find(f => f.field_id === field.field_id);
 
-                acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
+                acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, type: "STANDARD_TEXT" };
+                if (f?.input_type === "DROPDOWN") {
+                    acc[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
+                } else if (f?.input_type === "CHECKBOX") {
+                    acc[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
+                } else if (f?.input_type === "NUMBER") {
+                    acc[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
+                }
                 return acc;
             }, {}),
             ...body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: {
@@ -260,6 +267,9 @@ export const handler = async (event: any) => {
                 acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
                 if (f?.input_type === "DROPDOWN" && field?.label) {
                     acc[`reg_field_${field.field_id}`].label_value = field.label
+                    acc[`reg_field_${field.field_id}`].type = "BILLING_DROPDOWN"
+                } else {
+                    acc[`reg_field_${field.field_id}`].type = "BILLING_TEXT"
                 }
                 return acc;
             }, {})

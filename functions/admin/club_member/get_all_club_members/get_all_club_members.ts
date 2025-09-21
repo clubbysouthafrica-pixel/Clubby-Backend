@@ -37,6 +37,16 @@ export const handler = async (event: any) => {
                 }
             })
 
+            const meta_billing: any = [];
+            const meta_standard: any = [];
+            Object.keys(item).forEach(key => {
+                if (key.includes("reg_field_") && item[key].type.includes("BILLING_")) {
+                    meta_billing.push(item[key])
+                } else if (key.includes("reg_field_") && item[key].type.includes("STANDARD_")) {
+                    meta_standard.push(item[key])
+                }
+            })
+
             if (item.registered) {
                 registered.push({
                     outstanding_amount: item.outstanding_amount,
@@ -46,7 +56,9 @@ export const handler = async (event: any) => {
                     registration_submitted_on: item.registration_submitted_on ?? undefined,
                     registered_on: item.registered_on ?? undefined,
                     member_email: item.member_email,
-                    meta: meta
+                    meta: meta,
+                    meta_standard: meta_standard,
+                    meta_billing: meta_billing
                 });
             } else {
                 unregistered.push({
@@ -57,6 +69,8 @@ export const handler = async (event: any) => {
                     user_id: item.user_id,
                     registration_submitted_on: item.registration_submitted_on ?? undefined,
                     meta: meta,
+                    meta_standard: meta_standard,
+                    meta_billing: meta_billing
                 });
             }
         })
