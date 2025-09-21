@@ -136,7 +136,7 @@ export const handler = async (event: any) => {
                 date: new Date().getTime(),
                 amount: body.payment_amount,
                 description: "Registration payment",
-                payment_type: "EFT / CASH",
+                payment_type: "EFT/CASH",
                 status: "CONFIRMED"
             }
         )
