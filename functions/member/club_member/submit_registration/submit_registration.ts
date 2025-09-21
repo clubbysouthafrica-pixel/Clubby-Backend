@@ -209,7 +209,7 @@ export const handler = async (event: any) => {
         const billingFields: BillingField[] = [];
         const standardFields: StandardField[] = [];
 
-        form.forEach((field, index) => {
+        form.forEach(field => {
             if (!field.visible) {
                 return
             }
@@ -288,7 +288,8 @@ export const handler = async (event: any) => {
                 date: new Date().getTime(),
                 amount: membership_amount,
                 description: "Registration submission",
-                type: "PAYMENT PENDING"
+                payment_type: "EFT/CASH",
+                status: "PENDING"
             }
         )
 

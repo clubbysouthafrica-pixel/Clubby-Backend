@@ -8,7 +8,8 @@ import {
     MSC_MemberClubConstruct ,
     MSC_MemberRegistrationFormConstruct,
     MSC_ClubMemberConstruct,
-    MSC_ImagesConstruct
+    MSC_ImagesConstruct,
+    MSC_TransactionsConstruct
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs"
 import { MSC_Layers } from '../lambda_layers';
@@ -42,6 +43,13 @@ export class MSC_MemberNestedStack extends Stack {
             user_pool: login_construct.user_pool,
             layers: props.layers
         });
+
+        new MSC_TransactionsConstruct(this, `${id}-Transactions`, {
+            api_gateway: api_gateway,
+            layers: props.layers,
+            token_authorizer: jwt_construct.token_authorizer,
+            transactions_table: props.transactions_table
+        })
 
         new MSC_ImagesConstruct(this, `${id}-Images`, {
             api_gateway: api_gateway,
