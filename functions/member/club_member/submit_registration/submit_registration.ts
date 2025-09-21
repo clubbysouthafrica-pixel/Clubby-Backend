@@ -223,6 +223,9 @@ export const handler = async (event: any) => {
         if (typeof membership_amount === 'string') {
             return createResponse(400, { message: membership_amount }, origin);
         }
+        if (typeof membership_amount !== "number") {
+            return createResponse(500, { message: "Issue processing registration form." }, origin);
+        }
 
         const standardFieldValidation = validateStandardFields(standardFields, body.standard_fields);
         if (standardFieldValidation) {
