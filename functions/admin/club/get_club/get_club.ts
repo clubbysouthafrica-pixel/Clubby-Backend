@@ -22,7 +22,11 @@ export const handler = async (event: any) => {
             club_account_id: item["club_account_id"],
             club_type: item["club_type"],
             club_name: item["club_name"],
-            description: item["description"] ?? undefined
+            description: item["description"] ?? undefined,
+            address: item["address"] ?? undefined,
+            support_email: item["support_email"],
+            country_of_operation: item["country_of_operation"],
+            joined: item["joined"]
         }, origin);
 
     } catch (error) {
