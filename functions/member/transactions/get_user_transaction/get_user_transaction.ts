@@ -20,7 +20,7 @@ export const handler = async (event: any) => {
                 ":clubId": query_string_params.club_account_id,
                 ":userId": query_string_params.user_id
             },
-            process.env.REGISTRATIONS_USER_ID_INDEX as string
+            process.env.TRANSACTIONS_USER_ID_INDEX as string
         )
 
         if (transactions == null) {

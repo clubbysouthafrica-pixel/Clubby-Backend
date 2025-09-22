@@ -19,7 +19,7 @@ export class MSC_TransactionsConstruct extends Construct {
             code: "member/transactions/get_user_transaction",
             envVariables: {
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
-                REGISTRATIONS_USER_ID_INDEX: "UserIDIndex"
+                TRANSACTIONS_USER_ID_INDEX: "UserIDIndex"
             },
             permissions: {
                 [`${props.transactions_table.tableArn}/index/UserIDIndex`]: [

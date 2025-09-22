@@ -9,18 +9,14 @@ export const handler = async (event: any) => {
 
     try {
 
-        if (query_string_params?.club_account_id == null || query_string_params?.user_id == null) {
-            return createResponse(400, { message: 'club_account_id, user_id required.' }, origin);
+        if (query_string_params?.club_account_id == null) {
+            return createResponse(400, { message: 'club_account_id required.' }, origin);
         }
 
         const transactions = await queryItems(
             process.env.TRANSACTIONS_TABLE_NAME as string,
-            "club_account_id = :clubId AND user_id = :userId",
-            {
-                ":clubId": query_string_params.club_account_id,
-                ":userId": query_string_params.user_id
-            },
-            process.env.TRANSACTIONS_USER_ID_INDEX as string
+            "club_account_id = :clubId",
+            { ":clubId": query_string_params.club_account_id }
         )
 
         if (transactions == null) {
