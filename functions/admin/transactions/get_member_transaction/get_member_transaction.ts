@@ -30,7 +30,7 @@ export const handler = async (event: any) => {
         transactions.sort((a: any, b: any) => a.date - b.date)
         const transactions_cleaned = transactions.map((tx: any) => ({
             ...tx,
-            date: new Date(tx.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+            date: new Date(tx.date).toLocaleDateString('en-GB')
         }));
 
         return createResponse(200, { transactions: transactions_cleaned }, origin);
