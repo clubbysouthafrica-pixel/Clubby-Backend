@@ -287,6 +287,7 @@ export const handler = async (event: any) => {
                 user_id: user_id as string,
                 date: new Date().getTime(),
                 amount: membership_amount,
+                type: "REGISTRATION",
                 description: "Registration submission",
                 payment_type: "EFT/CASH",
                 status: "PENDING"

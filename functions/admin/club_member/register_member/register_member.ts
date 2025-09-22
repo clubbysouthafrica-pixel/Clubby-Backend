@@ -135,6 +135,7 @@ export const handler = async (event: any) => {
                 user_id: club_member.user_id,
                 date: new Date().getTime(),
                 amount: body.payment_amount,
+                type: "REGISTRATION",
                 description: "Registration payment",
                 payment_type: "EFT/CASH",
                 status: "CONFIRMED"
