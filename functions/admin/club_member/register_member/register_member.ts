@@ -95,7 +95,7 @@ export const handler = async (event: any) => {
                 {
                     club_account_id: body.club_account_id,
                     transaction_id: randomUUID(),
-                    user_id: user_id as string,
+                    user_id: club_member.user_id,
                     date: new Date().getTime(),
                     amount: body.payment_amount,
                     description: "Registration payment",
@@ -132,7 +132,7 @@ export const handler = async (event: any) => {
             {
                 club_account_id: body.club_account_id,
                 transaction_id: randomUUID(),
-                user_id: user_id as string,
+                user_id: club_member.user_id,
                 date: new Date().getTime(),
                 amount: body.payment_amount,
                 description: "Registration payment",

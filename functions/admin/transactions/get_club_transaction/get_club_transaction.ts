@@ -23,10 +23,17 @@ export const handler = async (event: any) => {
             return createResponse(200, { transactions: [] }, origin);
         }
 
-        transactions.sort((a: any, b: any) => a.date - b.date)
+        transactions.sort((a: any, b: any) => b.date - a.date)
         const transactions_cleaned = transactions.map((tx: any) => ({
             ...tx,
-            date: new Date(tx.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+            date: new Date(tx.date).toLocaleString('en-GB', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+            })
         }));
 
         return createResponse(200, { transactions: transactions_cleaned }, origin);
