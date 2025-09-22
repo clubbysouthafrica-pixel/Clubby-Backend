@@ -24,21 +24,23 @@ export const handler = async (event: any) => {
         }
 
         transactions.sort((a: any, b: any) => b.date - a.date)
-        const transactions_cleaned = transactions.map((tx: any) => ({
-            ...tx,
-            date: new Date(tx.date).toLocaleString('en-GB', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
+        const transactions_cleaned = transactions.map((tx: any) => {
+            const dateObj = new Date(tx.date);
+
+            const formattedDate = dateObj.toLocaleDateString('en-GB');
+            const formattedTime = dateObj.toLocaleTimeString('en-GB', {
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: false,
-            })
-        }));
+                hour12: true,
+            }).replace(' ', '');
+
+            return {
+                ...tx,
+                date: `${formattedDate} ${formattedTime}`,
+            };
+        });
 
         return createResponse(200, { transactions: transactions_cleaned }, origin);
-
-
     } catch (error: any) {
         console.error('Signup error:', error);
         const message = error?.message || "Internal Server Error";
