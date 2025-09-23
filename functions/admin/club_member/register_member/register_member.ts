@@ -46,7 +46,7 @@ export const handler = async (event: any) => {
         if (body?.club_account_id == null || body?.member_id == null || body?.payment_amount == null) {
             return createResponse(400, { message: "Invalid request. club_account_id, member_id, payment_amount requried in body." }, origin);
         }
-        if (typeof body.club_account_id !== 'string' || typeof body.member_id !== 'string' || typeof body.payment_amount !== 'number' ) {
+        if (typeof body.club_account_id !== 'string' || typeof body.member_id !== 'string' || typeof body.payment_amount !== 'number') {
             return createResponse(400, { message: "club_account_id, member_id must be STRING type. payment_amount must be NUMBER type." }, origin);
         }
 
@@ -94,12 +94,15 @@ export const handler = async (event: any) => {
                 process.env.TRANSACTIONS_TABLE_NAME as string,
                 {
                     club_account_id: body.club_account_id,
+                    name: `${club_member.member_first_name} ${club_member.member_surname}`,
                     transaction_id: randomUUID(),
                     user_id: club_member.user_id,
                     date: new Date().getTime(),
                     amount: body.payment_amount,
+                    type: "REGISTRATION",
                     description: "Registration payment",
-                    type: "PAYMENT CONFIRMED"
+                    payment_type: "EFT/CASH",
+                    status: "CONFIRMED"
                 }
             )
 
@@ -132,6 +135,7 @@ export const handler = async (event: any) => {
             {
                 club_account_id: body.club_account_id,
                 transaction_id: randomUUID(),
+                name: `${club_member.member_first_name} ${club_member.member_surname}`,
                 user_id: club_member.user_id,
                 date: new Date().getTime(),
                 amount: body.payment_amount,

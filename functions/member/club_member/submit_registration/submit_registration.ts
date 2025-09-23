@@ -283,6 +283,7 @@ export const handler = async (event: any) => {
             process.env.TRANSACTIONS_TABLE_NAME as string,
             {
                 club_account_id: body.club_account_id,
+                name: `${user.first_name} ${user.surname}`,
                 transaction_id: randomUUID(),
                 user_id: user_id as string,
                 date: new Date().getTime(),
