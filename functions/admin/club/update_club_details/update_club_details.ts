@@ -75,6 +75,12 @@ export const handler = async (event: any) => {
             expressionAttributeValues[":currency"] = body.currency;
         }
 
+        if (body?.support_email && typeof body.support_email === "string") {
+            updateParts.push("#support_email = :support_email");
+            expressionAttributeNames["#support_email"] = "support_email";
+            expressionAttributeValues[":support_email"] = body.support_email;
+        }
+
         if (updateParts.length === 0) {
             return createResponse(200, { message: "Nothing to update." }, origin);
         }
