@@ -313,8 +313,7 @@ export const handler = async (event: any) => {
                     acc[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
                 }
                 return acc;
-            }, {}),
-            ...billing_fields
+            }, {})
         };
 
         await addItem(
