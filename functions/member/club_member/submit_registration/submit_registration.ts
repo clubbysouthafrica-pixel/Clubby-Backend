@@ -170,10 +170,10 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
 }
 
 async function addToRegistrationFeesTable(
-    club_account_id: string, 
-    user_id: string, 
-    billing_fields: any, 
-    membership_amount: number, 
+    club_account_id: string,
+    user_id: string,
+    billing_fields: any,
+    membership_amount: number,
     registration_submitted_on: number
 ): Promise<string> {
     const member_registrations = await queryItems(
@@ -331,10 +331,11 @@ export const handler = async (event: any) => {
                 user_id: user_id as string,
                 amount_paid: 0,
                 amount: membership_amount,
-                [`lifecycle_${Date.now}`]: {
-                    date: Date.now(),
-                    description: "Registration submission",
-                    amount: membership_amount
+                lifecycle: {
+                    [Date.now()]: {
+                        description: "Registration submission",
+                        amount: membership_amount
+                    }
                 },
                 type: "REGISTRATION",
                 payment_type: "EFT/CASH",

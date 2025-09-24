@@ -124,10 +124,11 @@ export const handler = async (event: any) => {
 
         const registered_on = Date.now()
 
+        const timestamp = registered_on;
         const newLifecycleEntry = {
             date: timestamp,
             description: "Registration submission",
-            amount: membership_amount
+            amount: body.payment_amount
         };
 
         await updateItem(
@@ -142,7 +143,7 @@ export const handler = async (event: any) => {
                 "#amount": "amount",
                 "#status": "status",
                 "#lifecycle": "lifecycle",
-                "#ts": `${Date.now()}`
+                "#ts": `${timestamp}`
             },
             {
                 ":status": "PAID",

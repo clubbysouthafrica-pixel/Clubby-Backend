@@ -6,7 +6,7 @@ const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
 export const addItem = async (
     table_name: string, 
-    item: Record<string, string | boolean | number>,
+    item: Record<string, any>,
     condition_expression?: string,
 ) => {
     if (!item || Object.keys(item).length === 0) {
