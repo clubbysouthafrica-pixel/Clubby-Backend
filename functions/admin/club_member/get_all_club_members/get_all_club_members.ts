@@ -1,4 +1,4 @@
-import { createResponse, deconstructEvent, queryItems } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, queryItems } from "./function_helpers";
 
 export const handler = async (event: any) => {
 
@@ -27,22 +27,33 @@ export const handler = async (event: any) => {
         const registered: any[] = []
         const unregistered: any[] = []
 
-        club_members.forEach(item => {
+        club_members.forEach(async item => {
             delete item.club_account_id
+
+            const registration_fee = await getItem(
+                process.env.REGISTRATION_FEES_TABLE_NAME as string,
+                { 
+                   user_id: user_id as string,
+                   registration_id: item.current_reg_id
+                }
+            )
 
             const meta_billing: any = [];
             const meta_standard: any = [];
             Object.keys(item).forEach(key => {
+                if (key.includes("reg_field_") && item[key].type.includes("STANDARD_")) {
+                    meta_standard.push(item[key])
+                }
+            })
+            Object.keys(registration_fee ?? {}).forEach(key => {
                 if (key.includes("reg_field_") && item[key].type.includes("BILLING_")) {
                     meta_billing.push(item[key])
-                } else if (key.includes("reg_field_") && item[key].type.includes("STANDARD_")) {
-                    meta_standard.push(item[key])
                 }
             })
 
             if (item.registered) {
                 registered.push({
-                    outstanding_amount: item.outstanding_amount,
+                    outstanding_amount: registration_fee?.total_outstanding_amount,
                     user_id: item.user_id,
                     member_first_name: item.member_first_name,
                     member_surname: item.member_surname,

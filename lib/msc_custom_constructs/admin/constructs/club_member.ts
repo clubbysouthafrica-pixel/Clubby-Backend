@@ -24,11 +24,15 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             code: "admin/club_member/get_all_club_members",
             envVariables: {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
+                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
+                REGISTRATION_FEES_TABLE_NAME: props.registration_fees_table.tableName
             },
             permissions: {
                 [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
                     "dynamodb:Query"
+                ],
+                [props.registration_fees_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
