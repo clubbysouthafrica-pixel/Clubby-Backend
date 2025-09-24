@@ -27,7 +27,7 @@ export const handler = async (event: any) => {
         const registered: any[] = []
         const unregistered: any[] = []
 
-        club_members.forEach(async item => {
+        for (const item of club_members) {
             delete item.club_account_id
 
             const registration_fee = await getItem(
@@ -75,7 +75,7 @@ export const handler = async (event: any) => {
                     meta_billing: meta_billing
                 });
             }
-        })
+        }
 
         return createResponse(200, { registered, unregistered }, origin);
 
