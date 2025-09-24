@@ -78,7 +78,7 @@ export class MSC_TablesConstruct extends Construct {
 
         this.registration_fees_table = new MSC_Table(this, `${id}-RegistraionFees`, {
             partitionKey: { "user_id": "STRING" },
-            sortKey: { "registration_id": "NUMBER" }
+            sortKey: { "registration_id": "STRING" }
         })
     }
 }
