@@ -9,6 +9,7 @@ interface MSC_ReportingConstructProps {
     club_member_table: MSC_Table;
     club_table: MSC_Table;
     billing_table: MSC_Table;
+    registration_fees_table: MSC_Table;
     registration_form_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     layers: MSC_Layers;
@@ -21,11 +22,11 @@ export class MSC_ReportingConstruct extends Construct {
         const general_reporting = new MSC_Lambda(this, `${id}-GeneralReporting`, {
             code: "admin/reporting/general_reporting",
             envVariables: {
-                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                REGISTRATION_FEES_TABLE_NAME: props.registration_fees_table.tableName,
                 CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
             },
             permissions: {
-                [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
+                [`${props.registration_fees_table.tableArn}/index/ClubAccountIDIndex`]: [
                     "dynamodb:Query"
                 ]
             },

@@ -72,7 +72,8 @@ export class MSC_AdminNestedStack extends Stack {
             billing_table: props.billing_table,
             layers: props.layers,
             token_authorizer: jwt_construct.token_authorizer,
-            registration_form_table: props.registration_form_table
+            registration_form_table: props.registration_form_table,
+            registration_fees_table: props.registration_fees_table
         });
 
         new MSC_DeregistrationConstruct(this, `${id}-Deregistration`, {
