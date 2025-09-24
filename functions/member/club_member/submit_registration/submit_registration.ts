@@ -333,7 +333,8 @@ export const handler = async (event: any) => {
                 lifecycle: {
                     [Date.now()]: {
                         description: "Registration submission",
-                        amount: membership_amount
+                        amount: membership_amount,
+                        type: "SUBMISSION"
                     }
                 },
                 type: "REGISTRATION",

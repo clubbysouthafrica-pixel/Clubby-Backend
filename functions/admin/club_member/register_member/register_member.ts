@@ -92,15 +92,23 @@ export const handler = async (event: any) => {
                     club_account_id: body.club_account_id,
                     transaction_id: club_member.current_reg_transaction_id
                 },
-                "SET #amount_paid = #amount_paid - :payment_amount, #status = :status",
+                `SET #amount_paid = #amount, #status = :status, #lifecycle.#ts = :lifecycleValue`,
                 {
-                    "#amount_paid": "amount_paid"
+                    "#amount_paid": "amount_paid",
+                    "#amount": "amount",
+                    "#status": "status",
+                    "#lifecycle": "lifecycle",
+                    "#ts": `${Date.now()}`
                 },
                 {
-                    ":status": "PARTIALLY PAID",
-                    ":payment_amount": body.payment_amount
+                    ":status": "PAID",
+                    ":lifecycleValue": {
+                        type: "CONFIRMATION",
+                        description: "Registration submission",
+                        amount: body.payment_amount
+                    }
                 }
-            )
+            );
 
             await updateItem(
                 process.env.REGISTRATION_FEES_TABLE_NAME as string,
@@ -124,13 +132,6 @@ export const handler = async (event: any) => {
 
         const registered_on = Date.now()
 
-        const timestamp = registered_on;
-        const newLifecycleEntry = {
-            date: timestamp,
-            description: "Registration submission",
-            amount: body.payment_amount
-        };
-
         await updateItem(
             process.env.TRANSACTIONS_TABLE_NAME as string,
             {
@@ -143,11 +144,15 @@ export const handler = async (event: any) => {
                 "#amount": "amount",
                 "#status": "status",
                 "#lifecycle": "lifecycle",
-                "#ts": `${timestamp}`
+                "#ts": `${registered_on}`
             },
             {
                 ":status": "PAID",
-                ":lifecycleValue": newLifecycleEntry
+                ":lifecycleValue": {
+                    type: "CONFIRMATION",
+                    description: "Payment confirmation",
+                    amount: body.payment_amount
+                }
             }
         );
 
