@@ -19,6 +19,7 @@ export interface MSC_MemberNestedStackProps extends StackProps {
     club_table: MSC_Table;
     club_member_table: MSC_Table;
     registration_form_table: MSC_Table;
+    registration_fees_table: MSC_Table;
     transactions_table: MSC_Table;
     image_bucket: MSC_Bucket;
     layers: MSC_Layers;

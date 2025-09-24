@@ -22,6 +22,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     users_table: MSC_Table;
     transactions_table: MSC_Table;
     club_table: MSC_Table;
+    registration_fees_table: MSC_Table;
     club_admin_table: MSC_Table;
     billing_table: MSC_Table;
     registration_form_table: MSC_Table;
