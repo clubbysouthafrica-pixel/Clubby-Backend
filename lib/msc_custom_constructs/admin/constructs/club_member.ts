@@ -59,7 +59,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                     "dynamodb:UpdateItem"
                 ],
                 [props.transactions_table.tableArn]: [
-                    "dynamodb:PutItem"
+                    "dynamodb:UpdateItem"
                 ],
                 [props.registration_fees_table.tableArn]: [
                     "dynamodb:GetItem",

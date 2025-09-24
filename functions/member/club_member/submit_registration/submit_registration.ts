@@ -169,7 +169,13 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
     return true;
 }
 
-async function addToRegistrationFeesTable(club_account_id: string, user_id: string, billing_fields: any, membership_amount: number): Promise<string> {
+async function addToRegistrationFeesTable(
+    club_account_id: string, 
+    user_id: string, 
+    billing_fields: any, 
+    membership_amount: number, 
+    registration_submitted_on: number
+): Promise<string> {
     const member_registrations = await queryItems(
         process.env.REGISTRATION_FEES_TABLE_NAME as string,
         "user_id = :userId",
@@ -190,7 +196,7 @@ async function addToRegistrationFeesTable(club_account_id: string, user_id: stri
             total_fee: membership_amount,
             total_outstanding_amount: membership_amount,
             deregistered: false,
-            registration_submitted_on: Date.now(),
+            registration_submitted_on,
             ...billing_fields,
         }
     )
@@ -275,7 +281,9 @@ export const handler = async (event: any) => {
             return acc;
         }, {})
 
-        const current_reg_id = await addToRegistrationFeesTable(body.club_account_id, user_id as string, billing_fields, membership_amount)
+        const registration_submitted_on = Date.now()
+
+        const current_reg_id = await addToRegistrationFeesTable(body.club_account_id, user_id as string, billing_fields, membership_amount, registration_submitted_on)
 
         const current_reg_transaction_id = randomUUID();
 
@@ -290,10 +298,8 @@ export const handler = async (event: any) => {
             member_surname: user.surname,
             registered: false,
             registration_payment_reference: generateShortReference(user.first_name, user.surname),
-            registration_submitted_on: new Date().toISOString(),
+            registration_submitted_on,
             ...await getClubDetails(body.club_account_id),
-            outstanding_amount: membership_amount,
-            registration_amount: membership_amount,
             primary_member: user_id,
             ...body.standard_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
                 const f = form.find(f => f.field_id === field.field_id);
@@ -323,11 +329,14 @@ export const handler = async (event: any) => {
                 name: `${user.first_name} ${user.surname}`,
                 transaction_id: current_reg_transaction_id,
                 user_id: user_id as string,
-                date: new Date().getTime(),
                 amount_paid: 0,
                 amount: membership_amount,
+                [`lifecycle_${Date.now}`]: {
+                    date: Date.now(),
+                    description: "Registration submission",
+                    amount: membership_amount
+                },
                 type: "REGISTRATION",
-                description: "Registration submission",
                 payment_type: "EFT/CASH",
                 status: "PENDING"
             }
