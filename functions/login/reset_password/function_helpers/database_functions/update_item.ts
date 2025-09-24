@@ -9,7 +9,7 @@ export const updateItem = async (
     key: Record<string, string>,
     update_expression: string,
     expression_attribute_names: Record<string, string>,
-    expression_attribute_values: Record<string, string | boolean | number | object>,
+    expression_attribute_values: Record<string, any>,
     condition_expression?: string,
     return_values: boolean = false,
 ) => {
