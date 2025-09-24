@@ -140,6 +140,7 @@ export class MSC_AdminNestedStack extends Stack {
             token_authorizer: jwt_construct.token_authorizer,
             registration_form_table: props.registration_form_table,
             billing_table: props.billing_table,
+            registration_fees_table: props.registration_fees_table,
             layers: props.layers
         });
     }

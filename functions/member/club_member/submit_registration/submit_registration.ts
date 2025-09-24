@@ -169,6 +169,35 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
     return true;
 }
 
+async function addToRegistrationFeesTable(club_account_id: string, user_id: string, billing_fields: any, membership_amount: number): Promise<string> {
+    const member_registrations = await queryItems(
+        process.env.REGISTRATION_FEES_TABLE_NAME as string,
+        "user_id = :userId",
+        { ":userId": user_id }
+    )
+
+    let new_registration_index = 1
+    if (member_registrations !== null) {
+        new_registration_index = member_registrations.length + 1
+    }
+
+    await addItem(
+        process.env.REGISTRATION_FEES_TABLE_NAME as string,
+        {
+            user_id: user_id,
+            registration_id: `${club_account_id}-00${new_registration_index}`,
+            club_account_id,
+            total_fee: membership_amount,
+            total_outstanding_amount: membership_amount,
+            deregistered: false,
+            registration_submitted_on: Date.now(),
+            ...billing_fields,
+        }
+    )
+
+    return `${club_account_id}-00${new_registration_index}`;
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -231,10 +260,31 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: standardFieldValidation }, origin);
         }
 
+        const billing_fields = body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: {
+            value: string; field_id: string; option_order_id?: string; label?: string;
+        }) => {
+            const f = form.find(f => f.field_id === field.field_id);
+
+            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
+            if (f?.input_type === "DROPDOWN" && field?.label) {
+                acc[`reg_field_${field.field_id}`].label_value = field.label
+                acc[`reg_field_${field.field_id}`].type = "BILLING_DROPDOWN"
+            } else {
+                acc[`reg_field_${field.field_id}`].type = "BILLING_TEXT"
+            }
+            return acc;
+        }, {})
+
+        const current_reg_id = await addToRegistrationFeesTable(body.club_account_id, user_id as string, billing_fields, membership_amount)
+
+        const current_reg_transaction_id = randomUUID();
+
         const item = {
             club_account_id: body.club_account_id,
             resubmission_required: false,
+            current_reg_id,
             user_id: user_id,
+            current_reg_transaction_id,
             member_email: user.email,
             member_first_name: user.first_name,
             member_surname: user.surname,
@@ -258,20 +308,7 @@ export const handler = async (event: any) => {
                 }
                 return acc;
             }, {}),
-            ...body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: {
-                value: string; field_id: string; option_order_id?: string; label?: string;
-            }) => {
-                const f = form.find(f => f.field_id === field.field_id);
-
-                acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
-                if (f?.input_type === "DROPDOWN" && field?.label) {
-                    acc[`reg_field_${field.field_id}`].label_value = field.label
-                    acc[`reg_field_${field.field_id}`].type = "BILLING_DROPDOWN"
-                } else {
-                    acc[`reg_field_${field.field_id}`].type = "BILLING_TEXT"
-                }
-                return acc;
-            }, {})
+            ...billing_fields
         };
 
         await addItem(
@@ -284,9 +321,10 @@ export const handler = async (event: any) => {
             {
                 club_account_id: body.club_account_id,
                 name: `${user.first_name} ${user.surname}`,
-                transaction_id: randomUUID(),
+                transaction_id: current_reg_transaction_id,
                 user_id: user_id as string,
                 date: new Date().getTime(),
+                amount_paid: 0,
                 amount: membership_amount,
                 type: "REGISTRATION",
                 description: "Registration submission",
