@@ -68,7 +68,7 @@ export class MSC_TablesConstruct extends Construct {
 
         this.transactions_table = new MSC_Table(this, `${id}-Transaction`, {
             partitionKey: { "club_account_id": "STRING" },
-            sortKey: { "transaction_id": "STRING" } ,
+            sortKey: { "transaction_id": "STRING" },
             gsi: [{
                 indexName: "UserIDIndex",
                 partitionKey: { name: "club_account_id", type: AttributeType.STRING },
@@ -78,7 +78,11 @@ export class MSC_TablesConstruct extends Construct {
 
         this.registration_fees_table = new MSC_Table(this, `${id}-RegistrationFees`, {
             partitionKey: { "user_id": "STRING" },
-            sortKey: { "registration_id": "STRING" }
+            sortKey: { "registration_id": "STRING" },
+            gsi: [{
+                indexName: "ClubAccountIDIndex",
+                partitionKey: { name: "club_account_id", type: AttributeType.STRING }
+            }]
         })
     }
 }
