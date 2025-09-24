@@ -41,15 +41,20 @@ export const handler = async (event: any) => {
             const meta_billing: any = [];
             const meta_standard: any = [];
             Object.keys(item).forEach(key => {
-                if (key.includes("reg_field_") && item[key].type.includes("STANDARD_")) {
+                console.log(key)
+                if (key.includes("reg_field_")) {
                     meta_standard.push(item[key])
                 }
             })
-            Object.keys(registration_fee ?? {}).forEach(key => {
-                if (key.includes("reg_field_") && item[key].type.includes("BILLING_")) {
-                    meta_billing.push(item[key])
-                }
-            })
+
+            if (registration_fee) {
+                Object.keys(registration_fee).forEach(key => {
+                    console.log(key)
+                    if (key.includes("reg_field_")) {
+                        meta_billing.push(registration_fee[key])
+                    }
+                })
+            }
 
             if (item.registered) {
                 registered.push({
@@ -65,7 +70,7 @@ export const handler = async (event: any) => {
                 });
             } else {
                 unregistered.push({
-                    outstanding_amount: item.outstanding_amount,
+                    outstanding_amount: registration_fee?.total_outstanding_amount,
                     registration_payment_reference: item.registration_payment_reference,
                     member_first_name: item.member_first_name,
                     member_surname: item.member_surname,
