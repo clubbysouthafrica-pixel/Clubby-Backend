@@ -77,7 +77,7 @@ export const handler = async (event: any) => {
         const registration_fee = await getItem(
             process.env.REGISTRATION_FEES_TABLE_NAME as string,
             {
-                user_id: user_id as string,
+                user_id: club_member.user_id,
                 registration_id: club_member.current_reg_id
             }
         )
@@ -92,19 +92,19 @@ export const handler = async (event: any) => {
                     club_account_id: body.club_account_id,
                     transaction_id: club_member.current_reg_transaction_id
                 },
-                `SET #amount_paid = #amount, #status = :status, #lifecycle.#ts = :lifecycleValue`,
+                `SET #amount_paid = #amount_paid + :payment_amount, #status = :status, #lifecycle.#ts = :lifecycleValue`,
                 {
                     "#amount_paid": "amount_paid",
-                    "#amount": "amount",
                     "#status": "status",
                     "#lifecycle": "lifecycle",
                     "#ts": `${Date.now()}`
                 },
                 {
-                    ":status": "PAID",
+                    ":status": "PARTIALLY PAID",
+                    ":payment_amount": body.payment_amount,
                     ":lifecycleValue": {
                         type: "CONFIRMATION",
-                        description: "Registration submission",
+                        description: "Payment confirmation",
                         amount: body.payment_amount
                     }
                 }
