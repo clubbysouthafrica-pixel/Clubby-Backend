@@ -127,7 +127,6 @@ export const handler = async (event: any) => {
                     "#total_pending_revenue": "total_pending_revenue"
                 },
                 {
-                    ":one": 1,
                     ":zero": 0,
                     ":payment_amount": body.payment_amount,
                 }
