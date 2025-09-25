@@ -3,9 +3,7 @@ import {
     deconstructEvent,
     updateItem,
     getItem,
-    addItem,
 } from "./function_helpers";
-import { randomUUID } from 'crypto';
 
 async function updateClubsRegistrationBilling(club_account_id: string, fee: number) {
     const now = new Date();
@@ -85,6 +83,10 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Registration fee does not exist." }, origin);
         }
 
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+
         if (registration_fee.total_outstanding_amount > body.payment_amount) {
             await updateItem(
                 process.env.TRANSACTIONS_TABLE_NAME as string,
@@ -109,6 +111,27 @@ export const handler = async (event: any) => {
                     }
                 }
             );
+
+            await updateItem(
+                process.env.CLUB_REPORTING_TABLE_NAME as string,
+                {
+                    club_account_id: body.club_account_id,
+                    year_month: `${year}/${month}`
+                },
+                `SET 
+                    #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
+                    #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount
+                `,
+                {
+                    "#total_revenue": "total_revenue",
+                    "#total_pending_revenue": "total_pending_revenue"
+                },
+                {
+                    ":one": 1,
+                    ":zero": 0,
+                    ":payment_amount": body.payment_amount,
+                }
+            )
 
             await updateItem(
                 process.env.REGISTRATION_FEES_TABLE_NAME as string,
@@ -155,6 +178,31 @@ export const handler = async (event: any) => {
                 }
             }
         );
+
+        await updateItem(
+            process.env.CLUB_REPORTING_TABLE_NAME as string,
+            {
+                club_account_id: body.club_account_id,
+                year_month: `${year}/${month}`
+            },
+            `SET 
+                #total_registered_members = if_not_exists(#total_registered_members, :zero) + :one,
+                #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
+                #total_pending_members = if_not_exists(#total_pending_members, :zero) - :one,
+                #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount
+            `,
+            {
+                "#total_registered_members": "total_registered_members",
+                "#total_revenue": "total_revenue",
+                "#total_pending_members": "total_pending_members",
+                "#total_pending_revenue": "total_pending_revenue"
+            },
+            {
+                ":one": 1,
+                ":zero": 0,
+                ":payment_amount": body.payment_amount,
+            }
+        )
 
         await updateItem(
             process.env.CLUB_MEMBER_TABLE_NAME as string,
