@@ -72,7 +72,8 @@ export const handler = async (event: any) => {
                     user_id: item.user_id,
                     registration_submitted_on: item.registration_submitted_on ?? undefined,
                     meta_standard: meta_standard,
-                    meta_billing: meta_billing
+                    meta_billing: meta_billing,
+                    resubmission_required: item.resubmission_required
                 });
             }
         }
