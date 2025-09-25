@@ -23,13 +23,17 @@ export class MSC_MemberClubConstruct extends Construct {
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
-                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
             },
             permissions: {
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
                 [props.club_member_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.registrations_table.tableArn]: [
                     "dynamodb:GetItem"
                 ]
             },

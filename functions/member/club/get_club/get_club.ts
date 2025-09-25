@@ -51,8 +51,27 @@ export const handler = async (event: any) => {
             });
         }
 
-        const member_exists = club_member ? true : false;
+        const club_member_exists = club_member ? true : false;
+        const resubmission_required = club_member?.resubmission_required ?? false
         const registered = club_member ? (club_member?.registered ? true : false) : false;
+
+        const meta: Record<string, any> = {}
+        if (resubmission_required && club_member) {
+            const registration = await getItem(
+                process.env.REGISTRATIONS_TABLE_NAME as string,
+                {
+                    user_id: user_id as string,
+                    registration_id: club_member.current_reg_id
+                }
+            );
+            if (registration) {
+                Object.keys(registration).forEach(key => {
+                    if (key.includes("reg_field_")) {
+                        meta[key.replace("reg_field_", "")] = registration[key]
+                    }
+                })
+            }
+        }
 
         return createResponse(200, {
             user_id: user_id,
@@ -65,8 +84,10 @@ export const handler = async (event: any) => {
             support_email: item["support_email"],
             country_of_operation: item["country_of_operation"],
             joined: item["joined"],
-            club_member_exists: member_exists,
-            registered: registered,
+            club_member_exists,
+            registered,
+            resubmission_required,
+            meta,
             ...await getClubImageUrls(query_string_params?.get_club_images, query_string_params.club_account_id)
         }, origin);
 
