@@ -338,6 +338,10 @@ export const handler = async (event: any) => {
             if (f?.input_type === "DROPDOWN" && field?.label) {
                 acc[`reg_field_${field.field_id}`].label_value = field.label
                 acc[`reg_field_${field.field_id}`].type = "BILLING_DROPDOWN"
+
+                if (field?.option_order_id) {
+                    acc[`reg_field_${field.field_id}`].option_order_id = field?.option_order_id
+                }
             } else {
                 acc[`reg_field_${field.field_id}`].type = "BILLING_TEXT"
             }
@@ -360,11 +364,11 @@ export const handler = async (event: any) => {
         const registration_submitted_on = Date.now()
 
         const current_reg_id = await addToRegistrationsTable(
-            body.club_account_id, 
-            user_id as string, 
-            billing_fields, 
+            body.club_account_id,
+            user_id as string,
+            billing_fields,
             standard_fields,
-            membership_amount, 
+            membership_amount,
             registration_submitted_on
         )
 
@@ -392,8 +396,8 @@ export const handler = async (event: any) => {
 
         await addToClubReportingTable(body.club_account_id, membership_amount)
         await addToTransactionsTable(
-            body.club_account_id, 
-            user.first_name, 
+            body.club_account_id,
+            user.first_name,
             user.surname,
             current_reg_transaction_id,
             user_id as string,
