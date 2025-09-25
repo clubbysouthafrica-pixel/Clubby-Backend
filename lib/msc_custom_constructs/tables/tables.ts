@@ -16,6 +16,7 @@ export class MSC_TablesConstruct extends Construct {
     public readonly registration_form_table: MSC_Table;
     public readonly transactions_table: MSC_Table;
     public readonly registration_fees_table: MSC_Table;
+    public readonly club_reporting_table: MSC_Table;
     constructor(scope: Construct, id: string, props: MSC_TablesProps) {
         super(scope, `${id}-Tables`);
 
@@ -83,6 +84,11 @@ export class MSC_TablesConstruct extends Construct {
                 indexName: "ClubAccountIDIndex",
                 partitionKey: { name: "club_account_id", type: AttributeType.STRING }
             }]
+        })
+
+        this.club_reporting_table = new MSC_Table(this, `${id}-ClubReporting`, {
+            partitionKey: {"club_account_id": "STRING"},
+            sortKey: { "year_month": "STRING" }
         })
     }
 }

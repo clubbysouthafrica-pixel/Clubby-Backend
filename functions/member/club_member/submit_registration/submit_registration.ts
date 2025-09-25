@@ -4,7 +4,8 @@ import {
     deconstructEvent,
     addItem,
     queryItems,
-    getItem
+    getItem,
+    updateItem
 } from "./function_helpers";
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
@@ -204,6 +205,66 @@ async function addToRegistrationFeesTable(
     return `${club_account_id}-00${new_registration_index}`;
 }
 
+async function addToClubReportingTable(
+    club_account_id: string,
+    membership_amount: number,
+) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    await updateItem(
+        process.env.CLUB_REPORTING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: `${year}/${month}`
+        },
+        `SET 
+                #total_pending_members = if_not_exists(#total_pending_members, :zero) + :one,
+                #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) + :member_registration_fee
+            `,
+        {
+            "#total_pending_members": "total_pending_members",
+            "#total_pending_revenue": "total_pending_revenue"
+        },
+        {
+            ":one": 1,
+            ":zero": 0,
+            ":member_registration_fee": membership_amount,
+        }
+    )
+}
+
+async function addToTransactionsTable(
+    club_account_id: string,
+    first_name: string,
+    surname: string,
+    transaction_id: string,
+    user_id: string,
+    membership_amount: number
+) {
+    await addItem(
+        process.env.TRANSACTIONS_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            name: `${first_name} ${surname}`,
+            transaction_id: transaction_id,
+            user_id: user_id as string,
+            amount_paid: 0,
+            amount: membership_amount,
+            lifecycle: {
+                [Date.now()]: {
+                    description: "Registration submission",
+                    amount: membership_amount,
+                    type: "SUBMISSION"
+                }
+            },
+            type: "REGISTRATION",
+            payment_type: "EFT/CASH",
+            status: "PENDING"
+        }
+    )
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -321,26 +382,14 @@ export const handler = async (event: any) => {
             item
         );
 
-        await addItem(
-            process.env.TRANSACTIONS_TABLE_NAME as string,
-            {
-                club_account_id: body.club_account_id,
-                name: `${user.first_name} ${user.surname}`,
-                transaction_id: current_reg_transaction_id,
-                user_id: user_id as string,
-                amount_paid: 0,
-                amount: membership_amount,
-                lifecycle: {
-                    [Date.now()]: {
-                        description: "Registration submission",
-                        amount: membership_amount,
-                        type: "SUBMISSION"
-                    }
-                },
-                type: "REGISTRATION",
-                payment_type: "EFT/CASH",
-                status: "PENDING"
-            }
+        await addToClubReportingTable(body.club_account_id, membership_amount)
+        await addToTransactionsTable(
+            body.club_account_id, 
+            user.first_name, 
+            user.surname,
+            current_reg_transaction_id,
+            user_id as string,
+            membership_amount,
         )
 
         return createResponse(200, { message: "Registration form successfully submitted." }, origin);
