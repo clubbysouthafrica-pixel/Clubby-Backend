@@ -20,6 +20,7 @@ export const handler = async (event: any) => {
         let report: Record<string, any> = {}
 
         report = {
+            total_active_members: 0,
             total_registered_members: 0,
             total_pending_members: 0,
             total_pending_revenue: 0,
@@ -46,6 +47,8 @@ export const handler = async (event: any) => {
             report.total_pending_revenue += monthly_report?.total_pending_revenue ?? 0
             report.total_revenue += monthly_report?.total_revenue ?? 0
             report.total_deregistered_members += monthly_report?.total_deregistered_members ?? 0
+            
+            report.total_active_members = report.total_registered_members - report.total_deregistered_members
         });
 
         return createResponse(200, report, origin);
