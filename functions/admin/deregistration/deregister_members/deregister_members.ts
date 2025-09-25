@@ -8,6 +8,70 @@ import {
 
 const s3Client = new S3Client({});
 
+async function updateClubReportingTable(user_id: string) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    await updateItem(
+        process.env.CLUB_REPORTING_TABLE_NAME as string,
+        {
+            user_id: user_id,
+            year_month: `${year}/${month}`
+        },
+        `SET 
+                    #total_deregistered_members = if_not_exists(#total_deregistered_members, :zero) + :one
+                `,
+        {
+            "#total_deregistered_members": "total_deregistered_members"
+        },
+        {
+            ":zero": 0,
+            ":one": 1
+        }
+    )
+}
+
+async function updateClubMemberTable(user_id: string, club_account_id: string) {
+    await updateItem(
+        process.env.CLUB_MEMBER_TABLE_NAME as string,
+        {
+            "club_account_id": club_account_id,
+            "user_id": user_id
+        },
+        `SET 
+            #registered = :registered,
+            #resubmission_required = :resubmission_required
+        `,
+        {
+            "#registered": "registered",
+            "#resubmission_required": "resubmission_required"
+        },
+        {
+            ":registered": false,
+            ":resubmission_required": true
+        }
+    );
+}
+
+async function updateRegistrationsTable(user_id: string, registration_id: string) {
+    await updateItem(
+        process.env.REGISTRATIONS_TABLE_NAME as string,
+        {
+            "registration_id": registration_id,
+            "user_id": user_id
+        },
+        `SET 
+            #deregistered = :deregistered
+        `,
+        {
+            "#deregistered": "deregistered"
+        },
+        {
+            ":deregistered": true
+        }
+    );
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -39,28 +103,9 @@ export const handler = async (event: any) => {
             }
             club_members.push(member);
 
-            await updateItem(
-                process.env.CLUB_MEMBER_TABLE_NAME as string,
-                {
-                    "club_account_id": body.club_account_id,
-                    "user_id": user_id
-                },
-                `SET 
-                    #registered = :registered,
-                    #outstanding_amount = #registration_amount,
-                    #resubmission_required = :resubmission_required
-                `,
-                {
-                    "#registered": "registered",
-                    "#outstanding_amount": "outstanding_amount",
-                    "#registration_amount": "registration_amount",
-                    "#resubmission_required": "resubmission_required"
-                },
-                {
-                    ":registered": false,
-                    ":resubmission_required": true
-                }
-            );
+            await updateClubMemberTable(member.user_id, body.club_account_id)
+            await updateClubReportingTable(member.user_id)
+            await updateRegistrationsTable(member.user_id, member.current_reg_id)
         }
 
         const season_id = Date.now()

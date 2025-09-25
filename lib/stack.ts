@@ -40,7 +40,7 @@ export class MSC_Stack extends cdk.Stack {
       club_table: tables.club_table,
       club_admin_table: tables.club_admin_table,
       registration_form_table: tables.registration_form_table,
-      registration_fees_table: tables.registration_fees_table,
+      registrations_table: tables.registrations_table,
       club_member_table: tables.club_member_table,
       image_bucket: buckets.image_bucket,
       club_history_bucket: buckets.club_history_bucket,
@@ -59,7 +59,7 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_MemberNestedStack(this, `MemberStack`, {
       env: props?.env,
-      registration_fees_table: tables.registration_fees_table,
+      registrations_table: tables.registrations_table,
       club_reporting_table: tables.club_reporting_table,
       transactions_table: tables.transactions_table,
       users_table: tables.users_table,

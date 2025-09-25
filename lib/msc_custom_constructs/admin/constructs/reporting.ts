@@ -9,7 +9,7 @@ interface MSC_ReportingConstructProps {
     club_member_table: MSC_Table;
     club_table: MSC_Table;
     billing_table: MSC_Table;
-    registration_fees_table: MSC_Table;
+    registrations_table: MSC_Table;
     club_reporting_table: MSC_Table;
     registration_form_table: MSC_Table;
     token_authorizer: TokenAuthorizer;

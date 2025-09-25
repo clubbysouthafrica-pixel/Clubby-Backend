@@ -22,7 +22,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     users_table: MSC_Table;
     transactions_table: MSC_Table;
     club_table: MSC_Table;
-    registration_fees_table: MSC_Table;
+    registrations_table: MSC_Table;
     club_admin_table: MSC_Table;
     billing_table: MSC_Table;
     registration_form_table: MSC_Table;
@@ -75,14 +75,16 @@ export class MSC_AdminNestedStack extends Stack {
             club_reporting_table: props.club_reporting_table,
             token_authorizer: jwt_construct.token_authorizer,
             registration_form_table: props.registration_form_table,
-            registration_fees_table: props.registration_fees_table
+            registrations_table: props.registrations_table
         });
 
         new MSC_DeregistrationConstruct(this, `${id}-Deregistration`, {
             api_gateway: api_gateway,
             club_member_table: props.club_member_table,
+            club_reporting_table: props.club_reporting_table,
             club_history_bucket: props.club_history_bucket,
             layers: props.layers,
+            registrations_table: props.registrations_table,
             token_authorizer: jwt_construct.token_authorizer
         });
 
@@ -144,7 +146,7 @@ export class MSC_AdminNestedStack extends Stack {
             token_authorizer: jwt_construct.token_authorizer,
             registration_form_table: props.registration_form_table,
             billing_table: props.billing_table,
-            registration_fees_table: props.registration_fees_table,
+            registrations_table: props.registrations_table,
             layers: props.layers
         });
     }

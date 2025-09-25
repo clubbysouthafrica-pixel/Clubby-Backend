@@ -14,7 +14,7 @@ interface MSC_ClubMemberConstructProps {
     club_table: MSC_Table,
     users_table: MSC_Table;
     image_bucket: MSC_Bucket;
-    registration_fees_table: MSC_Table;
+    registrations_table: MSC_Table;
     layers: MSC_Layers;
 }
 
@@ -30,7 +30,7 @@ export class MSC_ClubMemberConstruct extends Construct {
                 USERS_TABLE_NAME: props.users_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
-                REGISTRATIONS_TABLE_NAME: props.registration_fees_table.tableName,
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
             },
             permissions: {
@@ -50,7 +50,7 @@ export class MSC_ClubMemberConstruct extends Construct {
                 [props.transactions_table.tableArn]: [
                     "dynamodb:PutItem"
                 ],
-                [props.registration_fees_table.tableArn]: [
+                [props.registrations_table.tableArn]: [
                     "dynamodb:Query",
                     "dynamodb:PutItem"
                 ],

@@ -19,7 +19,7 @@ export interface MSC_MemberNestedStackProps extends StackProps {
     club_table: MSC_Table;
     club_member_table: MSC_Table;
     registration_form_table: MSC_Table;
-    registration_fees_table: MSC_Table;
+    registrations_table: MSC_Table;
     club_reporting_table: MSC_Table;
     transactions_table: MSC_Table;
     image_bucket: MSC_Bucket;
@@ -64,7 +64,7 @@ export class MSC_MemberNestedStack extends Stack {
         new MSC_ClubMemberConstruct(this, `${id}-ClubMember`, {
             api_gateway: api_gateway,
             club_member_table: props.club_member_table,
-            registration_fees_table: props.registration_fees_table,
+            registrations_table: props.registrations_table,
             registration_form_table: props.registration_form_table,
             club_reporting_table: props.club_reporting_table,
             users_table: props.users_table,
@@ -85,7 +85,7 @@ export class MSC_MemberNestedStack extends Stack {
         new MSC_MemberClubConstruct(this, `${id}-Club`, {
             api_gateway: api_gateway,
             club_table: props.club_table,
-            registration_fees_table: props.registration_fees_table,
+            registrations_table: props.registrations_table,
             club_member_table: props.club_member_table,
             token_authorizer: jwt_construct.token_authorizer,
             image_bucket: props.image_bucket,
