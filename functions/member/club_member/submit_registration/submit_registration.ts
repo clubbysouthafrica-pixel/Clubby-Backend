@@ -253,6 +253,7 @@ async function addToTransactionsTable(
             user_id: user_id as string,
             amount_paid: 0,
             amount: membership_amount,
+            creation_date: Date.now(),
             lifecycle: {
                 [Date.now()]: {
                     description: "Registration submission",

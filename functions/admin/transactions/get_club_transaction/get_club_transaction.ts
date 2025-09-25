@@ -23,9 +23,9 @@ export const handler = async (event: any) => {
             return createResponse(200, { transactions: [] }, origin);
         }
 
-        transactions.sort((a: any, b: any) => b.date - a.date)
+        transactions.sort((a: any, b: any) => b.creation_date - a.creation_date)
         const transactions_cleaned = transactions.map((tx: any) => {
-            const dateObj = new Date(tx.date);
+            const dateObj = new Date(tx.creation_date);
 
             const formattedDate = dateObj.toLocaleDateString('en-GB');
             const formattedTime = dateObj.toLocaleTimeString('en-GB', {
@@ -36,7 +36,7 @@ export const handler = async (event: any) => {
 
             return {
                 ...tx,
-                date: `${formattedDate} ${formattedTime}`,
+                creation_date: `${formattedDate} ${formattedTime}`,
             };
         });
 
