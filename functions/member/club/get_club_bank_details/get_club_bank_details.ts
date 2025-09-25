@@ -30,7 +30,7 @@ export const handler = async (event: any) => {
         }
 
         const registration_fee = await getItem(
-            process.env.REGISTRATION_FEES_TABLE_NAME as string,
+            process.env.REGISTRATIONS_TABLE_NAME as string,
             {
                 user_id: user_id as string,
                 registration_id: club_member.current_reg_id

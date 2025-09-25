@@ -57,7 +57,7 @@ export class MSC_MemberClubConstruct extends Construct {
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                REGISTRATION_FEES_TABLE_NAME: props.registration_fees_table.tableName
+                REGISTRATIONS_TABLE_NAME: props.registration_fees_table.tableName
             },
             permissions: {
                 [props.club_table.tableArn]: [

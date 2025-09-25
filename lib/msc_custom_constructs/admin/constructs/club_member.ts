@@ -26,7 +26,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             envVariables: {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
-                REGISTRATION_FEES_TABLE_NAME: props.registration_fees_table.tableName
+                REGISTRATIONS_TABLE_NAME: props.registration_fees_table.tableName
             },
             permissions: {
                 [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
@@ -47,7 +47,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
-                REGISTRATION_FEES_TABLE_NAME: props.registration_fees_table.tableName,
+                REGISTRATIONS_TABLE_NAME: props.registration_fees_table.tableName,
                 CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
             },
             permissions: {

@@ -31,7 +31,7 @@ export const handler = async (event: any) => {
             delete item.club_account_id
 
             const registration_fee = await getItem(
-                process.env.REGISTRATION_FEES_TABLE_NAME as string,
+                process.env.REGISTRATIONS_TABLE_NAME as string,
                 { 
                    user_id: item.user_id,
                    registration_id: item.current_reg_id
@@ -40,18 +40,13 @@ export const handler = async (event: any) => {
 
             const meta_billing: any = [];
             const meta_standard: any = [];
-            Object.keys(item).forEach(key => {
-                console.log(key)
-                if (key.includes("reg_field_")) {
-                    meta_standard.push(item[key])
-                }
-            })
-
             if (registration_fee) {
                 Object.keys(registration_fee).forEach(key => {
                     console.log(key)
-                    if (key.includes("reg_field_")) {
+                    if (key.includes("reg_field_") && registration_fee[key].type.includes("BILLING_")) {
                         meta_billing.push(registration_fee[key])
+                    } else if (key.includes("reg_field_") && registration_fee[key].type.includes("STANDARD_")) {
+                        meta_standard.push(registration_fee[key])
                     }
                 })
             }

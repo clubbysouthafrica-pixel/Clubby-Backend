@@ -73,7 +73,7 @@ export const handler = async (event: any) => {
         }
 
         const registration_fee = await getItem(
-            process.env.REGISTRATION_FEES_TABLE_NAME as string,
+            process.env.REGISTRATIONS_TABLE_NAME as string,
             {
                 user_id: club_member.user_id,
                 registration_id: club_member.current_reg_id
@@ -133,7 +133,7 @@ export const handler = async (event: any) => {
             )
 
             await updateItem(
-                process.env.REGISTRATION_FEES_TABLE_NAME as string,
+                process.env.REGISTRATIONS_TABLE_NAME as string,
                 {
                     user_id: body.member_id,
                     registration_id: club_member.current_reg_id
@@ -221,7 +221,7 @@ export const handler = async (event: any) => {
         );
 
         await updateItem(
-            process.env.REGISTRATION_FEES_TABLE_NAME as string,
+            process.env.REGISTRATIONS_TABLE_NAME as string,
             {
                 user_id: body.member_id,
                 registration_id: club_member.current_reg_id

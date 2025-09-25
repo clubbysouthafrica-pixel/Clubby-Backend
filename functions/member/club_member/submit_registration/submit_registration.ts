@@ -170,15 +170,16 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
     return true;
 }
 
-async function addToRegistrationFeesTable(
+async function addToRegistrationsTable(
     club_account_id: string,
     user_id: string,
     billing_fields: any,
+    standard_fields: any,
     membership_amount: number,
     registration_submitted_on: number
 ): Promise<string> {
     const member_registrations = await queryItems(
-        process.env.REGISTRATION_FEES_TABLE_NAME as string,
+        process.env.REGISTRATIONS_TABLE_NAME as string,
         "user_id = :userId",
         { ":userId": user_id }
     )
@@ -189,7 +190,7 @@ async function addToRegistrationFeesTable(
     }
 
     await addItem(
-        process.env.REGISTRATION_FEES_TABLE_NAME as string,
+        process.env.REGISTRATIONS_TABLE_NAME as string,
         {
             user_id: user_id,
             registration_id: `${club_account_id}-00${new_registration_index}`,
@@ -199,6 +200,7 @@ async function addToRegistrationFeesTable(
             deregistered: false,
             registration_submitted_on,
             ...billing_fields,
+            ...standard_fields,
         }
     )
 
@@ -341,10 +343,30 @@ export const handler = async (event: any) => {
             }
             return acc;
         }, {})
+        const standard_fields = body.standard_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
+            const f = form.find(f => f.field_id === field.field_id);
+
+            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, type: "STANDARD_TEXT" };
+            if (f?.input_type === "DROPDOWN") {
+                acc[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
+            } else if (f?.input_type === "CHECKBOX") {
+                acc[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
+            } else if (f?.input_type === "NUMBER") {
+                acc[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
+            }
+            return acc;
+        }, {})
 
         const registration_submitted_on = Date.now()
 
-        const current_reg_id = await addToRegistrationFeesTable(body.club_account_id, user_id as string, billing_fields, membership_amount, registration_submitted_on)
+        const current_reg_id = await addToRegistrationsTable(
+            body.club_account_id, 
+            user_id as string, 
+            billing_fields, 
+            standard_fields,
+            membership_amount, 
+            registration_submitted_on
+        )
 
         const current_reg_transaction_id = randomUUID();
 
@@ -361,20 +383,6 @@ export const handler = async (event: any) => {
             registration_payment_reference: generateShortReference(user.first_name, user.surname),
             registration_submitted_on,
             ...await getClubDetails(body.club_account_id),
-            primary_member: user_id,
-            ...body.standard_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
-                const f = form.find(f => f.field_id === field.field_id);
-
-                acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, type: "STANDARD_TEXT" };
-                if (f?.input_type === "DROPDOWN") {
-                    acc[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
-                } else if (f?.input_type === "CHECKBOX") {
-                    acc[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
-                } else if (f?.input_type === "NUMBER") {
-                    acc[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
-                }
-                return acc;
-            }, {})
         };
 
         await addItem(

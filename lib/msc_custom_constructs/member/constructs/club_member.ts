@@ -30,7 +30,7 @@ export class MSC_ClubMemberConstruct extends Construct {
                 USERS_TABLE_NAME: props.users_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
-                REGISTRATION_FEES_TABLE_NAME: props.registration_fees_table.tableName,
+                REGISTRATIONS_TABLE_NAME: props.registration_fees_table.tableName,
                 CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
             },
             permissions: {
