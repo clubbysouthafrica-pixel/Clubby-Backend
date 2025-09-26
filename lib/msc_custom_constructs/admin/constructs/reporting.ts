@@ -36,6 +36,7 @@ export class MSC_ReportingConstruct extends Construct {
         const registration_billing = new MSC_Lambda(this, `${id}-RegistrationBilling`, {
             code: "admin/reporting/registration_billing",
             envVariables: {
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
@@ -45,6 +46,9 @@ export class MSC_ReportingConstruct extends Construct {
                     "dynamodb:Query"
                 ],
                 [props.registration_form_table.tableArn]: [
+                    "dynamodb:Query"
+                ], 
+                [`${props.registrations_table.tableArn}/index/ClubAccountIDIndex`]: [
                     "dynamodb:Query"
                 ]
             },

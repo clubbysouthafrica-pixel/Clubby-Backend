@@ -9,13 +9,6 @@ export const handler = async (event: any) => {
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
-        const club_members = await queryItems(
-            process.env.CLUB_MEMBER_TABLE_NAME as string,
-            "club_account_id = :clubId",
-            { ":clubId": query_string_params.club_account_id },
-            process.env.CLUB_ACCOUNT_ID_INDEX as string
-        );
-
         const form = await queryItems(
             process.env.REGISTRATION_FORM_TABLE_NAME as string,
             "club_account_id = :clubId",
@@ -23,6 +16,13 @@ export const handler = async (event: any) => {
             undefined,
             false,
         );
+
+        const registrations = await queryItems(
+            process.env.REGISTRATIONS_TABLE_NAME as string,
+            "club_account_id = :clubId",
+            { ":clubId": query_string_params.club_account_id },
+            process.env.CLUB_ACCOUNT_ID_INDEX
+        )
 
         if (!form) {
             return createResponse(200, { report: [] }, origin);
@@ -49,7 +49,7 @@ export const handler = async (event: any) => {
                     table_name: field.field_name,
                     field_id: field.field_id,
                     fee_amount: field.amount,
-                    total: { paid_to_club: 0, due_to_club: 0 },
+                    total: { paid_to_club: 0, due_to_club: 0, total: 0, pending: 0 },
                     data: []
                 });
             } else if (field.input_type === "DROPDOWN") {
@@ -58,94 +58,69 @@ export const handler = async (event: any) => {
                     field_id: field.field_id,
                     rows: field.billingOptions.map((option: any) => ({
                         row_name: option.label,
-                        total: { fee_amount: option.amount, paid_to_club: 0, due_to_club: 0 },
+                        total: { fee_amount: option.amount, paid_to_club: 0, due_to_club: 0, total: 0, pending: 0 },
                         data: []
                     }))
                 });
             }
         });
 
-        if (!club_members) {
+        if (!registrations) {
             return createResponse(200, { report }, origin);
         }
 
-        club_members.forEach(member => {
-            const year_month = (member.registered ? member.registered_on : member.registration_submitted_on).slice(0, 7);
-            let outstanding_amount = member.outstanding_amount;
+        report.forEach(field => {
+            registrations.forEach(registration => {
+                
+                if (registration.total_outstanding_amount == 0) {
+                    const date = new Date(registration.registered_on);
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year_month = `${year}/${month}`;   
 
-            Object.keys(member).forEach(key => {
-                report.forEach((table: any) => {
-                    if (`reg_field_${table.field_id}` !== key) return;
+                    Object.keys(registration).forEach(key => {
+                        if (key.includes(field.field_id)) {
 
-                    if (table.fee_amount !== undefined) {
-                        let index = table.data.findIndex((item: any) => item.date === year_month);
-                        if (index < 0) {
-                            table.data.push({ date: year_month, paid_to_club: 0, due_to_club: 0 })
-                            index = table.data.length - 1
-                        }
-                        
-        
-                        if (!table!["total"]) table!["total"] = { paid_to_club: 0, due_to_club: 0 };
+                            if (field.rows) {
 
-                        const fee = table.fee_amount;
-                        if (member.registered) {
-                            table.data[index].paid_to_club += fee;
-                            table!["total"].paid_to_club += fee;
-                        } else {
-                            if (outstanding_amount < fee) {
-                                table.data[index].due_to_club += outstanding_amount;
-                                table.data[index].paid_to_club += fee - outstanding_amount;
-                                table!["total"].due_to_club += outstanding_amount;
-                                table!["total"].paid_to_club += fee - outstanding_amount;
-                                outstanding_amount = 0;
+                                field.rows.forEach((row: any) => {
+                                    row.total.paid_to_club += row.total.fee_amount
+                                    row.total.total += 1
+
+                                    let index = row.data.findIndex((item: any) => item.date === year_month);
+
+                                    if (index < 0) row.data.push({date: year_month, paid_to_club: field.fee_amount, due_to_club: 0, total: 1, pending: 0})
+                                    else {
+                                        row.data[index].paid_to_club += row.total.fee_amount
+                                        row.data[index].total += 1
+                                    }
+                                })
+
                             } else {
-                                table.data[index].due_to_club += fee;
-                                table!["total"].due_to_club += fee;
-                                outstanding_amount -= fee;
-                            }
-                        }
-                    }
 
-                    if (table.rows) {
-                        table.rows.forEach((row: any) => {
-                            if (row.row_name !== member[key].label_value) return;
+                                field.total.paid_to_club += field.fee_amount
+                                field.total.total += 1
 
-                            let index = row.data.findIndex((item: any) => item.date === year_month);
-                            if (index < 0) {
-                                row.data.push({ date: year_month, paid_to_club: 0, due_to_club: 0 })
-                                index = row.data.length - 1
-                            }
-   
-                            if (!row["total"]) {
-                                row["total"] = {
-                                    fee_amount: row.total.fee_amount,
-                                    paid_to_club: 0,
-                                    due_to_club: 0
-                                };
-                            }
-
-                            const fee = row.total.fee_amount;
-                            if (member.registered) {
-                                row.data[index].paid_to_club += fee;
-                                row["total"].paid_to_club += fee;
-                            } else {
-                                if (outstanding_amount < fee) {
-                                    row.data[index].due_to_club += outstanding_amount;
-                                    row.data[index].paid_to_club += fee - outstanding_amount;
-                                    row["total"].due_to_club += outstanding_amount;
-                                    row["total"].paid_to_club += fee - outstanding_amount;
-                                    outstanding_amount = 0;
-                                } else {
-                                    row.data[index].due_to_club += fee;
-                                    row["total"].due_to_club += fee;
-                                    outstanding_amount -= fee;
+                                let index = field.data.findIndex((item: any) => item.date === year_month);
+                                
+                                if (index < 0) field.data.push({date: year_month, paid_to_club: field.fee_amount, due_to_club: 0, total: 1, pending: 0})
+                                else {
+                                    field.data[index].paid_to_club += field.fee_amount
+                                    field.data[index].total += 1
                                 }
                             }
-                        });
-                    }
-                });
-            });
-        });
+
+                        }
+                    })
+
+                } else {
+
+                    console.log('true')
+
+                }
+
+            })
+        })
 
         return createResponse(200, { report }, origin);
 
