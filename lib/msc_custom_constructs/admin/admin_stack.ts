@@ -70,14 +70,12 @@ export class MSC_AdminNestedStack extends Stack {
 
         new  MSC_ReportingConstruct(this, `${id}-Reporting`, {
             api_gateway: api_gateway,
-            club_member_table: props.club_member_table,
             club_table: props.club_table,
             billing_table: props.billing_table,
             layers: props.layers,
+            registration_reporting_table: props.registration_reporting_table,
             club_reporting_table: props.club_reporting_table,
-            token_authorizer: jwt_construct.token_authorizer,
-            registration_form_table: props.registration_form_table,
-            registrations_table: props.registrations_table
+            token_authorizer: jwt_construct.token_authorizer
         });
 
         new MSC_DeregistrationConstruct(this, `${id}-Deregistration`, {
