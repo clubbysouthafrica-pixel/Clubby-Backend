@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_Queue } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Layers } from "../../lambda_layers";
@@ -10,6 +10,7 @@ interface MSC_ClubMemberConstructProps {
     token_authorizer: TokenAuthorizer;
     registration_form_table: MSC_Table;
     club_reporting_table: MSC_Table;
+    update_registration_reporting_queue: MSC_Queue;
     transactions_table: MSC_Table;
     club_table: MSC_Table,
     users_table: MSC_Table;
@@ -31,7 +32,8 @@ export class MSC_ClubMemberConstruct extends Construct {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
+                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
+                UPDATE_REGISTRATION_REPORTING_QUEUE_URL: props.update_registration_reporting_queue.queueUrl
             },
             permissions: {
                 [props.registration_form_table.tableArn]: [
@@ -56,6 +58,9 @@ export class MSC_ClubMemberConstruct extends Construct {
                 ],
                 [props.club_reporting_table.tableArn]: [
                     "dynamodb:UpdateItem"
+                ],
+                [props.update_registration_reporting_queue.queueArn]: [
+                    "sqs:SendMessage"
                 ]
             },
             layers: [props.layers.jwt_layer]

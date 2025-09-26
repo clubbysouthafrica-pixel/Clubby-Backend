@@ -7,6 +7,7 @@ import { MSC_Layers } from "../../lambda_layers";
 interface MSC_AdminRegistrationFormConstructProps {
     api_gateway: MSC_APIGateway;
     registration_form_table: MSC_Table;
+    registration_reporting_table: MSC_Table;
     club_table: MSC_Table;
     club_admin_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
@@ -20,6 +21,7 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
         const create_registration_form = new MSC_Lambda(this, `${id}-CreateRegistrationForm`, {
             code: "admin/registration/create_registration_form",
             envVariables: {
+                REGISTRATION_REPORTING_TABLE_NAME: props.registration_reporting_table.tableName,
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 CLUB_ADMIN_TABLE_NAME: props.club_admin_table.tableName
@@ -34,6 +36,10 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
                 ],
                 [props.club_admin_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [props.registration_reporting_table.tableArn]: [
+                    "dynamodb:Query",
+                    "dynamodb:PutItem"
                 ]
             },
             layers: [props.layers.jwt_layer]

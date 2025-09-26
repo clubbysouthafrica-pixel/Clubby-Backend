@@ -3,6 +3,7 @@ import {
     deconstructEvent,
     updateItem,
     getItem,
+    sendSqsMessage,
 } from "./function_helpers";
 
 async function updateClubsRegistrationBilling(club_account_id: string, fee: number) {
@@ -79,10 +80,12 @@ async function partialRegistrationUpdateClubReportingTable(
         },
         `SET 
             #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
-            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount
+            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount,
+            #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount
         `,
         {
             "#total_revenue": "total_revenue",
+            "#total_registration_revenue": "total_registration_revenue",
             "#total_pending_revenue": "total_pending_revenue"
         },
         {
@@ -209,8 +212,8 @@ async function updateClubMember(
     await updateItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
         {
-            user_id: body.member_id,
-            club_account_id: body.club_account_id,
+            user_id: member_id,
+            club_account_id: club_account_id,
         },
         "SET #reg = :registered, #registered_on = :registered_on",
         {
@@ -282,6 +285,16 @@ export const handler = async (event: any) => {
             await partialRegistrationUpdateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
             await partialRegistrationUpdateRegistrationsTable(body.member_id, club_member.current_reg_id, body.payment_amount)
 
+            await sendSqsMessage(
+                process.env.UPDATE_REGISTRATION_REPORTING_QUEUE_URL as string,
+                {
+                    registration_id: club_member.current_reg_id,
+                    user_id: body.member_id,
+                    payment_amount: body.payment_amount
+                },
+                "UpdateRegistrationReporting"
+            );
+
             return createResponse(200, { registered: false, message: "Member outstanding balance updated." }, origin);
         }
 
@@ -292,6 +305,16 @@ export const handler = async (event: any) => {
         await updateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
         await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on)
         await updateClubMember(body.club_account_id, body.member_id, registered_on)
+
+        await sendSqsMessage(
+            process.env.UPDATE_REGISTRATION_REPORTING_QUEUE_URL as string,
+            {
+                registration_id: club_member.current_reg_id,
+                user_id: body.member_id,
+                payment_amount: body.payment_amount
+            },
+            "UpdateRegistrationReporting"
+        );
 
         return createResponse(200, { registered: true, message: "Member outstanding balance updated." }, origin);
 

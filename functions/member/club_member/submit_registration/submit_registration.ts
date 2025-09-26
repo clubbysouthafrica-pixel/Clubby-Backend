@@ -5,7 +5,8 @@ import {
     addItem,
     queryItems,
     getItem,
-    updateItem
+    updateItem,
+    sendSqsMessage
 } from "./function_helpers";
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
@@ -404,6 +405,15 @@ export const handler = async (event: any) => {
             user_id as string,
             membership_amount,
         )
+
+        await sendSqsMessage(
+            process.env.UPDATE_REGISTRATION_REPORTING_QUEUE_URL as string,
+            {
+                registration_id: current_reg_id,
+                user_id: user_id as string
+            },
+            "UpdateRegistrationReporting"
+        );
 
         return createResponse(200, { message: "Registration form successfully submitted." }, origin);
 

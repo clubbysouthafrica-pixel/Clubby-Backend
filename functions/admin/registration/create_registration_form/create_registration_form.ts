@@ -1,5 +1,6 @@
-import { createResponse, deconstructEvent, getItem, addItem, updateItem } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, addItem, updateItem, queryItems } from "./function_helpers";
 import { randomUUID } from 'crypto';
+import { unmarshall } from "@aws-sdk/util-dynamodb";
 
 export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
@@ -74,6 +75,59 @@ function isTextField(obj: any): obj is TextField {
         typeof obj === 'object' &&
         typeof obj.field_order_id === 'number' &&
         typeof obj.field_text === 'string'
+}
+
+
+async function updateRegistrationReportingTable(allFields: any, club_account_id: string) {
+    const report: any[] = [];
+    allFields.forEach((field: Record<string, any>) => {
+        if (field.field_type !== "BILLING") return;
+
+        if (field.input_type === "TEXT") {
+            report.push({
+                table_name: field.field_name,
+                club_account_id,
+                field_id: field.field_id,
+                fee_amount: field.amount,
+                total: { paid_to_club: 0, due_to_club: 0, total: 0, pending: 0 },
+                data: []
+            });
+        } else if (field.input_type === "DROPDOWN") {
+            report.push({
+                table_name: field.field_name,
+                club_account_id,
+                field_id: field.field_id,
+                rows: field.billingOptions.map((option: any) => ({
+                    option_order_id: option.option_order_id,
+                    row_name: option.label,
+                    total: { fee_amount: option.amount, paid_to_club: 0, due_to_club: 0, total: 0, pending: 0 },
+                    data: []
+                }))
+            });
+        }
+    });
+
+    const fields = await queryItems(
+        process.env.REGISTRATION_REPORTING_TABLE_NAME as string,
+        "club_account_id = :clubId",
+        { ":clubId": club_account_id },
+    )
+
+    console.log('fields: ', JSON.stringify(fields))
+
+    if (fields) {
+        for (const r of report) {
+            let index = fields.findIndex((field: any) => field.field_id === r.field_id);
+
+            if (index < 0) {
+                await addItem(process.env.REGISTRATION_REPORTING_TABLE_NAME as string, r)
+            }
+        }
+    } else {
+        for (const r of report) {
+            await addItem(process.env.REGISTRATION_REPORTING_TABLE_NAME as string, r)
+        }
+    }
 }
 
 export const handler = async (event: any) => {
@@ -206,6 +260,8 @@ export const handler = async (event: any) => {
                 }
             }
         }
+
+        await updateRegistrationReportingTable(allFields, body.club_account_id);
 
         return createResponse(200, { message: "Fields successfully added." }, origin);
 
