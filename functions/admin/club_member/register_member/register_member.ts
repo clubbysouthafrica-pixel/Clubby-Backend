@@ -81,11 +81,13 @@ async function partialRegistrationUpdateClubReportingTable(
         `SET 
             #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
             #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount,
-            #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount
+            #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount,
+            #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount
         `,
         {
             "#total_revenue": "total_revenue",
             "#total_registration_revenue": "total_registration_revenue",
+            "#total_registration_pending_revenue": "total_registration_pending_revenue",
             "#total_pending_revenue": "total_pending_revenue"
         },
         {
@@ -111,11 +113,13 @@ async function updateClubReportingTable(
             #total_registered_members = if_not_exists(#total_registered_members, :zero) + :one,
             #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
             #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount,
+            #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount,
             #total_pending_members = if_not_exists(#total_pending_members, :zero) - :one,
             #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount
         `,
         {
             "#total_registered_members": "total_registered_members",
+            "#total_registration_pending_revenue": "total_registration_pending_revenue",
             "#total_registration_revenue": "total_registration_revenue",
             "#total_revenue": "total_revenue",
             "#total_pending_members": "total_pending_members",
@@ -285,16 +289,6 @@ export const handler = async (event: any) => {
             await partialRegistrationUpdateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
             await partialRegistrationUpdateRegistrationsTable(body.member_id, club_member.current_reg_id, body.payment_amount)
 
-            await sendSqsMessage(
-                process.env.UPDATE_REGISTRATION_REPORTING_QUEUE_URL as string,
-                {
-                    registration_id: club_member.current_reg_id,
-                    user_id: body.member_id,
-                    payment_amount: body.payment_amount
-                },
-                "UpdateRegistrationReporting"
-            );
-
             return createResponse(200, { registered: false, message: "Member outstanding balance updated." }, origin);
         }
 
@@ -311,7 +305,7 @@ export const handler = async (event: any) => {
             {
                 registration_id: club_member.current_reg_id,
                 user_id: body.member_id,
-                payment_amount: body.payment_amount
+                update_registration_reporting: 'true'
             },
             "UpdateRegistrationReporting"
         );

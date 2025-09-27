@@ -223,10 +223,12 @@ async function addToClubReportingTable(
         },
         `SET 
                 #total_pending_members = if_not_exists(#total_pending_members, :zero) + :one,
-                #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) + :member_registration_fee
-            `,
+                #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) + :member_registration_fee,
+                #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) + :member_registration_fee
+        `,
         {
             "#total_pending_members": "total_pending_members",
+            "#total_registration_pending_revenue": "total_registration_pending_revenue",
             "#total_pending_revenue": "total_pending_revenue"
         },
         {

@@ -113,15 +113,28 @@ async function updateRegistrationReportingTable(allFields: any, club_account_id:
         { ":clubId": club_account_id },
     )
 
-    console.log('fields: ', JSON.stringify(fields))
-
     if (fields) {
         for (const r of report) {
             let index = fields.findIndex((field: any) => field.field_id === r.field_id);
 
-            if (index < 0) {
-                await addItem(process.env.REGISTRATION_REPORTING_TABLE_NAME as string, r)
-            }
+            if (r.rows)
+
+                if (index < 0) {
+                    await addItem(process.env.REGISTRATION_REPORTING_TABLE_NAME as string, r)
+                } else if (r.rows) {
+
+                    let update = false
+                    r.rows.forEach((row: any) => {
+                        let i = fields[index].rows.findIndex((field_row: any) => field_row.option_order_id === row.option_order_id)
+
+                        if (i < 0) {
+                            fields[index].rows.push(row)
+                            update = true
+                        }
+                    })
+
+                    if (update) await addItem(process.env.REGISTRATION_REPORTING_TABLE_NAME as string, fields[index])
+                }
         }
     } else {
         for (const r of report) {
