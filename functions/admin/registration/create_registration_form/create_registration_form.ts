@@ -100,7 +100,8 @@ async function updateRegistrationReportingTable(allFields: any, club_account_id:
                 rows: field.billingOptions.map((option: any) => ({
                     option_order_id: option.option_order_id,
                     row_name: option.label,
-                    total: { fee_amount: option.amount, paid_to_club: 0, due_to_club: 0, total: 0, pending: 0 },
+                    fee_amount: option.amount,
+                    total: { paid_to_club: 0, due_to_club: 0, total: 0, pending: 0 },
                     data: []
                 }))
             });
@@ -114,29 +115,43 @@ async function updateRegistrationReportingTable(allFields: any, club_account_id:
     )
 
     if (fields) {
+        // Fields exist, check for field updates or new fields
+
         for (const r of report) {
             let index = fields.findIndex((field: any) => field.field_id === r.field_id);
 
-            if (r.rows)
+            if (index < 0) {
+                // Field does not exist, add to report
 
-                if (index < 0) {
-                    await addItem(process.env.REGISTRATION_REPORTING_TABLE_NAME as string, r)
-                } else if (r.rows) {
+                await addItem(process.env.REGISTRATION_REPORTING_TABLE_NAME as string, r)
 
-                    let update = false
-                    r.rows.forEach((row: any) => {
-                        let i = fields[index].rows.findIndex((field_row: any) => field_row.option_order_id === row.option_order_id)
+            } else if (r.rows) {
+                // Check if DROPDOWN field requires updates or new additions
 
-                        if (i < 0) {
-                            fields[index].rows.push(row)
-                            update = true
-                        }
-                    })
+                let update = false
 
-                    if (update) await addItem(process.env.REGISTRATION_REPORTING_TABLE_NAME as string, fields[index])
-                }
+                r.rows.forEach((row: any) => {
+                    let i = fields[index].rows.findIndex((field_row: any) => field_row.option_order_id === row.option_order_id)
+
+                    if (i < 0) {
+                        // Dropdown field does not exist - add to report
+
+                        fields[index].rows.push(row)
+                        update = true
+                    }
+                })
+
+                if (update) await addItem(process.env.REGISTRATION_REPORTING_TABLE_NAME as string, fields[index])
+            } else if (fields[index].fee_amount != r.fee_amount) {
+                // Field exists but fee amount has been updated
+
+                fields[index].fee_amount = r.fee_amount
+                await addItem(process.env.REGISTRATION_REPORTING_TABLE_NAME as string, fields[index])
+            }
         }
     } else {
+        // No fields exist, create new billing report
+
         for (const r of report) {
             await addItem(process.env.REGISTRATION_REPORTING_TABLE_NAME as string, r)
         }

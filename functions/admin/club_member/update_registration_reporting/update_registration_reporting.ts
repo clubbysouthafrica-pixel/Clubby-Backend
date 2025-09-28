@@ -88,20 +88,20 @@ async function updateRegistrationReportWithPaidAmount(registration_report: Recor
                             field.rows.forEach((row: Record<string, any>) => {
                                 if (registration[key].option_order_id === row.option_order_id) {
 
-                                    row.total.due_to_club -= row.total.fee_amount
+                                    row.total.due_to_club -= row.fee_amount
                                     row.total.pending -= 1
-                                    row.total.paid_to_club += row.total.fee_amount
+                                    row.total.paid_to_club += row.fee_amount
                                     row.total.total += 1
 
                                     let index = row.data.findIndex((item: any) => item.date === registered_on_year_month);
-                                    if (index < 0) row.data.push({ date: registered_on_year_month, paid_to_club: row.total.fee_amount, due_to_club: 0, total: 1, pending: 0 })
+                                    if (index < 0) row.data.push({ date: registered_on_year_month, paid_to_club: row.fee_amount, due_to_club: 0, total: 1, pending: 0 })
                                     else {
-                                        row.data[index].paid_to_club += row.total.fee_amount
+                                        row.data[index].paid_to_club += row.fee_amount
                                         row.data[index].total += 1
                                     }
 
                                     index = row.data.findIndex((item: any) => item.date === registration_submitted_on_year_month);
-                                    row.data[index].due_to_club -= row.total.fee_amount
+                                    row.data[index].due_to_club -= row.fee_amount
                                     row.data[index].pending -= 1
                                 }
                             })
