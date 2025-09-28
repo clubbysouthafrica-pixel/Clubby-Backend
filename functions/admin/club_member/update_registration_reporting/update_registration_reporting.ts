@@ -19,13 +19,13 @@ async function updateRegistrationReportWithNewRegistration(registration_report: 
                     field.rows.forEach((row: Record<string, any>) => {
                         if (registration[key].option_order_id === row.option_order_id) {
 
-                            row.total.due_to_club += row.total.fee_amount
+                            row.total.due_to_club += row.fee_amount
                             row.total.pending += 1
 
                             let index = row.data.findIndex((item: any) => item.date === year_month);
-                            if (index < 0) row.data.push({ date: year_month, paid_to_club: 0, due_to_club: row.total.fee_amount, total: 0, pending: 1 })
+                            if (index < 0) row.data.push({ date: year_month, paid_to_club: 0, due_to_club: row.fee_amount, total: 0, pending: 1 })
                             else {
-                                row.data[index].due_to_club += row.total.fee_amount
+                                row.data[index].due_to_club += row.fee_amount
                                 row.data[index].pending += 1
                             }
                         }
