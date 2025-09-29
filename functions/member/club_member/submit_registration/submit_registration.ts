@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomUUID, createHash } from "crypto";
 import {
     createResponse,
     deconstructEvent,
@@ -33,17 +33,15 @@ interface BillingField {
 }
 
 function generateShortReference(
-    firstName: string,
-    lastName: string,
+    userId: string
 ): string {
-    const initials = `${firstName[0]}${lastName[0]}`.toUpperCase();
-
     const now = new Date();
-    const mmdd = now.toISOString().slice(5, 10).replace('-', ''); // e.g., "0721"
+    const mmdd = now.toISOString().slice(5, 10).replace('-', '');
 
-    let shortCode = '00';
+    const hash = createHash('sha1').update(userId).digest('hex').toUpperCase();
+    const shortHash = hash.substring(0, 6);
 
-    return `${initials}-${mmdd}-${shortCode}`;
+    return `REF-${mmdd}-${shortHash}`;
 }
 
 function validateRequestBody(body: any) {
@@ -388,7 +386,7 @@ export const handler = async (event: any) => {
             member_first_name: user.first_name,
             member_surname: user.surname,
             registered: false,
-            registration_payment_reference: generateShortReference(user.first_name, user.surname),
+            registration_payment_reference: generateShortReference(user_id as string),
             registration_submitted_on,
             ...await getClubDetails(body.club_account_id),
         };
