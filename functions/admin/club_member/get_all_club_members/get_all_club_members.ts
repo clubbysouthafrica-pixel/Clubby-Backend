@@ -42,7 +42,6 @@ export const handler = async (event: any) => {
             const meta_standard: any = [];
             if (registration_fee) {
                 Object.keys(registration_fee).forEach(key => {
-                    console.log(key)
                     if (key.includes("reg_field_") && registration_fee[key].type.includes("BILLING_")) {
                         meta_billing.push(registration_fee[key])
                     } else if (key.includes("reg_field_") && registration_fee[key].type.includes("STANDARD_")) {
