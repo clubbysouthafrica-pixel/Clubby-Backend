@@ -7,6 +7,7 @@ import { MSC_Layers } from "../../lambda_layers";
 interface MSC_MemberUserConstructProps {
     api_gateway: MSC_APIGateway;
     users_table: MSC_Table;
+    club_member_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     layers: MSC_Layers;
 }
@@ -48,12 +49,17 @@ export class MSC_MemberUserConstruct extends Construct {
             code: "member/user/update_user_details",
             envVariables: {
                 USERS_TABLE_NAME: props.users_table.tableName,
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 USER_TYPE: "MEMBER"
             },
             permissions: {
                 [props.users_table.tableArn]: [
                     "dynamodb:UpdateItem",
                     "dynamodb:GetItem"
+                ],
+                [props.club_member_table.tableArn]: [
+                    "dynamodb:UpdateItem",
+                    "dynamodb:Query"
                 ]
             },
             layers: [props.layers.jwt_layer]

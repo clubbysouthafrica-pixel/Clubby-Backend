@@ -96,6 +96,7 @@ export class MSC_MemberNestedStack extends Stack {
 
         new MSC_MemberUserConstruct(this, `${id}-User`, {
             api_gateway: api_gateway,
+            club_member_table: props.club_member_table,
             users_table: props.users_table,
             token_authorizer: jwt_construct.token_authorizer,
             layers: props.layers

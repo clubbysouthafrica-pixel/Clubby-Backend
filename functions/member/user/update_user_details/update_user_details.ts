@@ -1,4 +1,4 @@
-import { createResponse, deconstructEvent, getItem, updateItem } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, queryItems, updateItem } from "./function_helpers";
 
 const isValidDateOfBirth = (dob: string): boolean => {
     const regex = /^\d{4}\/\d{2}\/\d{2}$/;
@@ -99,6 +99,35 @@ export const handler = async (event: any) => {
                 expression_attribute_names,
                 expression_attribute_values
             )
+
+            if (body["first_name"] && body["surname"]) {
+                const club_members = await queryItems(
+                    process.env.CLUB_MEMBER_TABLE_NAME as string,
+                    "user_id = :userId",
+                    { ":userId": user_id as string }
+                )
+
+                if (!club_members) return createResponse(200, { message: "User details updated successfully." }, origin);
+
+                for (const member of club_members) {
+                    await updateItem(
+                        process.env.CLUB_MEMBER_TABLE_NAME as string,
+                        {
+                            user_id: user_id as string,
+                            club_account_id: member.club_account_id
+                        },
+                        `SET #member_first_name = :first_name, #member_surname = :surname`,
+                        {
+                            "#member_first_name": "member_first_name",
+                            "#member_surname": "member_surname"
+                        }, 
+                        {
+                            ":first_name": body["first_name"],
+                            ":surname": body["surname"]
+                        }
+                    )
+                }
+            }
 
             return createResponse(200, { message: "User details updated successfully." }, origin);
         } catch (error: any) {
