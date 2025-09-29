@@ -21,7 +21,7 @@ export const handler = async (event: any) => {
         )
 
         if (club_members == null) {
-            return createResponse(200, { registered: [], not_registered: [] }, origin);
+            return createResponse(200, { registered: [], unregistered: [] }, origin);
         }
 
         const registered: any[] = []
