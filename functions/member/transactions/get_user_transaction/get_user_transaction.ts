@@ -38,9 +38,13 @@ export const handler = async (event: any) => {
                 hour12: true,
             }).replace(' ', '');
 
+            const outstanding_amount = tx.amount - tx.amount_paid
+            delete tx.amount
+            delete tx.amount_paid
             return {
                 ...tx,
                 creation_date: `${formattedDate} ${formattedTime}`,
+                outstanding_amount
             };
         });
 
