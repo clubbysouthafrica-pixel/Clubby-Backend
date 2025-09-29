@@ -25,7 +25,9 @@ export const handler = async (event: any) => {
             total_pending_members: 0,
             total_pending_revenue: 0,
             total_revenue: 0,
-            total_deregistered_members: 0
+            total_deregistered_members: 0,
+            total_registration_pending_revenue: 0,
+            total_registration_revenue: 0
         }
 
         monthly_reports?.forEach(monthly_report => {
@@ -39,7 +41,9 @@ export const handler = async (event: any) => {
                 total_pending_members: monthly_report?.total_pending_members ?? 0,
                 total_pending_revenue: monthly_report?.total_pending_revenue ?? 0,
                 total_revenue: monthly_report?.total_revenue ?? 0,
-                total_deregistered_members: monthly_report?.total_deregistered_members ?? 0
+                total_deregistered_members: monthly_report?.total_deregistered_members ?? 0,
+                total_registration_pending_revenue: monthly_report?.total_registration_pending_revenue ?? 0,
+                total_registration_revenue: monthly_report?.total_registration_revenue ?? 0
             })
 
             report.total_registered_members += monthly_report?.total_registered_members ?? 0
@@ -47,6 +51,8 @@ export const handler = async (event: any) => {
             report.total_pending_revenue += monthly_report?.total_pending_revenue ?? 0
             report.total_revenue += monthly_report?.total_revenue ?? 0
             report.total_deregistered_members += monthly_report?.total_deregistered_members ?? 0
+            report.total_registration_pending_revenue += monthly_report?.total_registration_pending_revenue ?? 0
+            report.total_registration_revenue += monthly_report?.total_registration_revenue ?? 0
             
             report.total_active_members = report.total_registered_members - report.total_deregistered_members
         });
