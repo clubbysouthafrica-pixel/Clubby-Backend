@@ -1,4 +1,4 @@
-import { createResponse, deconstructEvent, queryItems } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, queryItems } from "./function_helpers";
 
 export const handler = async (event: any) => {
 
@@ -21,28 +21,38 @@ export const handler = async (event: any) => {
         )
 
         if (club_members == null) {
-            return createResponse(200, { registered: [], not_registered: [] }, origin);
+            return createResponse(200, { registered: [], unregistered: [] }, origin);
         }
 
         const registered: any[] = []
         const unregistered: any[] = []
 
-        club_members.forEach(item => {
+        for (const item of club_members) {
             delete item.club_account_id
+
+            const registration_fee = await getItem(
+                process.env.REGISTRATIONS_TABLE_NAME as string,
+                { 
+                   user_id: item.user_id,
+                   registration_id: item.current_reg_id
+                }
+            )
 
             const meta_billing: any = [];
             const meta_standard: any = [];
-            Object.keys(item).forEach(key => {
-                if (key.includes("reg_field_") && item[key].type.includes("BILLING_")) {
-                    meta_billing.push(item[key])
-                } else if (key.includes("reg_field_") && item[key].type.includes("STANDARD_")) {
-                    meta_standard.push(item[key])
-                }
-            })
+            if (registration_fee) {
+                Object.keys(registration_fee).forEach(key => {
+                    if (key.includes("reg_field_") && registration_fee[key].type.includes("BILLING_")) {
+                        meta_billing.push(registration_fee[key])
+                    } else if (key.includes("reg_field_") && registration_fee[key].type.includes("STANDARD_")) {
+                        meta_standard.push(registration_fee[key])
+                    }
+                })
+            }
 
             if (item.registered) {
                 registered.push({
-                    outstanding_amount: item.outstanding_amount,
+                    outstanding_amount: registration_fee?.total_outstanding_amount,
                     user_id: item.user_id,
                     member_first_name: item.member_first_name,
                     member_surname: item.member_surname,
@@ -54,17 +64,19 @@ export const handler = async (event: any) => {
                 });
             } else {
                 unregistered.push({
-                    outstanding_amount: item.outstanding_amount,
+                    outstanding_amount: registration_fee?.total_outstanding_amount,
                     registration_payment_reference: item.registration_payment_reference,
                     member_first_name: item.member_first_name,
                     member_surname: item.member_surname,
+                    member_email: item.member_email,
                     user_id: item.user_id,
                     registration_submitted_on: item.registration_submitted_on ?? undefined,
                     meta_standard: meta_standard,
-                    meta_billing: meta_billing
+                    meta_billing: meta_billing,
+                    resubmission_required: item.resubmission_required
                 });
             }
-        })
+        }
 
         return createResponse(200, { registered, unregistered }, origin);
 

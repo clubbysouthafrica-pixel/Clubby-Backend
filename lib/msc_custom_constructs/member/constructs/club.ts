@@ -8,6 +8,7 @@ interface MSC_MemberClubConstructProps {
     api_gateway: MSC_APIGateway;
     club_table: MSC_Table;
     club_member_table: MSC_Table;
+    registrations_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     image_bucket: MSC_Bucket;
     layers: MSC_Layers;
@@ -22,13 +23,17 @@ export class MSC_MemberClubConstruct extends Construct {
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
-                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
             },
             permissions: {
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
                 [props.club_member_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.registrations_table.tableArn]: [
                     "dynamodb:GetItem"
                 ]
             },
@@ -55,13 +60,17 @@ export class MSC_MemberClubConstruct extends Construct {
             code: "member/club/get_club_bank_details",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
-                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
             },
             permissions: {
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
                 [props.club_member_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.registrations_table.tableArn]: [
                     "dynamodb:GetItem"
                 ]
             },

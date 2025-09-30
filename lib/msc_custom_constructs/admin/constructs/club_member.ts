@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_Queue } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Layers } from "../../lambda_layers";
@@ -10,6 +10,8 @@ interface MSC_ClubMemberClubConstructProps {
     club_member_table: MSC_Table;
     club_table: MSC_Table;
     registration_form_table: MSC_Table;
+    registrations_table: MSC_Table;
+    club_reporting_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     layers: MSC_Layers;
     billing_table: MSC_Table;
@@ -23,11 +25,15 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             code: "admin/club_member/get_all_club_members",
             envVariables: {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
+                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
             },
             permissions: {
                 [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
                     "dynamodb:Query"
+                ],
+                [props.registrations_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
@@ -41,6 +47,8 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
             },
             permissions: {
                 [props.club_table.tableArn]: [
@@ -57,7 +65,14 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                     "dynamodb:UpdateItem"
                 ],
                 [props.transactions_table.tableArn]: [
-                    "dynamodb:PutItem"
+                    "dynamodb:UpdateItem"
+                ],
+                [props.registrations_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem"
+                ],
+                [props.club_reporting_table.tableArn]: [
+                    "dynamodb:UpdateItem"
                 ]
             },
             layers: [props.layers.jwt_layer]

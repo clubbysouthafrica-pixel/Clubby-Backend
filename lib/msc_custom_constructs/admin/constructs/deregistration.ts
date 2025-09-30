@@ -7,6 +7,8 @@ import { MSC_Layers } from "../../lambda_layers";
 interface MSC_DeregistrationConstructProps {
     api_gateway: MSC_APIGateway;
     club_member_table: MSC_Table;
+    club_reporting_table: MSC_Table;
+    registrations_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     club_history_bucket: MSC_Bucket;
     layers: MSC_Layers;
@@ -40,18 +42,24 @@ export class MSC_DeregistrationConstruct extends Construct {
             code: "admin/deregistration/deregister_members",
             envVariables: {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName
+                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
                     "dynamodb:UpdateItem",
                     "dynamodb:GetItem"
+                ],
+                [props.registrations_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ],
+                [props.club_reporting_table.tableArn]: [
+                    "dynamodb:UpdateItem"
                 ]
             },
             timeout: 360,
             layers: [props.layers.jwt_layer]
         });
-        props.club_history_bucket.grantPut(deregister_members);
 
         const deregistration_resource = props.api_gateway.root.addResource("deregistration");
 

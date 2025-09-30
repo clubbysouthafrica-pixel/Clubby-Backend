@@ -6,10 +6,11 @@ import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_ReportingConstructProps {
     api_gateway: MSC_APIGateway;
-    club_member_table: MSC_Table;
     club_table: MSC_Table;
-    billing_table: MSC_Table;
     registration_form_table: MSC_Table;
+    registrations_table: MSC_Table;
+    billing_table: MSC_Table;
+    club_reporting_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     layers: MSC_Layers;
 }
@@ -21,26 +22,25 @@ export class MSC_ReportingConstruct extends Construct {
         const general_reporting = new MSC_Lambda(this, `${id}-GeneralReporting`, {
             code: "admin/reporting/general_reporting",
             envVariables: {
-                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
+                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
             },
             permissions: {
-                [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
+                [props.club_reporting_table.tableArn]: [
                     "dynamodb:Query"
                 ]
             },
             layers: [props.layers.jwt_layer]
         });
 
-        const registration_billing = new MSC_Lambda(this, `${id}-RegistrationBilling`, {
-            code: "admin/reporting/registration_billing",
+        const registration_fees = new MSC_Lambda(this, `${id}-RegistrationFees`, {
+            code: "admin/reporting/registration_fees",
             envVariables: {
-                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
-                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
+                REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
             },
             permissions: {
-                [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
+                [`${props.registrations_table.tableArn}/index/ClubAccountIDIndex`]: [
                     "dynamodb:Query"
                 ],
                 [props.registration_form_table.tableArn]: [
@@ -71,7 +71,7 @@ export class MSC_ReportingConstruct extends Construct {
         const reporting_resource = props.api_gateway.root.addResource("reporting");
 
         const general_reporting_resource = reporting_resource.addResource("generalReporting");
-        const registration_billing_resource = reporting_resource.addResource("registrationBilling")
+        const registration_fees_resource = reporting_resource.addResource("registrationBilling")
         const mcs_billing_resource = reporting_resource.addResource("mcsBilling");
 
         const methodOptions: MethodOptions = {
@@ -81,7 +81,7 @@ export class MSC_ReportingConstruct extends Construct {
         }
 
         addCorsEnabledMethod(general_reporting_resource, general_reporting, methodOptions, undefined, "GET");
-        addCorsEnabledMethod(registration_billing_resource, registration_billing, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(registration_fees_resource, registration_fees, methodOptions, undefined, "GET");
         addCorsEnabledMethod(mcs_billing_resource, mcs_billing, methodOptions, undefined, "GET");
     }
 }

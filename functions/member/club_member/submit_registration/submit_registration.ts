@@ -1,10 +1,12 @@
-import { randomUUID } from "crypto";
+import { randomUUID, createHash } from "crypto";
 import {
     createResponse,
     deconstructEvent,
     addItem,
     queryItems,
-    getItem
+    getItem,
+    updateItem,
+    sendSqsMessage
 } from "./function_helpers";
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
@@ -31,17 +33,15 @@ interface BillingField {
 }
 
 function generateShortReference(
-    firstName: string,
-    lastName: string,
+    userId: string
 ): string {
-    const initials = `${firstName[0]}${lastName[0]}`.toUpperCase();
-
     const now = new Date();
-    const mmdd = now.toISOString().slice(5, 10).replace('-', ''); // e.g., "0721"
+    const mmdd = now.toISOString().slice(5, 10).replace('-', '');
 
-    let shortCode = '00';
+    const hash = createHash('sha1').update(userId).digest('hex').toUpperCase();
+    const shortHash = hash.substring(0, 6);
 
-    return `${initials}-${mmdd}-${shortCode}`;
+    return `REF-${mmdd}-${shortHash}`;
 }
 
 function validateRequestBody(body: any) {
@@ -169,6 +169,106 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
     return true;
 }
 
+async function addToRegistrationsTable(
+    club_account_id: string,
+    user_id: string,
+    billing_fields: any,
+    standard_fields: any,
+    membership_amount: number,
+    registration_submitted_on: number
+): Promise<string> {
+    const member_registrations = await queryItems(
+        process.env.REGISTRATIONS_TABLE_NAME as string,
+        "user_id = :userId",
+        { ":userId": user_id }
+    )
+
+    let new_registration_index = 1
+    if (member_registrations !== null) {
+        new_registration_index = member_registrations.length + 1
+    }
+
+    await addItem(
+        process.env.REGISTRATIONS_TABLE_NAME as string,
+        {
+            user_id: user_id,
+            registration_id: `${club_account_id}-00${new_registration_index}`,
+            club_account_id,
+            total_fee: membership_amount,
+            total_outstanding_amount: membership_amount,
+            deregistered: false,
+            registration_submitted_on,
+            ...billing_fields,
+            ...standard_fields,
+        }
+    )
+
+    return `${club_account_id}-00${new_registration_index}`;
+}
+
+async function addToClubReportingTable(
+    club_account_id: string,
+    membership_amount: number,
+) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    await updateItem(
+        process.env.CLUB_REPORTING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: `${year}/${month}`
+        },
+        `SET 
+                #total_pending_members = if_not_exists(#total_pending_members, :zero) + :one,
+                #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) + :member_registration_fee,
+                #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) + :member_registration_fee
+        `,
+        {
+            "#total_pending_members": "total_pending_members",
+            "#total_registration_pending_revenue": "total_registration_pending_revenue",
+            "#total_pending_revenue": "total_pending_revenue"
+        },
+        {
+            ":one": 1,
+            ":zero": 0,
+            ":member_registration_fee": membership_amount,
+        }
+    )
+}
+
+async function addToTransactionsTable(
+    club_account_id: string,
+    first_name: string,
+    surname: string,
+    transaction_id: string,
+    user_id: string,
+    membership_amount: number
+) {
+    await addItem(
+        process.env.TRANSACTIONS_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            name: `${first_name} ${surname}`,
+            transaction_id: transaction_id,
+            user_id: user_id as string,
+            amount_paid: 0,
+            amount: membership_amount,
+            creation_date: Date.now(),
+            lifecycle: {
+                [Date.now()]: {
+                    description: "Registration submission",
+                    amount: membership_amount,
+                    type: "SUBMISSION"
+                }
+            },
+            type: "REGISTRATION",
+            payment_type: "EFT/CASH",
+            status: "PENDING"
+        }
+    )
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -231,47 +331,64 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: standardFieldValidation }, origin);
         }
 
+        const billing_fields = body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: {
+            value: string; field_id: string; option_order_id?: string; label?: string;
+        }) => {
+            const f = form.find(f => f.field_id === field.field_id);
+
+            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
+            if (f?.input_type === "DROPDOWN" && field?.label) {
+                acc[`reg_field_${field.field_id}`].label_value = field.label
+                acc[`reg_field_${field.field_id}`].type = "BILLING_DROPDOWN"
+
+                if (field?.option_order_id) {
+                    acc[`reg_field_${field.field_id}`].option_order_id = field?.option_order_id
+                }
+            } else {
+                acc[`reg_field_${field.field_id}`].type = "BILLING_TEXT"
+            }
+            return acc;
+        }, {})
+        const standard_fields = body.standard_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
+            const f = form.find(f => f.field_id === field.field_id);
+
+            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, type: "STANDARD_TEXT" };
+            if (f?.input_type === "DROPDOWN") {
+                acc[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
+            } else if (f?.input_type === "CHECKBOX") {
+                acc[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
+            } else if (f?.input_type === "NUMBER") {
+                acc[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
+            }
+            return acc;
+        }, {})
+
+        const registration_submitted_on = Date.now()
+
+        const current_reg_id = await addToRegistrationsTable(
+            body.club_account_id,
+            user_id as string,
+            billing_fields,
+            standard_fields,
+            membership_amount,
+            registration_submitted_on
+        )
+
+        const current_reg_transaction_id = randomUUID();
+
         const item = {
             club_account_id: body.club_account_id,
             resubmission_required: false,
+            current_reg_id,
             user_id: user_id,
+            current_reg_transaction_id,
             member_email: user.email,
             member_first_name: user.first_name,
             member_surname: user.surname,
             registered: false,
-            registration_payment_reference: generateShortReference(user.first_name, user.surname),
-            registration_submitted_on: new Date().toISOString(),
+            registration_payment_reference: generateShortReference(user_id as string),
+            registration_submitted_on,
             ...await getClubDetails(body.club_account_id),
-            outstanding_amount: membership_amount,
-            registration_amount: membership_amount,
-            primary_member: user_id,
-            ...body.standard_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
-                const f = form.find(f => f.field_id === field.field_id);
-
-                acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, type: "STANDARD_TEXT" };
-                if (f?.input_type === "DROPDOWN") {
-                    acc[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
-                } else if (f?.input_type === "CHECKBOX") {
-                    acc[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
-                } else if (f?.input_type === "NUMBER") {
-                    acc[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
-                }
-                return acc;
-            }, {}),
-            ...body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: {
-                value: string; field_id: string; option_order_id?: string; label?: string;
-            }) => {
-                const f = form.find(f => f.field_id === field.field_id);
-
-                acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
-                if (f?.input_type === "DROPDOWN" && field?.label) {
-                    acc[`reg_field_${field.field_id}`].label_value = field.label
-                    acc[`reg_field_${field.field_id}`].type = "BILLING_DROPDOWN"
-                } else {
-                    acc[`reg_field_${field.field_id}`].type = "BILLING_TEXT"
-                }
-                return acc;
-            }, {})
         };
 
         await addItem(
@@ -279,18 +396,14 @@ export const handler = async (event: any) => {
             item
         );
 
-        await addItem(
-            process.env.TRANSACTIONS_TABLE_NAME as string,
-            {
-                club_account_id: body.club_account_id,
-                transaction_id: randomUUID(),
-                user_id: user_id as string,
-                date: new Date().getTime(),
-                amount: membership_amount,
-                description: "Registration submission",
-                payment_type: "EFT/CASH",
-                status: "PENDING"
-            }
+        await addToClubReportingTable(body.club_account_id, membership_amount)
+        await addToTransactionsTable(
+            body.club_account_id,
+            user.first_name,
+            user.surname,
+            current_reg_transaction_id,
+            user_id as string,
+            membership_amount,
         )
 
         return createResponse(200, { message: "Registration form successfully submitted." }, origin);

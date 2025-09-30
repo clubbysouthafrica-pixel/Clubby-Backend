@@ -17,6 +17,7 @@ interface MSC_LambdaProps {
     timeout?: number;
     memory?: number;
     layers?: MSC_LambdaLayer[],
+    reservedConcurrentExecutions?: number;
 }
 
 export class MSC_Lambda extends Function {
@@ -54,7 +55,8 @@ export class MSC_Lambda extends Function {
                 ...props.envVariables,
             },
             role: lambdaRole,
-            layers: props.layers ?? undefined
+            layers: props.layers ?? undefined,
+            reservedConcurrentExecutions: props.reservedConcurrentExecutions ?? undefined
         });
     }
 }

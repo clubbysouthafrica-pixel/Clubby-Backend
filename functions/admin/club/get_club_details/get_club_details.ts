@@ -15,7 +15,7 @@ export const handler = async (event: any) => {
         });
 
         if (item == null) {
-            return createResponse(400, { message: "Club not found." }, origin);
+            return createResponse(200, {}, origin);
         }
 
         return createResponse(200, {
@@ -26,7 +26,8 @@ export const handler = async (event: any) => {
                 account_type: item?.account_type
             },
             country_of_operation: item?.country_of_operation,
-            currency: item?.currency
+            currency: item?.currency,
+            support_email: item?.support_email
         }, origin);
 
     } catch (error) {

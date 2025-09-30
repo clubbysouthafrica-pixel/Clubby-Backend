@@ -3,9 +3,8 @@ import {
     deconstructEvent,
     updateItem,
     getItem,
-    addItem,
+    sendSqsMessage,
 } from "./function_helpers";
-import { randomUUID } from 'crypto';
 
 async function updateClubsRegistrationBilling(club_account_id: string, fee: number) {
     const now = new Date();
@@ -37,6 +36,201 @@ async function updateClubsRegistrationBilling(club_account_id: string, fee: numb
     );
 }
 
+async function partialRegistrationUpdateTransactionsTable(
+    club_account_id: string,
+    current_reg_transaction_id: string,
+    payment_amount: number
+) {
+    await updateItem(
+        process.env.TRANSACTIONS_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            transaction_id: current_reg_transaction_id
+        },
+        `SET #amount_paid = #amount_paid + :payment_amount, #status = :status, #lifecycle.#ts = :lifecycleValue`,
+        {
+            "#amount_paid": "amount_paid",
+            "#status": "status",
+            "#lifecycle": "lifecycle",
+            "#ts": `${Date.now()}`
+        },
+        {
+            ":status": "PARTIALLY PAID",
+            ":payment_amount": payment_amount,
+            ":lifecycleValue": {
+                type: "CONFIRMATION",
+                description: "Payment confirmation",
+                amount: payment_amount
+            }
+        }
+    );
+}
+
+async function partialRegistrationUpdateClubReportingTable(
+    club_account_id: string,
+    year: number,
+    month: string,
+    payment_amount: number
+) {
+    await updateItem(
+        process.env.CLUB_REPORTING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: `${year}/${month}`
+        },
+        `SET 
+            #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
+            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount,
+            #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount,
+            #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount
+        `,
+        {
+            "#total_revenue": "total_revenue",
+            "#total_registration_revenue": "total_registration_revenue",
+            "#total_registration_pending_revenue": "total_registration_pending_revenue",
+            "#total_pending_revenue": "total_pending_revenue"
+        },
+        {
+            ":zero": 0,
+            ":payment_amount": payment_amount,
+        }
+    )
+}
+
+async function updateClubReportingTable(
+    club_account_id: string,
+    year: number,
+    month: string,
+    payment_amount: number
+) {
+    await updateItem(
+        process.env.CLUB_REPORTING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: `${year}/${month}`
+        },
+        `SET 
+            #total_registered_members = if_not_exists(#total_registered_members, :zero) + :one,
+            #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
+            #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount,
+            #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount,
+            #total_pending_members = if_not_exists(#total_pending_members, :zero) - :one,
+            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount
+        `,
+        {
+            "#total_registered_members": "total_registered_members",
+            "#total_registration_pending_revenue": "total_registration_pending_revenue",
+            "#total_registration_revenue": "total_registration_revenue",
+            "#total_revenue": "total_revenue",
+            "#total_pending_members": "total_pending_members",
+            "#total_pending_revenue": "total_pending_revenue"
+        },
+        {
+            ":one": 1,
+            ":zero": 0,
+            ":payment_amount": payment_amount,
+        }
+    )
+}
+
+async function partialRegistrationUpdateRegistrationsTable(
+    member_id: string,
+    current_reg_id: string,
+    payment_amount: number
+) {
+    await updateItem(
+        process.env.REGISTRATIONS_TABLE_NAME as string,
+        {
+            user_id: member_id,
+            registration_id: current_reg_id
+        },
+        "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount",
+        {
+            "#total_outstanding_amount": "total_outstanding_amount"
+        },
+        {
+            ":payment_amount": payment_amount
+        }
+    );
+}
+
+async function updateRegistrationsTable(
+    member_id: string,
+    current_reg_id: string,
+    registered_on: number
+) {
+    await updateItem(
+        process.env.REGISTRATIONS_TABLE_NAME as string,
+        {
+            user_id: member_id,
+            registration_id: current_reg_id
+        },
+        "SET #total_outstanding_amount = :zero, #registered_on = :registered_on",
+        {
+            "#total_outstanding_amount": "total_outstanding_amount",
+            "#registered_on": "registered_on"
+        },
+        {
+            ":zero": 0,
+            ":registered_on": registered_on
+        }
+    )
+}
+
+async function updateTransactionsTable(
+    club_account_id: string,
+    current_reg_transaction_id: string,
+    registered_on: number,
+    payment_amount: number
+) {
+    await updateItem(
+        process.env.TRANSACTIONS_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            transaction_id: current_reg_transaction_id
+        },
+        `SET #amount_paid = #amount, #status = :status, #lifecycle.#ts = :lifecycleValue`,
+        {
+            "#amount_paid": "amount_paid",
+            "#amount": "amount",
+            "#status": "status",
+            "#lifecycle": "lifecycle",
+            "#ts": `${registered_on}`
+        },
+        {
+            ":status": "PAID",
+            ":lifecycleValue": {
+                type: "CONFIRMATION",
+                description: "Payment confirmation",
+                amount: payment_amount
+            }
+        }
+    );
+}
+
+async function updateClubMember(
+    club_account_id: string,
+    member_id: string,
+    registered_on: number,
+) {
+    await updateItem(
+        process.env.CLUB_MEMBER_TABLE_NAME as string,
+        {
+            user_id: member_id,
+            club_account_id: club_account_id,
+        },
+        "SET #reg = :registered, #registered_on = :registered_on",
+        {
+            "#reg": "registered",
+            "#registered_on": "registered_on"
+        },
+        {
+            ":registered": true,
+            ":registered_on": registered_on
+        }
+    );
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -46,7 +240,7 @@ export const handler = async (event: any) => {
         if (body?.club_account_id == null || body?.member_id == null || body?.payment_amount == null) {
             return createResponse(400, { message: "Invalid request. club_account_id, member_id, payment_amount requried in body." }, origin);
         }
-        if (typeof body.club_account_id !== 'string' || typeof body.member_id !== 'string' || typeof body.payment_amount !== 'number' ) {
+        if (typeof body.club_account_id !== 'string' || typeof body.member_id !== 'string' || typeof body.payment_amount !== 'number') {
             return createResponse(400, { message: "club_account_id, member_id must be STRING type. payment_amount must be NUMBER type." }, origin);
         }
 
@@ -74,72 +268,37 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Club does not exist." }, origin);
         }
 
-        if (club_member.outstanding_amount > body.payment_amount) {
-            await updateItem(
-                process.env.CLUB_MEMBER_TABLE_NAME as string,
-                {
-                    user_id: body.member_id,
-                    club_account_id: body.club_account_id,
-                },
-                "SET #outstanding_amount = #outstanding_amount - :payment_amount",
-                {
-                    "#outstanding_amount": "outstanding_amount"
-                },
-                {
-                    ":payment_amount": body.payment_amount
-                }
-            );
+        const registration_fee = await getItem(
+            process.env.REGISTRATIONS_TABLE_NAME as string,
+            {
+                user_id: club_member.user_id,
+                registration_id: club_member.current_reg_id
+            }
+        )
+        if (!registration_fee) {
+            return createResponse(400, { message: "Registration fee does not exist." }, origin);
+        }
 
-            await addItem(
-                process.env.TRANSACTIONS_TABLE_NAME as string,
-                {
-                    club_account_id: body.club_account_id,
-                    transaction_id: randomUUID(),
-                    user_id: user_id as string,
-                    date: new Date().getTime(),
-                    amount: body.payment_amount,
-                    description: "Registration payment",
-                    type: "PAYMENT CONFIRMED"
-                }
-            )
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+
+        if (registration_fee.total_outstanding_amount > body.payment_amount) {
+
+            await partialRegistrationUpdateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, body.payment_amount)
+            await partialRegistrationUpdateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
+            await partialRegistrationUpdateRegistrationsTable(body.member_id, club_member.current_reg_id, body.payment_amount)
 
             return createResponse(200, { registered: false, message: "Member outstanding balance updated." }, origin);
         }
 
+        const registered_on = Date.now()
+
         await updateClubsRegistrationBilling(body.club_account_id, club.member_registration_fee_to_club);
-
-        await updateItem(
-            process.env.CLUB_MEMBER_TABLE_NAME as string,
-            {
-                user_id: body.member_id,
-                club_account_id: body.club_account_id,
-            },
-            "SET #reg = :registered, #outstanding_amount = #outstanding_amount - :payment_amount, #registered_on = :registered_on",
-            {
-                "#reg": "registered",
-                "#outstanding_amount": "outstanding_amount",
-                "#registered_on": "registered_on"
-            },
-            {
-                ":registered": true,
-                ":payment_amount": body.payment_amount,
-                ":registered_on": new Date().toISOString()
-            }
-        );
-
-        await addItem(
-            process.env.TRANSACTIONS_TABLE_NAME as string,
-            {
-                club_account_id: body.club_account_id,
-                transaction_id: randomUUID(),
-                user_id: user_id as string,
-                date: new Date().getTime(),
-                amount: body.payment_amount,
-                description: "Registration payment",
-                payment_type: "EFT/CASH",
-                status: "CONFIRMED"
-            }
-        )
+        await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount)
+        await updateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
+        await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on)
+        await updateClubMember(body.club_account_id, body.member_id, registered_on)
 
         return createResponse(200, { registered: true, message: "Member outstanding balance updated." }, origin);
 
