@@ -132,7 +132,6 @@ export class MSC_AdminNestedStack extends Stack {
 
         new MSC_AdminRegistrationFormConstruct(this, `${id}-RegistrationForm`, {
             api_gateway: api_gateway,
-            registration_reporting_table: props.registration_reporting_table,
             registration_form_table: props.registration_form_table,
             club_table: props.club_table,
             club_admin_table: props.club_admin_table,
