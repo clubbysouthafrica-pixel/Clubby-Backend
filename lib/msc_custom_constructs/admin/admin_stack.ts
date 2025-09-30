@@ -75,7 +75,9 @@ export class MSC_AdminNestedStack extends Stack {
             layers: props.layers,
             registration_reporting_table: props.registration_reporting_table,
             club_reporting_table: props.club_reporting_table,
-            token_authorizer: jwt_construct.token_authorizer
+            token_authorizer: jwt_construct.token_authorizer,
+            registrations_table: props.registrations_table,
+            registration_form_table: props.registration_form_table
         });
 
         new MSC_DeregistrationConstruct(this, `${id}-Deregistration`, {

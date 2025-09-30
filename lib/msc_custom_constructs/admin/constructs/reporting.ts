@@ -7,6 +7,8 @@ import { MSC_Layers } from "../../lambda_layers";
 interface MSC_ReportingConstructProps {
     api_gateway: MSC_APIGateway;
     club_table: MSC_Table;
+    registration_form_table: MSC_Table;
+    registrations_table: MSC_Table;
     billing_table: MSC_Table;
     registration_reporting_table: MSC_Table;
     club_reporting_table: MSC_Table;
@@ -31,13 +33,19 @@ export class MSC_ReportingConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
-        const registration_billing = new MSC_Lambda(this, `${id}-RegistrationBilling`, {
-            code: "admin/reporting/registration_billing",
+        const registration_billing = new MSC_Lambda(this, `${id}-RegistrationFees`, {
+            code: "admin/reporting/registration_fees",
             envVariables: {
+                REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
+                REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 REGISTRATION_REPORTING_TABLE_NAME: props.registration_reporting_table.tableName
             },
             permissions: {
-                [props.registration_reporting_table.tableArn]: [
+                [`${props.registrations_table.tableArn}/index/ClubAccountIDIndex`]: [
+                    "dynamodb:Query"
+                ],
+                [props.registration_form_table.tableArn]: [
                     "dynamodb:Query"
                 ]
             },
