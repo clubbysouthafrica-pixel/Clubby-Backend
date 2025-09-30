@@ -10,7 +10,6 @@ interface MSC_ReportingConstructProps {
     registration_form_table: MSC_Table;
     registrations_table: MSC_Table;
     billing_table: MSC_Table;
-    registration_reporting_table: MSC_Table;
     club_reporting_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     layers: MSC_Layers;
@@ -33,13 +32,12 @@ export class MSC_ReportingConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
-        const registration_billing = new MSC_Lambda(this, `${id}-RegistrationFees`, {
+        const registration_fees = new MSC_Lambda(this, `${id}-RegistrationFees`, {
             code: "admin/reporting/registration_fees",
             envVariables: {
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
-                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                REGISTRATION_REPORTING_TABLE_NAME: props.registration_reporting_table.tableName
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
             },
             permissions: {
                 [`${props.registrations_table.tableArn}/index/ClubAccountIDIndex`]: [
@@ -73,7 +71,7 @@ export class MSC_ReportingConstruct extends Construct {
         const reporting_resource = props.api_gateway.root.addResource("reporting");
 
         const general_reporting_resource = reporting_resource.addResource("generalReporting");
-        const registration_billing_resource = reporting_resource.addResource("registrationBilling")
+        const registration_fees_resource = reporting_resource.addResource("registrationBilling")
         const mcs_billing_resource = reporting_resource.addResource("mcsBilling");
 
         const methodOptions: MethodOptions = {
@@ -83,7 +81,7 @@ export class MSC_ReportingConstruct extends Construct {
         }
 
         addCorsEnabledMethod(general_reporting_resource, general_reporting, methodOptions, undefined, "GET");
-        addCorsEnabledMethod(registration_billing_resource, registration_billing, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(registration_fees_resource, registration_fees, methodOptions, undefined, "GET");
         addCorsEnabledMethod(mcs_billing_resource, mcs_billing, methodOptions, undefined, "GET");
     }
 }

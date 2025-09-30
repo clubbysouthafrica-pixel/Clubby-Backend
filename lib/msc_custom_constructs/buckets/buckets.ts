@@ -11,13 +11,13 @@ export class MSC_BucketsConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_BucketsProps) {
         super(scope, `${id}-Buckets`);
 
-        this.image_bucket = new MSC_Bucket(this, `${id}-Images`, {
-            bucket_name: `${process.env.ENVIRONMENT as string}-${id}-Images`.toLocaleLowerCase(),
+        this.image_bucket = new MSC_Bucket(this, `${id}-CoverAndProfileImages`, {
+            bucket_name: `${process.env.ENVIRONMENT as string}-${id}-CoverAndProfileImages`.toLocaleLowerCase(),
             enableCors: true
         });
 
-        this.club_history_bucket = new MSC_Bucket(this, `${id}-Reporting`, {
-            bucket_name: `${process.env.ENVIRONMENT as string}-${id}-Reporting`.toLocaleLowerCase()
+        this.club_history_bucket = new MSC_Bucket(this, `${id}-HistoricalReports`, {
+            bucket_name: `${process.env.ENVIRONMENT as string}-${id}-HistoricalReports`.toLocaleLowerCase()
         });
     }
 }

@@ -406,15 +406,6 @@ export const handler = async (event: any) => {
             membership_amount,
         )
 
-        await sendSqsMessage(
-            process.env.UPDATE_REGISTRATION_REPORTING_QUEUE_URL as string,
-            {
-                registration_id: current_reg_id,
-                user_id: user_id as string
-            },
-            "UpdateRegistrationReporting"
-        );
-
         return createResponse(200, { message: "Registration form successfully submitted." }, origin);
 
     } catch (error: any) {

@@ -43,8 +43,7 @@ export class MSC_DeregistrationConstruct extends Construct {
             envVariables: {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
-                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
@@ -61,7 +60,6 @@ export class MSC_DeregistrationConstruct extends Construct {
             timeout: 360,
             layers: [props.layers.jwt_layer]
         });
-        props.club_history_bucket.grantPut(deregister_members);
 
         const deregistration_resource = props.api_gateway.root.addResource("deregistration");
 

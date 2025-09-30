@@ -300,16 +300,6 @@ export const handler = async (event: any) => {
         await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on)
         await updateClubMember(body.club_account_id, body.member_id, registered_on)
 
-        await sendSqsMessage(
-            process.env.UPDATE_REGISTRATION_REPORTING_QUEUE_URL as string,
-            {
-                registration_id: club_member.current_reg_id,
-                user_id: body.member_id,
-                update_registration_reporting: 'true'
-            },
-            "UpdateRegistrationReporting"
-        );
-
         return createResponse(200, { registered: true, message: "Member outstanding balance updated." }, origin);
 
     } catch (error) {

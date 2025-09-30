@@ -23,10 +23,8 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     transactions_table: MSC_Table;
     club_table: MSC_Table;
     registrations_table: MSC_Table;
-    registration_reporting_table: MSC_Table;
     club_admin_table: MSC_Table;
     billing_table: MSC_Table;
-    update_registration_reporting_queue: MSC_Queue;
     registration_form_table: MSC_Table;
     club_reporting_table: MSC_Table;
     club_member_table: MSC_Table;
@@ -73,7 +71,6 @@ export class MSC_AdminNestedStack extends Stack {
             club_table: props.club_table,
             billing_table: props.billing_table,
             layers: props.layers,
-            registration_reporting_table: props.registration_reporting_table,
             club_reporting_table: props.club_reporting_table,
             token_authorizer: jwt_construct.token_authorizer,
             registrations_table: props.registrations_table,
@@ -117,6 +114,7 @@ export class MSC_AdminNestedStack extends Stack {
 
         new MSC_AdminClubConstruct(this, `${id}-Club`, {
             api_gateway: api_gateway,
+            registration_form_table: props.registration_form_table,
             club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
             layers: props.layers
@@ -141,8 +139,6 @@ export class MSC_AdminNestedStack extends Stack {
 
         new MSC_ClubMemberClubConstruct(this, `${id}-ClubMember`, {
             api_gateway: api_gateway,
-            registration_reporting_table: props.registration_reporting_table,
-            update_registration_reporting_queue: props.update_registration_reporting_queue,
             club_reporting_table: props.club_reporting_table,
             transactions_table: props.transactions_table,
             club_table: props.club_table,

@@ -21,7 +21,6 @@ export interface MSC_MemberNestedStackProps extends StackProps {
     registration_form_table: MSC_Table;
     registrations_table: MSC_Table;
     club_reporting_table: MSC_Table;
-    update_registration_reporting_queue: MSC_Queue;
     transactions_table: MSC_Table;
     image_bucket: MSC_Bucket;
     layers: MSC_Layers;
@@ -64,7 +63,6 @@ export class MSC_MemberNestedStack extends Stack {
 
         new MSC_ClubMemberConstruct(this, `${id}-ClubMember`, {
             api_gateway: api_gateway,
-            update_registration_reporting_queue: props.update_registration_reporting_queue,
             club_member_table: props.club_member_table,
             registrations_table: props.registrations_table,
             registration_form_table: props.registration_form_table,

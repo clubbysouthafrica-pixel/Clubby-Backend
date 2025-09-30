@@ -101,20 +101,6 @@ export const handler = async (event: any) => {
             await updateRegistrationsTable(member.user_id, member.current_reg_id)
         }
 
-        // const season_id = Date.now()
-        // const bucket_name = process.env.CLUB_HISTORY_BUCKET_NAME;
-        // const uploadParams = {
-        //     Bucket: bucket_name,
-        //     Key: `${body.club_account_id}/club_members/${season_id}.json`,
-        //     Body: JSON.stringify(club_members),
-        //     ContentType: "application/json",
-        // };
-        // const command = new PutObjectCommand(uploadParams);
-        // console.log(`@@@ putItem request (Bucket_Name: ${bucket_name}): `, JSON.stringify(command));
-        // const response = await s3Client.send(command);
-        // console.log(`@@@ putItem response (Bucket_Name: ${bucket_name}): `, JSON.stringify(response));
-
-
         return createResponse(200, { message: "Successfully deregistered members" }, origin);
 
     } catch (error: any) {
