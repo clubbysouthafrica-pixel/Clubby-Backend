@@ -26,6 +26,8 @@ export const handler = async (event: any) => {
 
     try {
 
+        body["phone_number"] = body["phone_number"].replace(/\s+/g, '');
+        
         if (body.phone_number && !isValidPhoneNumber(body.phone_number)) {
             return createResponse(400, { message: "Invalid phone number format. Use format like +27727187281" }, origin);
         }
