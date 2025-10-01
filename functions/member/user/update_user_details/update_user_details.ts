@@ -27,7 +27,7 @@ export const handler = async (event: any) => {
     try {
 
         body["phone_number"] = body["phone_number"].replace(/\s+/g, '');
-        
+
         if (body.phone_number && !isValidPhoneNumber(body.phone_number)) {
             return createResponse(400, { message: "Invalid phone number format. Use format like +27727187281" }, origin);
         }
@@ -67,14 +67,14 @@ export const handler = async (event: any) => {
         const updatableFields = [
             "first_name",
             "surname",
+            "phone_number",
             "date_of_birth",
-            "country",
             "address_line_1",
             "address_line_2",
             "suburb",
             "city",
-            "phone_number",
             "postal_code",
+            "country",
         ];
 
         const update_expressions: string[] = [];
