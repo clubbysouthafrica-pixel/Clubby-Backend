@@ -52,7 +52,7 @@ export const handler = async (event: any) => {
     }
 
     if (!isValidPhoneNumber(body.phone_number)) {
-      return createResponse(400, { message: "Invalid phone number format. Use format like +27727187281" }, origin);
+      return createResponse(400, { message: "Invalid phone number format. Please ensure it is the correct length and is in the following valid format: +27727187266." }, origin);
     }
 
     if (!isValidDateOfBirth(body.date_of_birth)) {
