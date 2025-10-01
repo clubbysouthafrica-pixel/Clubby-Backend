@@ -37,6 +37,8 @@ export const handler = async (event: any) => {
       );
     }
 
+    body["phone_number"] = body["phone_number"].replace(/\s+/g, '');
+
     const invalidStringFields = requiredFields.filter(
       field => typeof body[field] !== "string"
     );
