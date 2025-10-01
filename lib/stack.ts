@@ -20,6 +20,7 @@ export class MSC_Stack extends cdk.Stack {
     });
     const club_deregistraiton_queue = new MSC_Queue(this, `ClubDeregistration`, {
       queue_name: 'ClubDeregistration',
+      timeout: 900
     });
 
     const tables = new MSC_TablesConstruct(this, stack_id, {});
