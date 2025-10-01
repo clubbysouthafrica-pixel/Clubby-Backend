@@ -18,9 +18,9 @@ export class MSC_Stack extends cdk.Stack {
     const mail_queue = new MSC_Queue(this, `SendMail`, {
       queue_name: 'SendMail',
     });
-    // const update_registration_reporting_queue = new MSC_Queue(this, `UpdateRegistrationReporting`, {
-    //   queue_name: 'UpdateRegistrationReporting',
-    // });
+    const club_deregistraiton_queue = new MSC_Queue(this, `ClubDeregistration`, {
+      queue_name: 'ClubDeregistration',
+    });
 
     const tables = new MSC_TablesConstruct(this, stack_id, {});
     const buckets = new MSC_BucketsConstruct(this, stack_id, {});
@@ -36,6 +36,7 @@ export class MSC_Stack extends cdk.Stack {
 
     const admin_stack = new MSC_AdminNestedStack(this, `AdminStack`, { 
       env: props?.env,
+      club_deregistraiton_queue: club_deregistraiton_queue,
       transactions_table: tables.transactions_table,
       club_reporting_table: tables.club_reporting_table,
       users_table: tables.users_table, 

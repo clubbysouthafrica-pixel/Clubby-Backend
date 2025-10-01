@@ -29,6 +29,7 @@ export class MSC_ReportingConstruct extends Construct {
                     "dynamodb:Query"
                 ]
             },
+            memory: 2048,
             layers: [props.layers.jwt_layer]
         });
 
@@ -47,6 +48,7 @@ export class MSC_ReportingConstruct extends Construct {
                     "dynamodb:Query"
                 ]
             },
+            memory: 2048,
             layers: [props.layers.jwt_layer]
         });
 
@@ -65,6 +67,7 @@ export class MSC_ReportingConstruct extends Construct {
                     "dynamodb:GetItem"
                 ]
             },
+            memory: 2048,
             layers: [props.layers.jwt_layer]
         });
 

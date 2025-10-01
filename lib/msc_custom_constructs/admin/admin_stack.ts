@@ -27,6 +27,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     billing_table: MSC_Table;
     registration_form_table: MSC_Table;
     club_reporting_table: MSC_Table;
+    club_deregistraiton_queue: MSC_Queue;
     club_member_table: MSC_Table;
     image_bucket: MSC_Bucket;
     club_history_bucket: MSC_Bucket;
@@ -79,6 +80,10 @@ export class MSC_AdminNestedStack extends Stack {
 
         new MSC_DeregistrationConstruct(this, `${id}-Deregistration`, {
             api_gateway: api_gateway,
+            transactions_table: props.transactions_table,
+            club_table: props.club_table,
+            billing_table: props.billing_table,
+            club_deregistraiton_queue: props.club_deregistraiton_queue,
             club_member_table: props.club_member_table,
             club_reporting_table: props.club_reporting_table,
             club_history_bucket: props.club_history_bucket,

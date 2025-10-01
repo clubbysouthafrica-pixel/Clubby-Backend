@@ -1,6 +1,5 @@
-import { createResponse, deconstructEvent, getItem, addItem, updateItem, queryItems } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, addItem, removeItem } from "./function_helpers";
 import { randomUUID } from 'crypto';
-import { unmarshall } from "@aws-sdk/util-dynamodb";
 
 export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
@@ -187,23 +186,16 @@ export const handler = async (event: any) => {
         if (body.deleteFields && body.deleteFields.length > 0) {
             for (const field_id of body.deleteFields) {
                 try {
-                    await updateItem(
+                    await removeItem(
                         process.env.REGISTRATION_FORM_TABLE_NAME as string,
                         {
                             club_account_id: body.club_account_id,
                             field_id: field_id
-                        },
-                        "SET #visible = :visible",
-                        {
-                            "#visible": "visible"
-                        },
-                        {
-                            ":visible": false
-                        },
-                        "attribute_exists(field_id)"
+                        }
                     );
                 } catch (error: any) {
                     console.log(`Could not delete field, ${field_id}.`);
+                    console.log(`Error: ${error.message}`)
                 }
             }
         }

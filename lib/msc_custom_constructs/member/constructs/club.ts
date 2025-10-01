@@ -8,6 +8,7 @@ interface MSC_MemberClubConstructProps {
     api_gateway: MSC_APIGateway;
     club_table: MSC_Table;
     club_member_table: MSC_Table;
+    registration_form_table: MSC_Table;
     registrations_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     image_bucket: MSC_Bucket;
@@ -22,6 +23,7 @@ export class MSC_MemberClubConstruct extends Construct {
             code: "member/club/get_club",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
+                REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
@@ -35,6 +37,9 @@ export class MSC_MemberClubConstruct extends Construct {
                 ],
                 [props.registrations_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [props.registration_form_table.tableArn]: [
+                    "dynamodb:Query"
                 ]
             },
             layers: [props.layers.jwt_layer]

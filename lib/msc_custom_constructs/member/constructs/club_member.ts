@@ -52,7 +52,8 @@ export class MSC_ClubMemberConstruct extends Construct {
                 ],
                 [props.registrations_table.tableArn]: [
                     "dynamodb:Query",
-                    "dynamodb:PutItem"
+                    "dynamodb:PutItem",
+                    "dynamodb:DeleteItem"
                 ],
                 [props.club_reporting_table.tableArn]: [
                     "dynamodb:UpdateItem"

@@ -1,6 +1,6 @@
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { createResponse, deconstructEvent, getItem } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, queryItems } from "./function_helpers";
 
 const s3_client = new S3Client({ region: process.env.REGION });
 
@@ -73,6 +73,22 @@ export const handler = async (event: any) => {
             }
         }
 
+        const form = await queryItems(
+            process.env.REGISTRATION_FORM_TABLE_NAME as string,
+            "club_account_id = :clubId",
+            { ":clubId": query_string_params.club_account_id }
+        )
+
+        const onboarded = Boolean(
+            form &&
+            item?.["country_of_operation"] &&
+            item?.["currency"] &&
+            item?.["account_type"] &&
+            item?.["branch_code"] &&
+            item?.["account_number"] &&
+            item?.["bank"]
+        );
+
         return createResponse(200, {
             user_id: user_id,
             currency: item.currency,
@@ -84,6 +100,7 @@ export const handler = async (event: any) => {
             support_email: item["support_email"],
             country_of_operation: item["country_of_operation"],
             joined: item["joined"],
+            onboarded,
             club_member_exists,
             registered,
             resubmission_required,

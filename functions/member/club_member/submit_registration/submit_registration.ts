@@ -6,7 +6,8 @@ import {
     queryItems,
     getItem,
     updateItem,
-    sendSqsMessage
+    sendSqsMessage,
+    removeItem
 } from "./function_helpers";
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
@@ -185,7 +186,21 @@ async function addToRegistrationsTable(
 
     let new_registration_index = 1
     if (member_registrations !== null) {
-        new_registration_index = member_registrations.length + 1
+
+        if (member_registrations.length == 1 && member_registrations[0]?.last_season_registration) {
+            new_registration_index = 1
+
+            await removeItem(
+                process.env.REGISTRATIONS_TABLE_NAME as string,
+                {
+                    user_id: member_registrations[0].user_id,
+                    registration_id: member_registrations[0].registration_id
+                }
+            )
+        
+        } else {
+            new_registration_index = member_registrations.length + 1
+        }
     }
 
     await addItem(

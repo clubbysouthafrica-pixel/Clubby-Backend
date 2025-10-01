@@ -160,6 +160,7 @@ export const handler = async (event: any) => {
         }
 
         for (const registration of registrations) {
+            if (registration?.last_season_registration) continue
             if (registration.total_outstanding_amount == 0) {
                 updateReportWithPaidRegistration(report, registration)
             } else {
