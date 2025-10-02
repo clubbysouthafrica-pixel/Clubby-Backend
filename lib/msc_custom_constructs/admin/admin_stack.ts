@@ -119,7 +119,6 @@ export class MSC_AdminNestedStack extends Stack {
 
         new MSC_AdminClubConstruct(this, `${id}-Club`, {
             api_gateway: api_gateway,
-            registration_form_table: props.registration_form_table,
             club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
             layers: props.layers
@@ -127,6 +126,7 @@ export class MSC_AdminNestedStack extends Stack {
 
         new MSC_ClubAdminClubConstruct(this, `${id}-ClubAdmin`, {
             api_gateway: api_gateway,
+            registration_form_table: props.registration_form_table,
             token_authorizer: jwt_construct.token_authorizer,
             club_admin_table: props.club_admin_table,
             club_table: props.club_table,

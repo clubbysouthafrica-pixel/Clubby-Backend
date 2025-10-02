@@ -7,6 +7,7 @@ import { MSC_Layers } from "../../lambda_layers";
 interface MSC_ClubAdminClubConstructProps {
     api_gateway: MSC_APIGateway;
     token_authorizer: TokenAuthorizer;
+    registration_form_table: MSC_Table;
     club_admin_table: MSC_Table;
     club_table: MSC_Table;
     layers: MSC_Layers;
@@ -20,6 +21,7 @@ export class MSC_ClubAdminClubConstruct extends Construct {
             code: "admin/club_admin/get_all_admin_clubs",
             envVariables: {
                 CLUB_ADMIN_TABLE_NAME: props.club_admin_table.tableName,
+                REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName
             },
             permissions: {
@@ -28,6 +30,9 @@ export class MSC_ClubAdminClubConstruct extends Construct {
                 ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [props.registration_form_table.tableArn]: [
+                    "dynamodb:Query"
                 ]
             },
             layers: [props.layers.jwt_layer]
