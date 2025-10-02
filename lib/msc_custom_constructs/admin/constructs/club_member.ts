@@ -25,6 +25,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             code: "admin/club_member/get_all_club_members",
             envVariables: {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
             },
@@ -34,6 +35,9 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 ],
                 [props.registrations_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [props.registration_form_table.tableArn]: [
+                    "dynamodb:Query"
                 ]
             },
             layers: [props.layers.jwt_layer]

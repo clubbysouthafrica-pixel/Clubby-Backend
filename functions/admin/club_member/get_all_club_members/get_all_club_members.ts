@@ -32,9 +32,9 @@ export const handler = async (event: any) => {
 
             const registration_fee = await getItem(
                 process.env.REGISTRATIONS_TABLE_NAME as string,
-                { 
-                   user_id: item.user_id,
-                   registration_id: item.current_reg_id
+                {
+                    user_id: item.user_id,
+                    registration_id: item.current_reg_id
                 }
             )
 
@@ -78,7 +78,36 @@ export const handler = async (event: any) => {
             }
         }
 
-        return createResponse(200, { registered, unregistered }, origin);
+        const form = await queryItems(
+            process.env.REGISTRATION_FORM_TABLE_NAME as string,
+            "club_account_id = :clubId",
+            { ":clubId": query_string_params.club_account_id }
+        )
+
+        const filters: any[] = []
+        form?.forEach(field => {
+            if (field.field_type === "BILLING" && field.input_type === "DROPDOWN") {
+                filters.push(
+                    {
+                       key: `billing:${field.field_name}`,
+                       field_name: field.field_name,
+                       options: field.billingOptions.map((bo: any) => bo.label),
+                       type: "billing"
+                    }
+                )
+            } else if (field.field_type === "STANDARD" && field.input_type === "DROPDOWN") {
+                filters.push(
+                    {
+                       key: `standard:${field.field_name}`,
+                       field_name: field.field_name,
+                       options: field.options,
+                       type: "standard"
+                    }
+                )
+            }
+        })
+
+        return createResponse(200, { registered, unregistered, filters }, origin);
 
     } catch (error) {
         console.error("Error:", error);
