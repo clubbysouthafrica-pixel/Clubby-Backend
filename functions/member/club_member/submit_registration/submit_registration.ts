@@ -402,7 +402,6 @@ export const handler = async (event: any) => {
             member_surname: user.surname,
             registered: false,
             registration_payment_reference: generateShortReference(user_id as string),
-            registration_submitted_on,
             ...await getClubDetails(body.club_account_id),
         };
 
