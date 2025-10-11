@@ -1,6 +1,6 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MSC_APIGateway, MSC_Bucket, MSC_Queue } from '../../msc_service_constructs';
+import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_Queue } from '../../msc_service_constructs';
 import { MSC_JWTConstruct } from '../authorization';
 import { 
     MSC_MemberLoginConstruct, 
@@ -17,6 +17,7 @@ import { MSC_Layers } from '../lambda_layers';
 export interface MSC_MemberNestedStackProps extends StackProps {
     users_table: MSC_Table;
     club_table: MSC_Table;
+    member_user_pool: MSC_Cognito;
     club_member_table: MSC_Table;
     registration_form_table: MSC_Table;
     registrations_table: MSC_Table;
@@ -35,14 +36,15 @@ export class MSC_MemberNestedStack extends Stack {
             cert_arn: process.env.MEMBER_CERT_ARN as string
         });
 
-        const login_construct = new MSC_MemberLoginConstruct(this, `${id}-Login`, {
+        new MSC_MemberLoginConstruct(this, `${id}-Login`, {
             api_gateway: api_gateway, users_table: props.users_table,
+            user_pool: props.member_user_pool,
             layers: props.layers
         });
 
         const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, {
             api_gateway: api_gateway, user_type: "member",
-            user_pool: login_construct.user_pool,
+            user_pool: props.member_user_pool,
             layers: props.layers
         });
 

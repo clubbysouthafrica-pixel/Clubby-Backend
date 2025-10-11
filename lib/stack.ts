@@ -9,7 +9,7 @@ import {
   MSC_MailingStack
 } from "./msc_custom_constructs";
 import { MSC_BucketsConstruct } from './msc_custom_constructs/buckets/buckets';
-import { MSC_Queue } from './msc_service_constructs';
+import { MSC_Cognito, MSC_Queue } from './msc_service_constructs';
 
 export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
@@ -23,6 +23,9 @@ export class MSC_Stack extends cdk.Stack {
       timeout: 900
     });
 
+    const member_user_pool = new MSC_Cognito(this, `${stack_id}-Member`);
+    const admin_user_pool = new MSC_Cognito(this, `${stack_id}-Admin`);
+
     const tables = new MSC_TablesConstruct(this, stack_id, {});
     const buckets = new MSC_BucketsConstruct(this, stack_id, {});
 
@@ -35,8 +38,10 @@ export class MSC_Stack extends cdk.Stack {
       layers: layers,
     });
 
-    const admin_stack = new MSC_AdminNestedStack(this, `AdminStack`, { 
+    new MSC_AdminNestedStack(this, `AdminStack`, { 
       env: props?.env,
+      member_user_pool: member_user_pool,
+      admin_user_pool: admin_user_pool,
       club_deregistraiton_queue: club_deregistraiton_queue,
       transactions_table: tables.transactions_table,
       club_reporting_table: tables.club_reporting_table,
@@ -55,7 +60,7 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_InternalInfraStack(this, `InternalInfra`, {
       env: props?.env,
-      admin_pool: admin_stack.admin_pool,
+      admin_pool: admin_user_pool,
       layers: layers,
       club_admin_table: tables.club_admin_table,
       users_table: tables.users_table,
@@ -64,6 +69,7 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_MemberNestedStack(this, `MemberStack`, {
       env: props?.env,
+      member_user_pool: member_user_pool,
       registrations_table: tables.registrations_table,
       club_reporting_table: tables.club_reporting_table,
       transactions_table: tables.transactions_table,
