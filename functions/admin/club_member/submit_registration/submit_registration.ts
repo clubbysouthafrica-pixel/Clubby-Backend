@@ -1,4 +1,4 @@
-import { AdminConfirmSignUpCommand, AdminUpdateUserAttributesCommand, CognitoIdentityProviderClient, SignUpCommand } from "@aws-sdk/client-cognito-identity-provider";
+import { AdminConfirmSignUpCommand, AdminGetUserCommand, AdminUpdateUserAttributesCommand, CognitoIdentityProviderClient, SignUpCommand } from "@aws-sdk/client-cognito-identity-provider";
 import { randomUUID, createHash } from "crypto";
 import {
     createResponse,
@@ -324,62 +324,74 @@ async function addToTransactionsTable(
     )
 }
 
-async function createClubbyUser(email: string, first_name: string, surname: string): Promise<string> {
+export async function createClubbyUser(email: string, first_name: string, surname: string): Promise<string> {
     const password = generateCognitoPassword();
 
     try {
-        const cognitoCommand = new SignUpCommand({
-            ClientId: process.env.USER_POOL_CLIENT_ID,
-            Username: email,
-            Password: password,
-            UserAttributes: [
-                { Name: 'email', Value: email },
-            ],
-        });
-        const cognitoResponse: any = await cognitoClient.send(cognitoCommand);
+        const cognitoResponse = await cognitoClient.send(
+            new SignUpCommand({
+                ClientId: process.env.USER_POOL_CLIENT_ID!,
+                Username: email,
+                Password: password,
+                UserAttributes: [
+                    { Name: 'email', Value: email },
+                ],
+            })
+        );
         console.log('Signup successful:', cognitoResponse);
-
-        const confirmSignUpCommand = await cognitoClient.send(
+        await cognitoClient.send(
             new AdminConfirmSignUpCommand({
-                UserPoolId: process.env.USER_POOL_ID,
+                UserPoolId: process.env.USER_POOL_ID!,
                 Username: email,
             })
         );
-        console.log('Confirm signup successful:', confirmSignUpCommand);
-
-        const verifyEmailCommand = await cognitoClient.send(
+        console.log('Confirm signup successful');
+        await cognitoClient.send(
             new AdminUpdateUserAttributesCommand({
-                UserPoolId: process.env.USER_POOL_ID,
+                UserPoolId: process.env.USER_POOL_ID!,
                 Username: email,
                 UserAttributes: [
-                    { Name: "email_verified", Value: "true" }
-                ]
+                    { Name: 'email_verified', Value: 'true' },
+                ],
             })
         );
-        console.log('Verify email successful:', verifyEmailCommand);
+        console.log('Email verified');
 
-        const member_user_id = cognitoResponse["UserSub"]
+        const userSub = cognitoResponse.UserSub!;
 
         await addItem(
             process.env.USERS_TABLE_NAME as string,
             {
-                "user_type": process.env.USER_TYPE as string,
-                "user_id": cognitoResponse["UserSub"],
-                "email": email,
-                "first_name": first_name,
-                "surname": surname,
-                "onboarded": false
+                user_type: process.env.USER_TYPE as string,
+                user_id: userSub,
+                email,
+                first_name,
+                surname,
+                onboarded: false,
             }
-        )
+        );
 
-        return member_user_id
+        return userSub;
+
     } catch (error: any) {
-        console.log(error)
         if (error.name === 'UsernameExistsException') {
-            console.error(`❌ User with email ${email} already exists.`);
-            return "User already exists."
+            console.warn(`⚠️ User with email ${email} already exists. Fetching user ID...`);
+
+            const existingUser = await cognitoClient.send(
+                new AdminGetUserCommand({
+                    UserPoolId: process.env.USER_POOL_ID!,
+                    Username: email,
+                })
+            );
+
+            const subAttr = existingUser.UserAttributes?.find(attr => attr.Name === 'sub');
+            if (!subAttr) {
+                return "Issue registering user.";
+            }
+
+            return subAttr.Value!;
         } else {
-            return "Error."
+            return "Issue registering user.";
         }
     }
 }
@@ -405,14 +417,12 @@ export const handler = async (event: any) => {
         }
 
         const member_user_id = await createClubbyUser(body.member_email, body.first_name, body.surname)
-        if (member_user_id === "User already exists.") {
-            return createResponse(500, { message: "Member already exists." }, origin);
-        } else if (member_user_id === "Error.") {
-            return createResponse(500, { message: "Error." }, origin);
+        if (member_user_id === "Issue registering user.") {
+            return createResponse(500, { message: "Issue registering user" }, origin);
         }
 
         if (await registrationSubmitted(body.club_account_id, member_user_id as string)) {
-            return createResponse(200, { message: "Registration form has already been submitted." }, origin);
+            return createResponse(500, { message: "This member is currently or was previously part of this club. You should be able to locate them on the Members page." }, origin);
         }
 
         const billingFields: BillingField[] = [];

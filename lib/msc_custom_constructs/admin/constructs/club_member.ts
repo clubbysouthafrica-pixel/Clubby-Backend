@@ -65,7 +65,8 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                     "cognito-idp:InitiateAuth",
                     "cognito-idp:AdminInitiateAuth",
                     "cognito-idp:AdminConfirmSignUp",
-                    "cognito-idp:AdminUpdateUserAttributes"
+                    "cognito-idp:AdminUpdateUserAttributes",
+                    "cognito-idp:AdminGetUser"
                 ],
                 [props.registration_form_table.tableArn]: [
                     "dynamodb:Query"
