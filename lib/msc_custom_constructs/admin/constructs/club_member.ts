@@ -48,7 +48,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
         const submit_registration = new MSC_Lambda(this, `${id}-SubmitRegistration`, {
             code: "admin/club_member/submit_registration",
             envVariables: {
-                USER_POOL_CLIENT_ID: props.member_user_pool.userPoolClient.userPoolClientId,
+                DOMAIN: process.env.DOMAIN as string,
                 USER_POOL_ID: props.member_user_pool.userPoolId,
                 USERS_TABLE_NAME: props.users_table.tableName,
                 USER_TYPE: "MEMBER",
@@ -60,12 +60,12 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
             },
             permissions: {
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                    "ses:SendEmail"
+                ],
                 [props.member_user_pool.userPoolArn]: [
-                    "cognito-idp:SignUp",
-                    "cognito-idp:InitiateAuth",
-                    "cognito-idp:AdminInitiateAuth",
-                    "cognito-idp:AdminConfirmSignUp",
-                    "cognito-idp:AdminUpdateUserAttributes",
+                    "cognito-idp:AdminCreateUser",
+                    "cognito-idp:AdminSetUserPassword",
                     "cognito-idp:AdminGetUser"
                 ],
                 [props.registration_form_table.tableArn]: [

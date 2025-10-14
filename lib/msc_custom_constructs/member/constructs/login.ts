@@ -49,6 +49,19 @@ export class MSC_MemberLoginConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const activate_user = new MSC_Lambda(this, `${id}-ActivateUser`, {
+            code: "login/activate_user",
+            envVariables: {
+                USER_POOL_CLIENT_ID: props.user_pool.userPoolClient.userPoolClientId,
+            },
+            permissions: {
+                [props.user_pool.userPoolArn]: [
+                    "cognito-idp:AdminRespondToAuthChallenge"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        })
+
         const sign_in = new MSC_Lambda(this, `${id}-SignIn`, {
             code: "login/sign_in",
             envVariables: {
@@ -116,16 +129,18 @@ export class MSC_MemberLoginConstruct extends Construct {
         const refresh_token_resource = member_resource.addResource("refreshToken");
         const forgot_password_resource = member_resource.addResource("forgotPassword");
         const reset_password_resource = member_resource.addResource("resetPassword");
+        const activate_user_resource = member_resource.addResource("activateUser");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
         }
-        
+
         addCorsEnabledMethod(sign_up_resource, sign_up, methodOptions);
         addCorsEnabledMethod(verify_sign_up_resource, verify_sign_up, methodOptions);
         addCorsEnabledMethod(sign_in_resource, sign_in, methodOptions);
         addCorsEnabledMethod(refresh_token_resource, refresh_token, methodOptions);
         addCorsEnabledMethod(forgot_password_resource, forgot_password, methodOptions);
         addCorsEnabledMethod(reset_password_resource, reset_password, methodOptions);
+        addCorsEnabledMethod(activate_user_resource, activate_user, methodOptions);
     }
 }

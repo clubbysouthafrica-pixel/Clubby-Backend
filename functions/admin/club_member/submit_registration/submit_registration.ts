@@ -1,4 +1,5 @@
-import { AdminConfirmSignUpCommand, AdminGetUserCommand, AdminUpdateUserAttributesCommand, CognitoIdentityProviderClient, SignUpCommand } from "@aws-sdk/client-cognito-identity-provider";
+import { AdminConfirmSignUpCommand, AdminCreateUserCommand, AdminGetUserCommand, AdminSetUserPasswordCommand, AdminUpdateUserAttributesCommand, CognitoIdentityProviderClient, SignUpCommand } from "@aws-sdk/client-cognito-identity-provider";
+import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { randomUUID, createHash } from "crypto";
 import {
     createResponse,
@@ -35,6 +36,7 @@ interface BillingField {
 }
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
+const sesClient = new SESClient({ region: process.env.REGION });
 
 function generateShortReference(
     userId: string
@@ -324,40 +326,94 @@ async function addToTransactionsTable(
     )
 }
 
-export async function createClubbyUser(email: string, first_name: string, surname: string): Promise<string> {
+export async function sendAccountCreatedEmail(
+    toAddress: string,
+    firstName: string,
+    tempPassword: string,
+    clubName: string,
+): Promise<void> {
+    const emailSubject = "Your Clubby Account Has Been Created";
+    const emailBody = `
+    <html>
+    <body style="font-family: Arial, sans-serif; color: #333;">
+      <p>Hi ${firstName},</p>
+      <p>
+        An administrator from <strong>${clubName}</strong> has submitted a registration form on your behalf. As a result, an account has been created for you on <strong>Clubby</strong>, giving you access to your affiliated club.
+      </p>
+      <p>Here are your login details:</p>
+      <ul>
+        <li><strong>Email:</strong> ${toAddress}</li>
+        <li><strong>Temporary Password:</strong> ${tempPassword}</li>
+      </ul>
+      <p>
+        When you first log in, you'll be prompted to set a new password.
+      </p>
+      <p>
+        You can log in using the following link:<br/>
+        <a href="https://${process.env.DOMAIN as string}/login">Log in to Clubby</a>
+      </p>
+      <p>Welcome to Clubby!<br/>— The Clubby Team</p>
+    </body>
+  </html>
+  
+    `;
+
+    const command = new SendEmailCommand({
+        Destination: {
+            ToAddresses: [toAddress],
+        },
+        Message: {
+            Body: {
+                Html: {
+                    Charset: "UTF-8",
+                    Data: emailBody,
+                },
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: emailSubject,
+            },
+        },
+        Source: `admin@${process.env.DOMAIN as string}`,
+    });
+
+    try {
+        await sesClient.send(command);
+        console.log(`✅ Email sent to ${toAddress}`);
+    } catch (err) {
+        console.error("❌ Error sending email:", err);
+        throw err;
+    }
+}
+
+export async function createClubbyUser(email: string, first_name: string, surname: string, club_name: string): Promise<string> {
     const password = generateCognitoPassword();
 
     try {
-        const cognitoResponse = await cognitoClient.send(
-            new SignUpCommand({
-                ClientId: process.env.USER_POOL_CLIENT_ID!,
+        const createUserResponse = await cognitoClient.send(
+            new AdminCreateUserCommand({
+                UserPoolId: process.env.USER_POOL_ID!,
+                Username: email,
+                UserAttributes: [
+                    { Name: 'email', Value: email }
+                ],
+                MessageAction: 'SUPPRESS',
+            })
+        );
+
+        await cognitoClient.send(
+            new AdminSetUserPasswordCommand({
+                UserPoolId: process.env.USER_POOL_ID!,
                 Username: email,
                 Password: password,
-                UserAttributes: [
-                    { Name: 'email', Value: email },
-                ],
+                Permanent: false,
             })
         );
-        console.log('Signup successful:', cognitoResponse);
-        await cognitoClient.send(
-            new AdminConfirmSignUpCommand({
-                UserPoolId: process.env.USER_POOL_ID!,
-                Username: email,
-            })
-        );
-        console.log('Confirm signup successful');
-        await cognitoClient.send(
-            new AdminUpdateUserAttributesCommand({
-                UserPoolId: process.env.USER_POOL_ID!,
-                Username: email,
-                UserAttributes: [
-                    { Name: 'email_verified', Value: 'true' },
-                ],
-            })
-        );
-        console.log('Email verified');
 
-        const userSub = cognitoResponse.UserSub!;
+        const userSubAttr = createUserResponse.User?.Attributes?.find(attr => attr.Name === 'sub');
+        const userSub = userSubAttr?.Value;
+
+        if (!userSub) throw new Error('UserSub not found in response');
 
         await addItem(
             process.env.USERS_TABLE_NAME as string,
@@ -370,6 +426,13 @@ export async function createClubbyUser(email: string, first_name: string, surnam
                 onboarded: false,
             }
         );
+
+        await sendAccountCreatedEmail(
+            email,
+            first_name,
+            password,
+            club_name,
+        )
 
         return userSub;
 
@@ -416,13 +479,18 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Registration form does not exist for the club." }, origin);
         }
 
-        const member_user_id = await createClubbyUser(body.member_email, body.first_name, body.surname)
+        const club_details = await getClubDetails(body.club_account_id)
+        if (!club_details) {
+            return createResponse(500, { message: "Club does not exist." }, origin);
+        }
+
+        const member_user_id = await createClubbyUser(body.member_email, body.first_name, body.surname, club_details.club_name)
         if (member_user_id === "Issue registering user.") {
             return createResponse(500, { message: "Issue registering user" }, origin);
         }
 
         if (await registrationSubmitted(body.club_account_id, member_user_id as string)) {
-            return createResponse(500, { message: "This member is currently or was previously part of this club. You should be able to locate them on the Members page." }, origin);
+            return createResponse(500, { message: "A member with this email is already associated with the club or was in the past. You can find them on the Members page." }, origin);
         }
 
         const billingFields: BillingField[] = [];
@@ -506,7 +574,7 @@ export const handler = async (event: any) => {
             member_surname: body.surname,
             registered: false,
             registration_payment_reference: generateShortReference(member_user_id as string),
-            ...await getClubDetails(body.club_account_id),
+            ...club_details,
         };
 
         await addItem(
