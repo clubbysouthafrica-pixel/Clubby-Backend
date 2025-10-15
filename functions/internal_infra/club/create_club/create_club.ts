@@ -79,6 +79,7 @@ export const handler = async (event: any) => {
             process.env.CLUB_TABLE_NAME as string,
             {
                 "support_email": body.support_email,
+                "season_cycle": 1,
                 "club_type": body.club_type,
                 "club_from_email": club_email,
                 "club_name": body.club_name,
