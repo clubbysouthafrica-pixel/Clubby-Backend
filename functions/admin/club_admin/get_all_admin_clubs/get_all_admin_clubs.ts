@@ -24,8 +24,25 @@ export const handler = async (event: any) => {
                     club_account_id: item.club_account_id,
                 }
             );
+            
+            const form = await queryItems(
+                process.env.REGISTRATION_FORM_TABLE_NAME as string,
+                "club_account_id = :clubId",
+                { ":clubId": club?.club_account_id }
+            )
+    
+            const onboarded = Boolean(
+                form &&
+                club?.["country_of_operation"] &&
+                club?.["currency"] &&
+                club?.["account_type"] &&
+                club?.["branch_code"] &&
+                club?.["account_number"] &&
+                club?.["bank"]
+            );
         
             item.currency = club?.currency;
+            item.onboarded = onboarded
         
             return item;
         }));

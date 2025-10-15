@@ -7,27 +7,23 @@ import { MSC_Layers } from "../../lambda_layers";
 interface MSC_AdminLoginConstructProps {
     api_gateway: MSC_APIGateway;
     users_table: MSC_Table;
+    admin_user_pool: MSC_Cognito;
     layers: MSC_Layers;
 }
 
 export class MSC_AdminLoginConstruct extends Construct {
-    public readonly user_pool: MSC_Cognito;
     constructor(scope: Construct, id: string, props: MSC_AdminLoginConstructProps) {
         super(scope, id);
-
-        this.user_pool = new MSC_Cognito(this, `${id}`, {
-            auto_verify: false,
-        });
 
         const sign_in = new MSC_Lambda(this, `${id}-SignIn`, {
             code: "login/sign_in",
             envVariables: {
-                USER_POOL_CLIENT_ID: this.user_pool.userPoolClient.userPoolClientId,
+                USER_POOL_CLIENT_ID: props.admin_user_pool.userPoolClient.userPoolClientId,
                 USERS_TABLE_NAME: props.users_table.tableName,
                 USER_TYPE: "ADMIN"
             },
             permissions: {
-                [this.user_pool.userPoolArn]: [
+                [props.admin_user_pool.userPoolArn]: [
                     "cognito-idp:InitiateAuth",
                     "cognito-idp:AdminInitiateAuth"
                 ],
@@ -41,10 +37,10 @@ export class MSC_AdminLoginConstruct extends Construct {
         const refresh_token = new MSC_Lambda(this, `${id}-RefreshToken`, {
             code: "login/refresh_token",
             envVariables: {
-                USER_POOL_CLIENT_ID: this.user_pool.userPoolClient.userPoolClientId,
+                USER_POOL_CLIENT_ID: props.admin_user_pool.userPoolClient.userPoolClientId,
             },
             permissions: {
-                [this.user_pool.userPoolArn]: [
+                [props.admin_user_pool.userPoolArn]: [
                     "cognito-idp:InitiateAuth",
                     "cognito-idp:AdminInitiateAuth"
                 ]
@@ -55,10 +51,10 @@ export class MSC_AdminLoginConstruct extends Construct {
         const forgot_password = new MSC_Lambda(this, `${id}-ForgotPassword`, {
             code: "login/forgot_password",
             envVariables: {
-                USER_POOL_CLIENT_ID: this.user_pool.userPoolClient.userPoolClientId,
+                USER_POOL_CLIENT_ID: props.admin_user_pool.userPoolClient.userPoolClientId,
             },
             permissions: {
-                [this.user_pool.userPoolArn]: [
+                [props.admin_user_pool.userPoolArn]: [
                     "cognito-idp:AdminConfirmForgotPassword"
                 ]
             },
@@ -68,10 +64,10 @@ export class MSC_AdminLoginConstruct extends Construct {
         const reset_password = new MSC_Lambda(this, `${id}-ResetPassword`, {
             code: "login/reset_password",
             envVariables: {
-                USER_POOL_CLIENT_ID: this.user_pool.userPoolClient.userPoolClientId,
+                USER_POOL_CLIENT_ID: props.admin_user_pool.userPoolClient.userPoolClientId,
             },
             permissions: {
-                [this.user_pool.userPoolArn]: [
+                [props.admin_user_pool.userPoolArn]: [
                     "cognito-idp:AdminResetUserPassword"
                 ]
             },

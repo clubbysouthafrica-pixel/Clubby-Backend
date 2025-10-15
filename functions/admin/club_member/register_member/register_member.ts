@@ -211,7 +211,6 @@ async function updateTransactionsTable(
 async function updateClubMember(
     club_account_id: string,
     member_id: string,
-    registered_on: number,
 ) {
     await updateItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
@@ -221,12 +220,10 @@ async function updateClubMember(
         },
         "SET #reg = :registered, #registered_on = :registered_on",
         {
-            "#reg": "registered",
-            "#registered_on": "registered_on"
+            "#reg": "registered"
         },
         {
-            ":registered": true,
-            ":registered_on": registered_on
+            ":registered": true
         }
     );
 }
@@ -298,7 +295,7 @@ export const handler = async (event: any) => {
         await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount)
         await updateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
         await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on)
-        await updateClubMember(body.club_account_id, body.member_id, registered_on)
+        await updateClubMember(body.club_account_id, body.member_id)
 
         return createResponse(200, { registered: true, message: "Member outstanding balance updated." }, origin);
 

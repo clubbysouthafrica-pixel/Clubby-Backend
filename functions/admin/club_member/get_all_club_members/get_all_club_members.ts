@@ -30,55 +30,85 @@ export const handler = async (event: any) => {
         for (const item of club_members) {
             delete item.club_account_id
 
-            const registration_fee = await getItem(
+            const registration = await getItem(
                 process.env.REGISTRATIONS_TABLE_NAME as string,
-                { 
-                   user_id: item.user_id,
-                   registration_id: item.current_reg_id
+                {
+                    user_id: item.user_id,
+                    registration_id: item.current_reg_id
                 }
             )
 
             const meta_billing: any = [];
             const meta_standard: any = [];
-            if (registration_fee) {
-                Object.keys(registration_fee).forEach(key => {
-                    if (key.includes("reg_field_") && registration_fee[key].type.includes("BILLING_")) {
-                        meta_billing.push(registration_fee[key])
-                    } else if (key.includes("reg_field_") && registration_fee[key].type.includes("STANDARD_")) {
-                        meta_standard.push(registration_fee[key])
+            if (registration) {
+                Object.keys(registration).forEach(key => {
+                    if (key.includes("reg_field_") && registration[key].type.includes("BILLING_")) {
+                        meta_billing.push(registration[key])
+                    } else if (key.includes("reg_field_") && registration[key].type.includes("STANDARD_")) {
+                        meta_standard.push(registration[key])
                     }
                 })
             }
 
             if (item.registered) {
                 registered.push({
-                    outstanding_amount: registration_fee?.total_outstanding_amount,
+                    outstanding_amount: registration?.total_outstanding_amount,
+                    registration_submitted_on: registration?.registration_submitted_on,
+                    registered_on: registration?.registered_on,
                     user_id: item.user_id,
                     member_first_name: item.member_first_name,
                     member_surname: item.member_surname,
-                    registration_submitted_on: item.registration_submitted_on ?? undefined,
-                    registered_on: item.registered_on ?? undefined,
                     member_email: item.member_email,
                     meta_standard: meta_standard,
                     meta_billing: meta_billing
                 });
             } else {
                 unregistered.push({
-                    outstanding_amount: registration_fee?.total_outstanding_amount,
+                    outstanding_amount: registration?.total_outstanding_amount,
+                    registration_submitted_on: registration?.registration_submitted_on,
+                    deregistered_on: registration?.deregistered_on,
                     registration_payment_reference: item.registration_payment_reference,
                     member_first_name: item.member_first_name,
                     member_surname: item.member_surname,
                     member_email: item.member_email,
                     user_id: item.user_id,
-                    registration_submitted_on: item.registration_submitted_on ?? undefined,
+                    resubmission_required: item.resubmission_required,
                     meta_standard: meta_standard,
                     meta_billing: meta_billing,
-                    resubmission_required: item.resubmission_required
                 });
             }
         }
 
-        return createResponse(200, { registered, unregistered }, origin);
+        const form = await queryItems(
+            process.env.REGISTRATION_FORM_TABLE_NAME as string,
+            "club_account_id = :clubId",
+            { ":clubId": query_string_params.club_account_id }
+        )
+
+        const filters: any[] = []
+        form?.forEach(field => {
+            if (field.field_type === "BILLING" && field.input_type === "DROPDOWN") {
+                filters.push(
+                    {
+                       key: `billing:${field.field_name}`,
+                       field_name: field.field_name,
+                       options: field.billingOptions.map((bo: any) => bo.label),
+                       type: "billing"
+                    }
+                )
+            } else if (field.field_type === "STANDARD" && field.input_type === "DROPDOWN") {
+                filters.push(
+                    {
+                       key: `standard:${field.field_name}`,
+                       field_name: field.field_name,
+                       options: field.options,
+                       type: "standard"
+                    }
+                )
+            }
+        })
+
+        return createResponse(200, { registered, unregistered, filters }, origin);
 
     } catch (error) {
         console.error("Error:", error);

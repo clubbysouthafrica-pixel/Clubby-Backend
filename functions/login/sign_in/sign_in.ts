@@ -29,6 +29,13 @@ export const handler = async (event: any) => {
     const response = await cognitoClient.send(command);
     console.log('Sign-in successful: ', response);
 
+    if (response["ChallengeName"] === "NEW_PASSWORD_REQUIRED") {
+      return createResponse(200, {
+        new_password_required: true,
+        session: response["Session"]
+      }, origin)
+    }
+
     const idToken = response.AuthenticationResult?.IdToken;
     if (idToken === undefined) {
       return createResponse(500, { message: "Cannot process ID Token." }, origin)

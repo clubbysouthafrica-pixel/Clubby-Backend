@@ -21,8 +21,7 @@ export class MSC_MailingStack extends Stack {
                 ENVIRONMENT: process.env.ENVIRONMENT as string
             },
             permissions: {
-                // [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
-                ["*"]: [
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
                     "ses:SendEmail"
                 ],
                 [props.billing_table.tableArn]: [

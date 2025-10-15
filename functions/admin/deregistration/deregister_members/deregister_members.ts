@@ -54,13 +54,16 @@ async function updateRegistrationsTable(user_id: string, registration_id: string
             "user_id": user_id
         },
         `SET 
-            #deregistered = :deregistered
+            #deregistered = :deregistered,
+            #deregistered_on = :deregistered_on
         `,
         {
-            "#deregistered": "deregistered"
+            "#deregistered": "deregistered",
+            "#deregistered_on": "deregistered_on"
         },
         {
-            ":deregistered": true
+            ":deregistered": true,
+            ":deregistered_on": Date.now()
         }
     );
 }

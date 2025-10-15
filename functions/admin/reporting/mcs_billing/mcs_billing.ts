@@ -43,11 +43,15 @@ export const handler = async (event: any) => {
                 "Charge per email": formatAmount(club.fee_per_email_to_club, club.currency)
             },
             total_outstanding_amount: 0,
+            total_email_amount: 0,
+            total_registration_amount: 0,
             total_charge: 0
         };
 
         monthly_billing?.forEach(month => {
             report.total_outstanding_amount += month?.outstanding_amount ?? 0
+            report.total_email_amount += month?.email_amount ?? 0
+            report.total_registration_amount += month?.registration_amount ?? 0
             report.total_charge += month.total_amount
 
             const registration_month_data = {
@@ -76,7 +80,8 @@ export const handler = async (event: any) => {
                 report.overall_month_data = {}
             }
             report.overall_month_data[month.year_month] = {}
-            report.overall_month_data[month.year_month].outstanding_amount = month.outstanding_amount
+            report.overall_month_data[month.year_month].email_amount = month?.email_amount ?? 0
+            report.overall_month_data[month.year_month].registration_amount = month?.registration_amount ?? 0
             report.overall_month_data[month.year_month].total_amount = month.total_amount
         });
 
