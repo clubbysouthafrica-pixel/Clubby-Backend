@@ -218,7 +218,7 @@ async function updateClubMember(
             user_id: member_id,
             club_account_id: club_account_id,
         },
-        "SET #reg = :registered, #registered_on = :registered_on",
+        "SET #reg = :registered",
         {
             "#reg": "registered"
         },
