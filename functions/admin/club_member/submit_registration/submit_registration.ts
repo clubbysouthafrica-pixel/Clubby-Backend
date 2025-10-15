@@ -448,10 +448,11 @@ export async function createClubbyUser(email: string, first_name: string, surnam
             );
 
             const subAttr = existingUser.UserAttributes?.find(attr => attr.Name === 'sub');
-            if (!subAttr) {
+            if (!subAttr || !subAttr.Value) {
                 return "Issue registering user.";
             }
 
+            console.log(`User ID successfully retrieved: ${subAttr.Value!}`)
             return subAttr.Value!;
         } else {
             return "Issue registering user.";
