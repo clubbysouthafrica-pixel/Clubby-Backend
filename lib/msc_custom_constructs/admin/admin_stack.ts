@@ -33,6 +33,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     club_member_table: MSC_Table;
     image_bucket: MSC_Bucket;
     club_history_bucket: MSC_Bucket;
+    signatures_bucket: MSC_Bucket;
     mail_queue: MSC_Queue;
     layers: MSC_Layers;
 }
