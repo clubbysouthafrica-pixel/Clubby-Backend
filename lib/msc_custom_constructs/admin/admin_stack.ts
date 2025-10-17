@@ -145,6 +145,7 @@ export class MSC_AdminNestedStack extends Stack {
 
         new MSC_ClubMemberClubConstruct(this, `${id}-ClubMember`, {
             api_gateway: api_gateway,
+            signatures_bucket: props.signatures_bucket,
             users_table: props.users_table,
             member_user_pool: props.member_user_pool,
             club_reporting_table: props.club_reporting_table,

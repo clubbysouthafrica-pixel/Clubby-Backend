@@ -1,4 +1,5 @@
 import { AdminConfirmSignUpCommand, AdminCreateUserCommand, AdminGetUserCommand, AdminSetUserPasswordCommand, AdminUpdateUserAttributesCommand, CognitoIdentityProviderClient, SignUpCommand } from "@aws-sdk/client-cognito-identity-provider";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { randomUUID, createHash } from "crypto";
 import {
@@ -37,6 +38,7 @@ interface BillingField {
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 const sesClient = new SESClient({ region: process.env.REGION });
+const s3_client = new S3Client({ region: process.env.REGION });
 
 function generateShortReference(
     userId: string
@@ -182,7 +184,7 @@ function validateStandardFields(standardFields: StandardField[], submittedFields
     return null;
 }
 
-async function getClubDetails(club_account_id: string): Promise<Record<string, string> | null> {
+async function getClubDetails(club_account_id: string): Promise<{club_name: string, currency: string, season_cycle: number} | null> {
     const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
         club_account_id: club_account_id
     });
@@ -191,7 +193,7 @@ async function getClubDetails(club_account_id: string): Promise<Record<string, s
         return null
     }
 
-    return { club_name: club.club_name, currency: club.currency };
+    return { club_name: club.club_name, currency: club.currency, season_cycle: club.season_cycle };
 }
 
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
@@ -210,6 +212,32 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
     }
 
     return true;
+}
+
+async function addSignature(
+    club_account_id: string,
+    club_season_cycle: number,
+    signature_id: string,
+    dataUrl: string,
+): Promise<string> {
+    const base64Data = dataUrl.split(",")[1];
+    const buffer = Buffer.from(base64Data, "base64");
+    const mimeMatch = dataUrl.match(/^data:(.+);base64,/);
+    const contentType = mimeMatch ? mimeMatch[1] : "application/octet-stream";
+
+    const key = `${club_account_id}/${club_season_cycle}/${signature_id}.png`;
+    const command = new PutObjectCommand({
+        Bucket: process.env.SIGNATURES_BUCKET_NAME,
+        Body: buffer,
+        Key: key,
+        ContentEncoding: "base64",
+        ContentType: contentType,
+    });
+    console.log(`@@@ putObject request (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(command));
+    const response = await s3_client.send(command);
+    console.log(`@@@ putObject response (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(response));
+
+    return key
 }
 
 async function addToRegistrationsTable(
@@ -537,19 +565,38 @@ export const handler = async (event: any) => {
             }
             return acc;
         }, {})
-        const standard_fields = body.standard_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
+
+        const standard_fields: Record<string, Record<string, string>> = {};
+        for (const field of body.standard_fields) {
             const f = form.find(f => f.field_id === field.field_id);
 
-            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, type: "STANDARD_TEXT" };
+            standard_fields[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, type: "STANDARD_TEXT" };
             if (f?.input_type === "DROPDOWN") {
-                acc[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
+                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
             } else if (f?.input_type === "CHECKBOX") {
-                acc[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
+                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
             } else if (f?.input_type === "NUMBER") {
-                acc[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
+                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
+            } else if (f?.input_type === "SIGNATURE") {
+
+                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_SIGNATURE"
+                if (field?.signature_type) {
+
+                    standard_fields[`reg_field_${field.field_id}`].signature_type = field.signature_type
+
+                    if (field.signature_type === "signature") {
+                        const signature_id = randomUUID()
+                        const key = await addSignature(
+                            body.club_account_id,
+                            club_details.season_cycle,
+                            signature_id,
+                            field.value
+                        )
+                        standard_fields[`reg_field_${field.field_id}`].value = key
+                    }
+                }
             }
-            return acc;
-        }, {})
+        }
 
         const registration_submitted_on = Date.now()
 

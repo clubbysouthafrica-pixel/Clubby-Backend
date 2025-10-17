@@ -291,7 +291,7 @@ async function addSignature(
     club_season_cycle: number,
     signature_id: string,
     dataUrl: string,
-) {
+): Promise<string> {
     const base64Data = dataUrl.split(",")[1];
     const buffer = Buffer.from(base64Data, "base64");
     const mimeMatch = dataUrl.match(/^data:(.+);base64,/);
@@ -308,6 +308,8 @@ async function addSignature(
     console.log(`@@@ putObject request (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(command));
     const response = await s3_client.send(command);
     console.log(`@@@ putObject response (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(response));
+
+    return key
 }
 
 export const handler = async (event: any) => {
@@ -416,12 +418,13 @@ export const handler = async (event: any) => {
 
                     if (field.signature_type === "signature") {
                         const signature_id = randomUUID()
-                        await addSignature(
+                        const key = await addSignature(
                             body.club_account_id,
                             clubDetails.season_cycle,
                             signature_id,
                             field.value
                         )
+                        standard_fields[`reg_field_${field.field_id}`].value = key
                     }
                 }
             }
