@@ -119,7 +119,7 @@ export const handler = async (event: any) => {
         }
 
         const fieldNames = allFields
-            .filter((f: any) => f.field_type !== 'TEXT')
+            .filter((f: any) => f.field_type !== 'TEXT' && f.input_type !== 'SIGNATURE')
             .map((f: any) => f.field_name);
 
         const duplicates = fieldNames.filter(
