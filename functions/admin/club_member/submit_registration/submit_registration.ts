@@ -119,7 +119,7 @@ function validateRequestBody(body: any) {
     return null;
 }
 
-function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string; field_id: string; option_order_id?: string }[]): number | null | string {
+function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string; field_id: string; option_order_id?: string; multiplier_value?: number }[]): number | null | string {
     const requiredFields = billingFields.filter(f => f.required);
     const field_ids = submittedFields.map(f => f.field_id);
     const allValid = requiredFields.every(req => {
@@ -145,11 +145,23 @@ function validateBillingField(billingFields: BillingField[], submittedFields: { 
     submittedFields.forEach(sub_field => {
         billingFields.forEach(billing_field => {
             if (billing_field.input_type === "TEXT" && billing_field.field_id === sub_field.field_id) {
-                total_amount += billing_field.amount ?? 0;
+
+                if (sub_field?.multiplier_value) {
+                    total_amount += (billing_field.amount ?? 0)*sub_field.multiplier_value;
+                } else {
+                    total_amount += billing_field.amount ?? 0;
+                }
+
             } else if (billing_field.input_type === "DROPDOWN" && billing_field.field_id === sub_field.field_id) {
                 billing_field.billingOptions.forEach(billing_options_field => {
                     if (billing_options_field.option_order_id === sub_field?.option_order_id) {
-                        total_amount += billing_options_field.amount;
+     
+                        if (sub_field?.multiplier_value) {
+                            total_amount += billing_options_field.amount*sub_field.multiplier_value;
+                        } else {
+                            total_amount += billing_options_field.amount;
+                        }
+                        
                     }
                 })
             }
@@ -547,12 +559,12 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: standardFieldValidation }, origin);
         }
 
-        const billing_fields = body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: {
-            value: string; field_id: string; option_order_id?: string; label?: string;
+        const billing_fields = body.billing_fields.reduce((acc: Record<string, Record<string, string | number | undefined>>, field: {
+            value: string; field_id: string; option_order_id?: string; label?: string; multiplier_value?: number
         }) => {
             const f = form.find(f => f.field_id === field.field_id);
 
-            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
+            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, multiplier_value: field?.multiplier_value };
             if (f?.input_type === "DROPDOWN" && field?.label) {
                 acc[`reg_field_${field.field_id}`].label_value = field.label
                 acc[`reg_field_${field.field_id}`].type = "BILLING_DROPDOWN"

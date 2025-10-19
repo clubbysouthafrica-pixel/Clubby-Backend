@@ -35,6 +35,7 @@ export interface BillingField {
     input_type: 'TEXT' | 'DROPDOWN';
     placeholder: string;
     required: boolean;
+    multiplier: boolean
     currency: CurrencyType;
     amount?: number;
     billingOptions?: BillingOption[];
@@ -171,6 +172,7 @@ export const handler = async (event: any) => {
                 item.placeholder = field.placeholder;
                 item.required = field.required;
                 item.field_name = field.field_name;
+                item.multiplier = field.multiplier;
                 if (field.input_type === 'TEXT') {
                     item.amount = field.amount;
                 } else if (field.input_type === 'DROPDOWN') {
