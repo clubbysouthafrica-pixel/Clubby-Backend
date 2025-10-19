@@ -89,7 +89,7 @@ export const handler = async (event: any) => {
         //     })
         // })
 
-        return registration_form
+        return createResponse(200, { registration_form }, origin);
 
     } catch (error) {
         console.error("Error:", error);
