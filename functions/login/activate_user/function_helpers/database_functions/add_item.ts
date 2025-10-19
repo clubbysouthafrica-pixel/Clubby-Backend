@@ -16,11 +16,15 @@ export const addItem = async (
     try {
         const request = {
             TableName: table_name,
-            Item: marshall(item),
+            Item: item,
             ConditionExpression: condition_expression ?? undefined,
         }
         console.log(`@@@ addItem request (Table_Name: ${table_name}): `, JSON.stringify(request));
-        const command = new PutItemCommand(request);
+        const command = new PutItemCommand({
+            TableName: table_name,
+            Item: marshall(item),
+            ConditionExpression: condition_expression ?? undefined,
+        });
         const response = await dynamodbClient.send(command);
         console.log(`@@@ addItem response (Table_Name: ${table_name}): `, JSON.stringify(response));
     } catch (error) {
