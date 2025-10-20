@@ -1,5 +1,5 @@
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent, getItem, queryItems, scanItems } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, queryItems, formatAmount } from "./function_helpers";
 
 async function getClubMemberRegistrationId(user_id: string, club_account_id: string): Promise<string> {
     const club_member = await getItem(
@@ -83,13 +83,46 @@ export const handler = async (event: any) => {
 
         const registration_form = await getRegistrationForm(query_string_params.club_account_id)
 
-        // registration_form.forEach(page => {
-        //     page.fields.forEach((field: any) => {
+        const pages: Record<string, any>[] = [];
+        registration_form.forEach(page => {
+            const new_page = { page_index: page.page_index, page_header: page.page_header, fields: [] } as { page_index: number, page_header: string, fields: Record<string, any>[] }
 
-        //     })
-        // })
+            page.fields.forEach((field: any) => {
+                if (field.field_type === "TEXT") new_page.fields.push({ label: field.field_text })
+                else {
 
-        return createResponse(200, { registration_form }, origin);
+                    Object.keys(member_registration).forEach(key => {
+                        if (member_registration[key].includes(field.field_id) && field.type.includes('STANDARD_SIGNATURE')) {
+                            if (member_registration[key].signature_type === "signature") {
+                                new_page.fields.push({
+                                    label: field.field_name,
+                                    value: "poes"
+                                })
+                            } else {
+                                new_page.fields.push({
+                                    label: field.field_name,
+                                    value: member_registration[key].value
+                                })
+                            }
+                        } else if (member_registration[key].includes(field.field_id) && field.type.includes('STANDARD_')) {
+                            new_page.fields.push({
+                                label: field.field_name,
+                                value: member_registration[key].value
+                            })
+                        } else if (member_registration[key].includes(field.field_id) && field.type.includes('BILLING_')) {
+                            new_page.fields.push({
+                                label: field.field_name,
+                                value: member_registration[key].value,
+                                quantity: member_registration[key].multiplier_value > 1 ? member_registration[key].multiplier_value : undefined
+                            })
+                        }
+                    })
+
+                }
+            })
+        })
+
+        return createResponse(200, { pages }, origin);
 
     } catch (error) {
         console.error("Error:", error);
