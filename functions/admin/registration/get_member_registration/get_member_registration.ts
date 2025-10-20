@@ -71,10 +71,10 @@ export const handler = async (event: any) => {
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
-        if (query_string_params?.club_account_id == null || query_string_params?.user_id == null) {
+        if (query_string_params?.club_account_id == null || query_string_params?.user_id == null || query_string_params?.currency == null) {
             return createResponse(400, { message: "club_account_id required in query string params." }, origin);
         }
-        if (typeof query_string_params.club_account_id !== 'string' || typeof query_string_params.user_id !== 'string') {
+        if (typeof query_string_params.club_account_id !== 'string' || typeof query_string_params.user_id !== 'string' || typeof query_string_params.currency !== 'string') {
             return createResponse(400, { message: "club_account_id must be STRING type." }, origin);
         }
 
@@ -90,36 +90,43 @@ export const handler = async (event: any) => {
             page.fields.forEach((field: any) => {
                 if (field.field_type === "TEXT") new_page.fields.push({ label: field.field_text })
                 else {
-
+                    let found = false
                     Object.keys(member_registration).forEach(key => {
-                        if (member_registration[key].includes(field.field_id) && field.type.includes('STANDARD_SIGNATURE')) {
+                        if (key.includes(field.field_id) && member_registration[key].type === 'STANDARD_SIGNATURE') {
                             if (member_registration[key].signature_type === "signature") {
                                 new_page.fields.push({
                                     label: field.field_name,
-                                    value: "poes"
+                                    value: member_registration[key].value
                                 })
+                                found = true
                             } else {
                                 new_page.fields.push({
                                     label: field.field_name,
                                     value: member_registration[key].value
                                 })
+                                found = true
                             }
-                        } else if (member_registration[key].includes(field.field_id) && field.type.includes('STANDARD_')) {
+                        } else if (key.includes(field.field_id) && member_registration[key].type.includes('STANDARD_')) {
                             new_page.fields.push({
                                 label: field.field_name,
                                 value: member_registration[key].value
                             })
-                        } else if (member_registration[key].includes(field.field_id) && field.type.includes('BILLING_')) {
+                            found = true
+                        } else if (key.includes(field.field_id) && member_registration[key].type.includes('BILLING_')) {
                             new_page.fields.push({
                                 label: field.field_name,
-                                value: member_registration[key].value,
+                                value: formatAmount(member_registration[key].value, query_string_params.currency),
                                 quantity: member_registration[key].multiplier_value > 1 ? member_registration[key].multiplier_value : undefined
                             })
+                            found = true
                         }
                     })
 
+                    if (!found) new_page.fields.push({ label: field.field_name, value: "NOT ENTERED BY MEMBER" })
+
                 }
             })
+            pages.push(new_page)
         })
 
         return createResponse(200, { pages }, origin);
