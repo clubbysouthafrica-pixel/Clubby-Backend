@@ -108,7 +108,7 @@ export const handler = async (event: any) => {
 
             for (const field of page.fields) {
                 if (field.field_type === "TEXT") {
-                    new_page.fields.push({ label: field.field_text });
+                    new_page.fields.push({ label: field.field_text, position: field.field_order_id, type: "TEXT", });
                     continue;
                 }
 
@@ -125,13 +125,15 @@ export const handler = async (event: any) => {
                                 signature_type: "signature",
                                 label: field.field_name,
                                 value: signatureUrl,
+                                position: field.field_order_id
                             });
                         } else {
                             new_page.fields.push({
                                 type: "STANDARD_SIGNATURE",
-                                signature_type: "signature",
+                                signature_type: "text",
                                 label: field.field_name,
                                 value: reg.value,
+                                position: field.field_order_id
                             });
                         }
                         found = true;
@@ -143,6 +145,7 @@ export const handler = async (event: any) => {
                             type: "STANDARD_OTHER",
                             label: field.field_name,
                             value: reg.value,
+                            position: field.field_order_id
                         });
                         found = true;
                         break;
@@ -151,9 +154,10 @@ export const handler = async (event: any) => {
                     else if (key.includes(field.field_id) && reg.type.includes("BILLING_")) {
                         new_page.fields.push({
                             type: "BILLING",
-                            label: `${field.field_name} ${field.label_value ? `(${field.label_value})` : ""}`,
-                            value: formatAmount(reg.value, query_string_params.currency),
+                            label: field.field_name,
+                            value: reg.label_value ? `${formatAmount(reg.value, query_string_params.currency)} - ${reg.label_value}` : formatAmount(reg.value, query_string_params.currency),
                             quantity: reg.multiplier_value > 1 ? reg.multiplier_value : undefined,
+                            position: field.field_order_id
                         });
                         found = true;
                         break;
@@ -163,11 +167,13 @@ export const handler = async (event: any) => {
                 if (!found) {
                     new_page.fields.push({
                         type: "DNE",
-                        label: field.field_name
+                        label: field.field_name,
+                        position: field.field_order_id
                     });
                 }
             }
 
+            new_page.fields.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
             pages.push(new_page);
         }
 
