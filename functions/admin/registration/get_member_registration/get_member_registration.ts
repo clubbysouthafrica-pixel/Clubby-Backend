@@ -1,5 +1,9 @@
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { createResponse, deconstructEvent, getItem, queryItems, formatAmount } from "./function_helpers";
+
+const s3_client = new S3Client({ region: process.env.AWS_REGION });
 
 async function getClubMemberRegistrationId(user_id: string, club_account_id: string): Promise<string> {
     const club_member = await getItem(
@@ -66,6 +70,17 @@ async function getRegistrationForm(club_account_id: string): Promise<Record<stri
     return pages
 }
 
+export async function getSignatureUrl(key: string): Promise<string> {
+    const command = new GetObjectCommand({
+        Bucket: process.env.SIGNATURES_BUCKET_NAME,
+        Key: key,
+    });
+
+    const signedUrl = await getSignedUrl(s3_client, command, { expiresIn: 3600 });
+
+    return signedUrl;
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -84,50 +99,77 @@ export const handler = async (event: any) => {
         const registration_form = await getRegistrationForm(query_string_params.club_account_id)
 
         const pages: Record<string, any>[] = [];
-        registration_form.forEach(page => {
-            const new_page = { page_index: page.page_index, page_header: page.page_header, fields: [] } as { page_index: number, page_header: string, fields: Record<string, any>[] }
+        for (const page of registration_form) {
+            const new_page = {
+                page_index: page.page_index,
+                page_header: page.page_header,
+                fields: []
+            } as { page_index: number, page_header: string, fields: Record<string, any>[] };
 
-            page.fields.forEach((field: any) => {
-                if (field.field_type === "TEXT") new_page.fields.push({ label: field.field_text })
-                else {
-                    let found = false
-                    Object.keys(member_registration).forEach(key => {
-                        if (key.includes(field.field_id) && member_registration[key].type === 'STANDARD_SIGNATURE') {
-                            if (member_registration[key].signature_type === "signature") {
-                                new_page.fields.push({
-                                    label: field.field_name,
-                                    value: member_registration[key].value
-                                })
-                                found = true
-                            } else {
-                                new_page.fields.push({
-                                    label: field.field_name,
-                                    value: member_registration[key].value
-                                })
-                                found = true
-                            }
-                        } else if (key.includes(field.field_id) && member_registration[key].type.includes('STANDARD_')) {
-                            new_page.fields.push({
-                                label: field.field_name,
-                                value: member_registration[key].value
-                            })
-                            found = true
-                        } else if (key.includes(field.field_id) && member_registration[key].type.includes('BILLING_')) {
-                            new_page.fields.push({
-                                label: field.field_name,
-                                value: formatAmount(member_registration[key].value, query_string_params.currency),
-                                quantity: member_registration[key].multiplier_value > 1 ? member_registration[key].multiplier_value : undefined
-                            })
-                            found = true
-                        }
-                    })
-
-                    if (!found) new_page.fields.push({ label: field.field_name, value: "NOT ENTERED BY MEMBER" })
-
+            for (const field of page.fields) {
+                if (field.field_type === "TEXT") {
+                    new_page.fields.push({ label: field.field_text });
+                    continue;
                 }
-            })
-            pages.push(new_page)
-        })
+
+                let found = false;
+
+                for (const key of Object.keys(member_registration)) {
+                    const reg = member_registration[key];
+
+                    if (key.includes(field.field_id) && reg.type === "STANDARD_SIGNATURE") {
+                        if (reg.signature_type === "signature") {
+                            const signatureUrl = await getSignatureUrl(reg.value);
+                            new_page.fields.push({
+                                type: "STANDARD_SIGNATURE",
+                                signature_type: "signature",
+                                label: field.field_name,
+                                value: signatureUrl,
+                            });
+                        } else {
+                            new_page.fields.push({
+                                type: "STANDARD_SIGNATURE",
+                                signature_type: "signature",
+                                label: field.field_name,
+                                value: reg.value,
+                            });
+                        }
+                        found = true;
+                        break;
+                    }
+
+                    else if (key.includes(field.field_id) && reg.type.includes("STANDARD_")) {
+                        new_page.fields.push({
+                            type: "STANDARD_OTHER",
+                            label: field.field_name,
+                            value: reg.value,
+                        });
+                        found = true;
+                        break;
+                    }
+
+                    else if (key.includes(field.field_id) && reg.type.includes("BILLING_")) {
+                        new_page.fields.push({
+                            type: "BILLING",
+                            label: `${field.field_name} ${field.label_value ? `(${field.label_value})` : ""}`,
+                            value: formatAmount(reg.value, query_string_params.currency),
+                            quantity: reg.multiplier_value > 1 ? reg.multiplier_value : undefined,
+                        });
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    new_page.fields.push({
+                        type: "DNE",
+                        label: field.field_name
+                    });
+                }
+            }
+
+            pages.push(new_page);
+        }
 
         return createResponse(200, { pages }, origin);
 
