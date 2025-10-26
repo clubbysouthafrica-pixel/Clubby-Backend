@@ -177,6 +177,7 @@ export const handler = async (event: any) => {
             pages.push(new_page);
         }
 
+        pages.sort((a, b) => (a.page_index ?? 0) - (b.page_index ?? 0));
         return createResponse(200, { pages }, origin);
 
     } catch (error) {
