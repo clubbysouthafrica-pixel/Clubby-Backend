@@ -17,6 +17,7 @@ import {
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
 import { MSC_Layers } from '../lambda_layers';
+import { MSC_MemberUserConstruct } from './constructs/member_user';
 
 export interface MSC_AdminNestedStackProps extends StackProps {
     users_table: MSC_Table;
@@ -132,6 +133,13 @@ export class MSC_AdminNestedStack extends Stack {
             club_admin_table: props.club_admin_table,
             club_table: props.club_table,
             layers: props.layers
+        });
+
+        new MSC_MemberUserConstruct(this, `${id}-MemberUser`, {
+            api_gateway: api_gateway,
+            layers: props.layers,
+            token_authorizer: jwt_construct.token_authorizer,
+            users_table: props.users_table
         });
 
         new MSC_AdminRegistrationFormConstruct(this, `${id}-RegistrationForm`, {
