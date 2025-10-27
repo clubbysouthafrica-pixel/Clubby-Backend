@@ -12,6 +12,7 @@ interface MSC_MemberClubConstructProps {
     registrations_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     image_bucket: MSC_Bucket;
+    signatures_bucket: MSC_Bucket;
     layers: MSC_Layers;
 }
 
@@ -26,7 +27,8 @@ export class MSC_MemberClubConstruct extends Construct {
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName
             },
             permissions: {
                 [props.club_table.tableArn]: [
@@ -45,6 +47,7 @@ export class MSC_MemberClubConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
         props.image_bucket.grantRead(get_club);
+        props.signatures_bucket.grantRead(get_club);
 
         const get_all_clubs = new MSC_Lambda(this, `${id}-GetAllClubs`, {
             code: "member/club/get_all_clubs",

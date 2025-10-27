@@ -41,13 +41,17 @@ export const handler = async (event: any) => {
             const meta_billing: any = [];
             const meta_standard: any = [];
             if (registration) {
-                Object.keys(registration).forEach(key => {
-                    if (key.includes("reg_field_") && registration[key].type.includes("BILLING_")) {
-                        meta_billing.push(registration[key])
-                    } else if (key.includes("reg_field_") && registration[key].type.includes("STANDARD_")) {
-                        meta_standard.push(registration[key])
+                for (const key of Object.keys(registration)) {
+                    const field = registration[key];
+
+                    if (key.includes("reg_field_") && field.type.includes("BILLING_")) {
+                        meta_billing.push(field);
+                    } else if (key.includes("reg_field_") && field.type.includes("STANDARD_")) {
+                        if (!field?.signature_type) {
+                            meta_standard.push(field);
+                        }
                     }
-                })
+                }
             }
 
             if (item.registered) {
@@ -90,19 +94,19 @@ export const handler = async (event: any) => {
             if (field.field_type === "BILLING" && field.input_type === "DROPDOWN") {
                 filters.push(
                     {
-                       key: `billing:${field.field_name}`,
-                       field_name: field.field_name,
-                       options: field.billingOptions.map((bo: any) => bo.label),
-                       type: "billing"
+                        key: `billing:${field.field_name}`,
+                        field_name: field.field_name,
+                        options: field.billingOptions.map((bo: any) => bo.label),
+                        type: "billing"
                     }
                 )
             } else if (field.field_type === "STANDARD" && field.input_type === "DROPDOWN") {
                 filters.push(
                     {
-                       key: `standard:${field.field_name}`,
-                       field_name: field.field_name,
-                       options: field.options,
-                       type: "standard"
+                        key: `standard:${field.field_name}`,
+                        field_name: field.field_name,
+                        options: field.options,
+                        type: "standard"
                     }
                 )
             }

@@ -4,7 +4,18 @@ import { createResponse, deconstructEvent, getItem, queryItems } from "./functio
 
 const s3_client = new S3Client({ region: process.env.REGION });
 
-async function getClubImageUrls(get_images: string, club_account_id: string): Promise<Record<string, string>> {
+export async function getSignatureUrl(key: string): Promise<string> {
+    const command = new GetObjectCommand({
+        Bucket: process.env.SIGNATURES_BUCKET_NAME,
+        Key: key,
+    });
+
+    const signedUrl = await getSignedUrl(s3_client, command, { expiresIn: 3600 });
+
+    return signedUrl;
+}
+
+async function getClubImageUrls(club_account_id: string): Promise<Record<string, string>> {
     const cover_key = `club_cover/${club_account_id}_cover`;
     const getCoverCommand = new GetObjectCommand({
         Bucket: process.env.IMAGE_BUCKET_NAME,
@@ -64,12 +75,17 @@ export const handler = async (event: any) => {
                     registration_id: club_member.current_reg_id
                 }
             );
+            
             if (registration) {
-                Object.keys(registration).forEach(key => {
+                for (const key of Object.keys(registration)) {
                     if (key.includes("reg_field_")) {
+                        if (registration[key]?.signature_type === "signature") {
+                            registration[key].value = await getSignatureUrl(registration[key].value);
+                        }
+
                         meta[key.replace("reg_field_", "")] = registration[key]
                     }
-                })
+                }
             }
         }
 
@@ -105,7 +121,7 @@ export const handler = async (event: any) => {
             registered,
             resubmission_required,
             meta,
-            ...await getClubImageUrls(query_string_params?.get_club_images, query_string_params.club_account_id)
+            ...await getClubImageUrls(query_string_params.club_account_id)
         }, origin);
 
     } catch (error) {

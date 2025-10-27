@@ -22,7 +22,8 @@ export class MSC_BucketsConstruct extends Construct {
         });
 
         this.signatures_bucket = new MSC_Bucket(this, `${id}-Signatures`, {
-            bucket_name: `${process.env.ENVIRONMENT as string}-${id}-Signatures`.toLocaleLowerCase()
+            bucket_name: `${process.env.ENVIRONMENT as string}-${id}-Signatures`.toLocaleLowerCase(),
+            enableCors: true
         });
     }
 }
