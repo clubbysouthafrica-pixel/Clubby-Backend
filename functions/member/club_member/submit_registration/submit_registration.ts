@@ -396,12 +396,14 @@ export async function sendEmailToMember(
     clubName: string,
     emailBody: string,
     clubFromEmail: string,
+    supportEmail: string
 ): Promise<void> {
     const emailSubject = `Registration Submission for ${clubName}`;
 
     let finalBody = emailBody
         .replace(/{{member_name}}/g, `${firstName} ${surname}`)
-        .replace(/{{club_name}}/g, clubName);
+        .replace(/{{club_name}}/g, clubName)
+        .replace(/{{club_email}}/g, supportEmail);
 
     const command = new SendEmailCommand({
         Destination: {
@@ -607,7 +609,8 @@ export const handler = async (event: any) => {
                 user.surname,
                 clubDetails.club_name,
                 clubDetails.registration_submission_email_template_body,
-                clubDetails.club_from_email
+                clubDetails.club_from_email,
+                clubDetails.support_email
             )
         }
 
