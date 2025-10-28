@@ -102,6 +102,8 @@ export const handler = async (event: any) => {
                 "fee_per_email_to_club": body.fee_per_email_to_club,
                 "free_email_limit": body.free_email_limit,
                 "joined": new Date().getTime(),
+                use_submission_email_template: false,
+                use_success_email_template: false,
                 ...EMAIL_TEMPLATE
             }
         );

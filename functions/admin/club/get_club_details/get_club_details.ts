@@ -29,7 +29,9 @@ export const handler = async (event: any) => {
             currency: item?.currency,
             support_email: item?.support_email,
             registration_submission_email_template_body: item?.registration_submission_email_template_body,
-            registration_success_email_template_body: item?.registration_success_email_template_body
+            registration_success_email_template_body: item?.registration_success_email_template_body,
+            use_submission_email_template: item?.use_submission_email_template ?? false,
+            use_success_email_template: item?.use_success_email_template ?? false
         }, origin);
 
     } catch (error) {

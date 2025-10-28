@@ -112,6 +112,9 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
             },
             permissions: {
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                    "ses:SendEmail"
+                ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],

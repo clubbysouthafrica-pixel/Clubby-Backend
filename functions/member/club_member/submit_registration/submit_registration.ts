@@ -157,7 +157,7 @@ function validateStandardFields(standardFields: StandardField[], submittedFields
     return null;
 }
 
-async function getClubDetails(club_account_id: string): Promise<{ support_email: string, club_name: string, currency: string, season_cycle: number } | null> {
+async function getClubDetails(club_account_id: string): Promise<Record<string, any> | null> {
     const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
         club_account_id: club_account_id
     });
@@ -166,7 +166,7 @@ async function getClubDetails(club_account_id: string): Promise<{ support_email:
         return null
     }
 
-    return { support_email: club.support_email, club_name: club.club_name, currency: club.currency, season_cycle: club.season_cycle };
+    return club;
 }
 
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
@@ -389,6 +389,48 @@ export async function sendEmailToAdmin(
     }
 }
 
+export async function sendEmailToMember(
+    toAddress: string,
+    firstName: string,
+    surname: string,
+    clubName: string,
+    emailBody: string,
+    clubFromEmail: string,
+): Promise<void> {
+    const emailSubject = `Registration Submission for ${clubName}`;
+
+    let finalBody = emailBody
+        .replace(/{{member_name}}/g, `${firstName} ${surname}`)
+        .replace(/{{club_name}}/g, clubName);
+
+    const command = new SendEmailCommand({
+        Destination: {
+            ToAddresses: [toAddress],
+        },
+        Message: {
+            Body: {
+                Html: {
+                    Charset: "UTF-8",
+                    Data: finalBody,
+                },
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: emailSubject,
+            },
+        },
+        Source: clubFromEmail,
+    });
+
+    try {
+        await sesClient.send(command);
+        console.log(`✅ Email sent to ${toAddress}`);
+    } catch (err) {
+        console.error("❌ Error sending email:", err);
+        throw err;
+    }
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -531,7 +573,9 @@ export const handler = async (event: any) => {
             member_surname: user.surname,
             registered: false,
             registration_payment_reference: generateShortReference(user_id as string),
-            ...clubDetails,
+            currency: clubDetails.currency,
+            club_name: clubDetails.club_name,
+            season_cycle: clubDetails.season_cycle
         };
 
         await addItem(
@@ -555,6 +599,17 @@ export const handler = async (event: any) => {
             user.surname,
             clubDetails.club_name
         )
+
+        if (clubDetails.use_submission_email_template) {
+            await sendEmailToMember(
+                user.email,
+                user.first_name,
+                user.surname,
+                clubDetails.club_name,
+                clubDetails.registration_submission_email_template_body,
+                clubDetails.club_from_email
+            )
+        }
 
         return createResponse(200, { message: "Registration form successfully submitted." }, origin);
 
