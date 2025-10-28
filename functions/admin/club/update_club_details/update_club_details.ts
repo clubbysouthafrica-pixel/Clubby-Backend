@@ -81,6 +81,30 @@ export const handler = async (event: any) => {
             expressionAttributeValues[":support_email"] = body.support_email;
         }
 
+        if (body?.registration_submission_email_template_body && typeof body.registration_submission_email_template_body === "string") {
+            updateParts.push("#registration_submission_email_template_body = :registration_submission_email_template_body");
+            expressionAttributeNames["#registration_submission_email_template_body"] = "registration_submission_email_template_body";
+            expressionAttributeValues[":registration_submission_email_template_body"] = body.registration_submission_email_template_body;
+        }
+
+        if (body?.registration_success_email_template_body && typeof body.registration_success_email_template_body === "string") {
+            updateParts.push("#registration_success_email_template_body = :registration_success_email_template_body");
+            expressionAttributeNames["#registration_success_email_template_body"] = "registration_success_email_template_body";
+            expressionAttributeValues[":registration_success_email_template_body"] = body.registration_success_email_template_body;
+        }
+
+        if (body?.use_success_email_template && typeof body.use_success_email_template === "boolean") {
+            updateParts.push("#use_success_email_template = :use_success_email_template");
+            expressionAttributeNames["#use_success_email_template"] = "use_success_email_template";
+            expressionAttributeValues[":use_success_email_template"] = body.use_success_email_template;
+        }
+
+        if (body?.use_submission_email_template && typeof body.use_submission_email_template === "boolean") {
+            updateParts.push("#use_submission_email_template = :use_submission_email_template");
+            expressionAttributeNames["#use_submission_email_template"] = "use_submission_email_template";
+            expressionAttributeValues[":use_submission_email_template"] = body.use_submission_email_template;
+        }
+
         if (updateParts.length === 0) {
             return createResponse(200, { message: "Nothing to update." }, origin);
         }

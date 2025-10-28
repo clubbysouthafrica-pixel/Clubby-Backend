@@ -35,6 +35,7 @@ export interface BillingField {
     input_type: 'TEXT' | 'DROPDOWN';
     placeholder: string;
     required: boolean;
+    multiplier: boolean
     currency: CurrencyType;
     amount?: number;
     billingOptions?: BillingOption[];
@@ -57,7 +58,7 @@ function isBillingField(obj: any): obj is BillingField {
 }
 
 function isStandardField(obj: any): obj is StandardField {
-    const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE', 'NUMBER', 'CHECKBOX'];
+    const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE', 'NUMBER', 'CHECKBOX', 'SIGNATURE'];
 
     return obj.field_type === 'STANDARD' &&
         validTypes.includes(obj.input_type) &&
@@ -119,7 +120,7 @@ export const handler = async (event: any) => {
         }
 
         const fieldNames = allFields
-            .filter((f: any) => f.field_type !== 'TEXT')
+            .filter((f: any) => f.field_type !== 'TEXT' && f.input_type !== 'SIGNATURE')
             .map((f: any) => f.field_name);
 
         const duplicates = fieldNames.filter(
@@ -171,6 +172,7 @@ export const handler = async (event: any) => {
                 item.placeholder = field.placeholder;
                 item.required = field.required;
                 item.field_name = field.field_name;
+                item.multiplier = field.multiplier;
                 if (field.input_type === 'TEXT') {
                     item.amount = field.amount;
                 } else if (field.input_type === 'DROPDOWN') {

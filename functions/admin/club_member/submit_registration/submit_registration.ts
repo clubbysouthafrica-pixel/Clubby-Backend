@@ -1,4 +1,5 @@
 import { AdminConfirmSignUpCommand, AdminCreateUserCommand, AdminGetUserCommand, AdminSetUserPasswordCommand, AdminUpdateUserAttributesCommand, CognitoIdentityProviderClient, SignUpCommand } from "@aws-sdk/client-cognito-identity-provider";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { randomUUID, createHash } from "crypto";
 import {
@@ -37,6 +38,7 @@ interface BillingField {
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 const sesClient = new SESClient({ region: process.env.REGION });
+const s3_client = new S3Client({ region: process.env.REGION });
 
 function generateShortReference(
     userId: string
@@ -117,7 +119,7 @@ function validateRequestBody(body: any) {
     return null;
 }
 
-function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string; field_id: string; option_order_id?: string }[]): number | null | string {
+function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string; field_id: string; option_order_id?: string; multiplier_value?: number }[]): number | null | string {
     const requiredFields = billingFields.filter(f => f.required);
     const field_ids = submittedFields.map(f => f.field_id);
     const allValid = requiredFields.every(req => {
@@ -143,11 +145,23 @@ function validateBillingField(billingFields: BillingField[], submittedFields: { 
     submittedFields.forEach(sub_field => {
         billingFields.forEach(billing_field => {
             if (billing_field.input_type === "TEXT" && billing_field.field_id === sub_field.field_id) {
-                total_amount += billing_field.amount ?? 0;
+
+                if (sub_field?.multiplier_value) {
+                    total_amount += (billing_field.amount ?? 0)*sub_field.multiplier_value;
+                } else {
+                    total_amount += billing_field.amount ?? 0;
+                }
+
             } else if (billing_field.input_type === "DROPDOWN" && billing_field.field_id === sub_field.field_id) {
                 billing_field.billingOptions.forEach(billing_options_field => {
                     if (billing_options_field.option_order_id === sub_field?.option_order_id) {
-                        total_amount += billing_options_field.amount;
+     
+                        if (sub_field?.multiplier_value) {
+                            total_amount += billing_options_field.amount*sub_field.multiplier_value;
+                        } else {
+                            total_amount += billing_options_field.amount;
+                        }
+                        
                     }
                 })
             }
@@ -182,7 +196,7 @@ function validateStandardFields(standardFields: StandardField[], submittedFields
     return null;
 }
 
-async function getClubDetails(club_account_id: string): Promise<Record<string, string> | null> {
+async function getClubDetails(club_account_id: string): Promise<{club_name: string, currency: string, season_cycle: number} | null> {
     const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
         club_account_id: club_account_id
     });
@@ -191,7 +205,7 @@ async function getClubDetails(club_account_id: string): Promise<Record<string, s
         return null
     }
 
-    return { club_name: club.club_name, currency: club.currency };
+    return { club_name: club.club_name, currency: club.currency, season_cycle: club.season_cycle };
 }
 
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
@@ -210,6 +224,32 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
     }
 
     return true;
+}
+
+async function addSignature(
+    club_account_id: string,
+    club_season_cycle: number,
+    signature_id: string,
+    dataUrl: string,
+): Promise<string> {
+    const base64Data = dataUrl.split(",")[1];
+    const buffer = Buffer.from(base64Data, "base64");
+    const mimeMatch = dataUrl.match(/^data:(.+);base64,/);
+    const contentType = mimeMatch ? mimeMatch[1] : "application/octet-stream";
+
+    const key = `${club_account_id}/${club_season_cycle}/${signature_id}.png`;
+    const command = new PutObjectCommand({
+        Bucket: process.env.SIGNATURES_BUCKET_NAME,
+        Body: buffer,
+        Key: key,
+        ContentEncoding: "base64",
+        ContentType: contentType,
+    });
+    console.log(`@@@ putObject request (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(command));
+    const response = await s3_client.send(command);
+    console.log(`@@@ putObject response (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(response));
+
+    return key
 }
 
 async function addToRegistrationsTable(
@@ -352,6 +392,9 @@ export async function sendAccountCreatedEmail(
         You can log in using the following link:<br/>
         <a href="https://${process.env.DOMAIN as string}/login">Log in to Clubby</a>
       </p>
+      <p>
+        To successfully register with ${clubName}, please complete the membership payment (This can be found in your member account under Payments & Billing).<br/>
+      </p>
       <p>Welcome to Clubby!<br/>— The Clubby Team</p>
     </body>
   </html>
@@ -448,10 +491,11 @@ export async function createClubbyUser(email: string, first_name: string, surnam
             );
 
             const subAttr = existingUser.UserAttributes?.find(attr => attr.Name === 'sub');
-            if (!subAttr) {
+            if (!subAttr || !subAttr.Value) {
                 return "Issue registering user.";
             }
 
+            console.log(`User ID successfully retrieved: ${subAttr.Value!}`)
             return subAttr.Value!;
         } else {
             return "Issue registering user.";
@@ -518,12 +562,12 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: standardFieldValidation }, origin);
         }
 
-        const billing_fields = body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: {
-            value: string; field_id: string; option_order_id?: string; label?: string;
+        const billing_fields = body.billing_fields.reduce((acc: Record<string, Record<string, string | number | undefined>>, field: {
+            value: string; field_id: string; option_order_id?: string; label?: string; multiplier_value?: number
         }) => {
             const f = form.find(f => f.field_id === field.field_id);
 
-            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
+            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, multiplier_value: field?.multiplier_value };
             if (f?.input_type === "DROPDOWN" && field?.label) {
                 acc[`reg_field_${field.field_id}`].label_value = field.label
                 acc[`reg_field_${field.field_id}`].type = "BILLING_DROPDOWN"
@@ -536,19 +580,38 @@ export const handler = async (event: any) => {
             }
             return acc;
         }, {})
-        const standard_fields = body.standard_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
+
+        const standard_fields: Record<string, Record<string, string>> = {};
+        for (const field of body.standard_fields) {
             const f = form.find(f => f.field_id === field.field_id);
 
-            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, type: "STANDARD_TEXT" };
+            standard_fields[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, type: "STANDARD_TEXT" };
             if (f?.input_type === "DROPDOWN") {
-                acc[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
+                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
             } else if (f?.input_type === "CHECKBOX") {
-                acc[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
+                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
             } else if (f?.input_type === "NUMBER") {
-                acc[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
+                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
+            } else if (f?.input_type === "SIGNATURE") {
+
+                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_SIGNATURE"
+                if (field?.signature_type) {
+
+                    standard_fields[`reg_field_${field.field_id}`].signature_type = field.signature_type
+
+                    if (field.signature_type === "signature") {
+                        const signature_id = randomUUID()
+                        const key = await addSignature(
+                            body.club_account_id,
+                            club_details.season_cycle,
+                            signature_id,
+                            field.value
+                        )
+                        standard_fields[`reg_field_${field.field_id}`].value = key
+                    }
+                }
             }
-            return acc;
-        }, {})
+        }
 
         const registration_submitted_on = Date.now()
 

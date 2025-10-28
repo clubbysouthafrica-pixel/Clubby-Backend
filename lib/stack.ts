@@ -40,6 +40,7 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_AdminNestedStack(this, `AdminStack`, { 
       env: props?.env,
+      signatures_bucket: buckets.signatures_bucket,
       member_user_pool: member_user_pool,
       admin_user_pool: admin_user_pool,
       club_deregistraiton_queue: club_deregistraiton_queue,
@@ -69,6 +70,7 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_MemberNestedStack(this, `MemberStack`, {
       env: props?.env,
+      signatures_bucket: buckets.signatures_bucket,
       member_user_pool: member_user_pool,
       registrations_table: tables.registrations_table,
       club_reporting_table: tables.club_reporting_table,

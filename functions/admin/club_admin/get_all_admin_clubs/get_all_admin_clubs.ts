@@ -43,6 +43,7 @@ export const handler = async (event: any) => {
         
             item.currency = club?.currency;
             item.onboarded = onboarded
+            item.season_cycle = club?.season_cycle ?? 1
         
             return item;
         }));

@@ -17,6 +17,7 @@ import {
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
 import { MSC_Layers } from '../lambda_layers';
+import { MSC_MemberUserConstruct } from './constructs/member_user';
 
 export interface MSC_AdminNestedStackProps extends StackProps {
     users_table: MSC_Table;
@@ -33,6 +34,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     club_member_table: MSC_Table;
     image_bucket: MSC_Bucket;
     club_history_bucket: MSC_Bucket;
+    signatures_bucket: MSC_Bucket;
     mail_queue: MSC_Queue;
     layers: MSC_Layers;
 }
@@ -133,10 +135,20 @@ export class MSC_AdminNestedStack extends Stack {
             layers: props.layers
         });
 
+        new MSC_MemberUserConstruct(this, `${id}-MemberUser`, {
+            api_gateway: api_gateway,
+            layers: props.layers,
+            token_authorizer: jwt_construct.token_authorizer,
+            users_table: props.users_table
+        });
+
         new MSC_AdminRegistrationFormConstruct(this, `${id}-RegistrationForm`, {
             api_gateway: api_gateway,
             registration_form_table: props.registration_form_table,
+            signatures_bucket: props.signatures_bucket,
             club_table: props.club_table,
+            club_member_table: props.club_member_table,
+            registrations_table: props.registrations_table,
             club_admin_table: props.club_admin_table,
             token_authorizer: jwt_construct.token_authorizer,
             layers: props.layers
@@ -144,6 +156,7 @@ export class MSC_AdminNestedStack extends Stack {
 
         new MSC_ClubMemberClubConstruct(this, `${id}-ClubMember`, {
             api_gateway: api_gateway,
+            signatures_bucket: props.signatures_bucket,
             users_table: props.users_table,
             member_user_pool: props.member_user_pool,
             club_reporting_table: props.club_reporting_table,

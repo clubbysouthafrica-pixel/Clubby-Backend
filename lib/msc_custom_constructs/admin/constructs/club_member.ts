@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_Queue, MSC_Cognito } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_Cognito } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Layers } from "../../lambda_layers";
@@ -14,6 +14,7 @@ interface MSC_ClubMemberClubConstructProps {
     registration_form_table: MSC_Table;
     registrations_table: MSC_Table;
     club_reporting_table: MSC_Table;
+    signatures_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
     layers: MSC_Layers;
     billing_table: MSC_Table;
@@ -52,6 +53,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 USER_POOL_ID: props.member_user_pool.userPoolId,
                 USERS_TABLE_NAME: props.users_table.tableName,
                 USER_TYPE: "MEMBER",
+                SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
@@ -96,6 +98,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             },
             layers: [props.layers.jwt_layer]
         });
+        props.signatures_bucket.grantPut(submit_registration)
 
         const register_member = new MSC_Lambda(this, `${id}-RegisterMember`, {
             code: "admin/club_member/register_member",
@@ -109,6 +112,9 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
             },
             permissions: {
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                    "ses:SendEmail"
+                ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],

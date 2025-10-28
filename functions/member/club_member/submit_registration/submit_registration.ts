@@ -1,3 +1,5 @@
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { randomUUID, createHash } from "crypto";
 import {
     createResponse,
@@ -6,9 +8,10 @@ import {
     queryItems,
     getItem,
     updateItem,
-    sendSqsMessage,
     removeItem
 } from "./function_helpers";
+
+const sesClient = new SESClient({ region: process.env.REGION });
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
@@ -32,6 +35,8 @@ interface BillingField {
     billingOptions: Record<string, any>[];
     amount?: number;
 }
+
+const s3_client = new S3Client({ region: process.env.REGION });
 
 function generateShortReference(
     userId: string
@@ -75,7 +80,7 @@ function validateRequestBody(body: any) {
     return null;
 }
 
-function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string; field_id: string; option_order_id?: string }[]): number | null | string {
+function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string; field_id: string; option_order_id?: string; multiplier_value?: number }[]): number | null | string {
     const requiredFields = billingFields.filter(f => f.required);
     const field_ids = submittedFields.map(f => f.field_id);
     const allValid = requiredFields.every(req => {
@@ -101,11 +106,23 @@ function validateBillingField(billingFields: BillingField[], submittedFields: { 
     submittedFields.forEach(sub_field => {
         billingFields.forEach(billing_field => {
             if (billing_field.input_type === "TEXT" && billing_field.field_id === sub_field.field_id) {
-                total_amount += billing_field.amount ?? 0;
+
+                if (sub_field?.multiplier_value) {
+                    total_amount += (billing_field.amount ?? 0) * sub_field.multiplier_value;
+                } else {
+                    total_amount += billing_field.amount ?? 0;
+                }
+
             } else if (billing_field.input_type === "DROPDOWN" && billing_field.field_id === sub_field.field_id) {
                 billing_field.billingOptions.forEach(billing_options_field => {
                     if (billing_options_field.option_order_id === sub_field?.option_order_id) {
-                        total_amount += billing_options_field.amount;
+
+                        if (sub_field?.multiplier_value) {
+                            total_amount += billing_options_field.amount * sub_field.multiplier_value;
+                        } else {
+                            total_amount += billing_options_field.amount;
+                        }
+
                     }
                 })
             }
@@ -140,7 +157,7 @@ function validateStandardFields(standardFields: StandardField[], submittedFields
     return null;
 }
 
-async function getClubDetails(club_account_id: string): Promise<Record<string, string> | null> {
+async function getClubDetails(club_account_id: string): Promise<Record<string, any> | null> {
     const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
         club_account_id: club_account_id
     });
@@ -149,7 +166,7 @@ async function getClubDetails(club_account_id: string): Promise<Record<string, s
         return null
     }
 
-    return { club_name: club.club_name, currency: club.currency };
+    return club;
 }
 
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
@@ -197,7 +214,7 @@ async function addToRegistrationsTable(
                     registration_id: member_registrations[0].registration_id
                 }
             )
-        
+
         } else {
             new_registration_index = member_registrations.length + 1
         }
@@ -284,6 +301,136 @@ async function addToTransactionsTable(
     )
 }
 
+async function addSignature(
+    club_account_id: string,
+    club_season_cycle: number,
+    signature_id: string,
+    dataUrl: string,
+): Promise<string> {
+    const base64Data = dataUrl.split(",")[1];
+    const buffer = Buffer.from(base64Data, "base64");
+    const mimeMatch = dataUrl.match(/^data:(.+);base64,/);
+    const contentType = mimeMatch ? mimeMatch[1] : "application/octet-stream";
+
+    const key = `${club_account_id}/${club_season_cycle}/${signature_id}.png`;
+    const command = new PutObjectCommand({
+        Bucket: process.env.SIGNATURES_BUCKET_NAME,
+        Body: buffer,
+        Key: key,
+        ContentEncoding: "base64",
+        ContentType: contentType,
+    });
+    console.log(`@@@ putObject request (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(command));
+    const response = await s3_client.send(command);
+    console.log(`@@@ putObject response (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(response));
+
+    return key
+}
+
+export async function sendEmailToAdmin(
+    toAddress: string,
+    firstName: string,
+    surname: string,
+    clubName: string,
+): Promise<void> {
+    const emailSubject = `New Member Registration for ${clubName}`;
+    const emailBody = `
+    <html>
+      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+        <p>Hi Admin,</p>
+  
+        <p>
+          A new member, <strong>${firstName} ${surname}</strong>, has submitted a registration form for your club, <strong>${clubName}</strong>.
+        </p>
+  
+        <p>
+          To review and complete their registration, please visit the <em>Members Pending</em> section using the link below:
+        </p>
+  
+        <p>
+          <a href="https://${process.env.DOMAIN as string}/manage/members" style="color: #004aad; text-decoration: none;">
+            View Members Pending
+          </a>
+        </p>
+  
+        <p>
+          Kind regards,<br/>
+          <strong>The Clubby Team</strong>
+        </p>
+      </body>
+    </html>
+  `;
+
+    const command = new SendEmailCommand({
+        Destination: {
+            ToAddresses: [toAddress],
+        },
+        Message: {
+            Body: {
+                Html: {
+                    Charset: "UTF-8",
+                    Data: emailBody,
+                },
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: emailSubject,
+            },
+        },
+        Source: `registrations@${process.env.DOMAIN as string}`,
+    });
+
+    try {
+        await sesClient.send(command);
+        console.log(`✅ Email sent to ${toAddress}`);
+    } catch (err) {
+        console.error("❌ Error sending email:", err);
+        throw err;
+    }
+}
+
+export async function sendEmailToMember(
+    toAddress: string,
+    firstName: string,
+    surname: string,
+    clubName: string,
+    emailBody: string,
+    clubFromEmail: string,
+): Promise<void> {
+    const emailSubject = `Registration Submission for ${clubName}`;
+
+    let finalBody = emailBody
+        .replace(/{{member_name}}/g, `${firstName} ${surname}`)
+        .replace(/{{club_name}}/g, clubName);
+
+    const command = new SendEmailCommand({
+        Destination: {
+            ToAddresses: [toAddress],
+        },
+        Message: {
+            Body: {
+                Html: {
+                    Charset: "UTF-8",
+                    Data: finalBody,
+                },
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: emailSubject,
+            },
+        },
+        Source: clubFromEmail,
+    });
+
+    try {
+        await sesClient.send(command);
+        console.log(`✅ Email sent to ${toAddress}`);
+    } catch (err) {
+        console.error("❌ Error sending email:", err);
+        throw err;
+    }
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -307,6 +454,11 @@ export const handler = async (event: any) => {
 
         if (form == null) {
             return createResponse(400, { message: "Registration form does not exist for the club." }, origin);
+        }
+
+        const clubDetails = await getClubDetails(body.club_account_id);
+        if (!clubDetails) {
+            return createResponse(400, { message: "Club does not exist." }, origin);
         }
 
         const user = await getItem(
@@ -346,12 +498,12 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: standardFieldValidation }, origin);
         }
 
-        const billing_fields = body.billing_fields.reduce((acc: Record<string, Record<string, string>>, field: {
-            value: string; field_id: string; option_order_id?: string; label?: string;
+        const billing_fields = body.billing_fields.reduce((acc: Record<string, Record<string, string | number | undefined>>, field: {
+            value: string; field_id: string; option_order_id?: string; label?: string; multiplier_value?: number
         }) => {
             const f = form.find(f => f.field_id === field.field_id);
 
-            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name };
+            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, multiplier_value: field?.multiplier_value };
             if (f?.input_type === "DROPDOWN" && field?.label) {
                 acc[`reg_field_${field.field_id}`].label_value = field.label
                 acc[`reg_field_${field.field_id}`].type = "BILLING_DROPDOWN"
@@ -364,19 +516,38 @@ export const handler = async (event: any) => {
             }
             return acc;
         }, {})
-        const standard_fields = body.standard_fields.reduce((acc: Record<string, Record<string, string>>, field: { value: string; field_id: string }) => {
+
+        const standard_fields: Record<string, Record<string, string>> = {};
+        for (const field of body.standard_fields) {
             const f = form.find(f => f.field_id === field.field_id);
 
-            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, type: "STANDARD_TEXT" };
+            standard_fields[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, type: "STANDARD_TEXT" };
             if (f?.input_type === "DROPDOWN") {
-                acc[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
+                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
             } else if (f?.input_type === "CHECKBOX") {
-                acc[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
+                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
             } else if (f?.input_type === "NUMBER") {
-                acc[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
+                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
+            } else if (f?.input_type === "SIGNATURE") {
+
+                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_SIGNATURE"
+                if (field?.signature_type) {
+
+                    standard_fields[`reg_field_${field.field_id}`].signature_type = field.signature_type
+
+                    if (field.signature_type === "signature") {
+                        const signature_id = randomUUID()
+                        const key = await addSignature(
+                            body.club_account_id,
+                            clubDetails.season_cycle,
+                            signature_id,
+                            field.value
+                        )
+                        standard_fields[`reg_field_${field.field_id}`].value = key
+                    }
+                }
             }
-            return acc;
-        }, {})
+        }
 
         const registration_submitted_on = Date.now()
 
@@ -402,7 +573,9 @@ export const handler = async (event: any) => {
             member_surname: user.surname,
             registered: false,
             registration_payment_reference: generateShortReference(user_id as string),
-            ...await getClubDetails(body.club_account_id),
+            currency: clubDetails.currency,
+            club_name: clubDetails.club_name,
+            season_cycle: clubDetails.season_cycle
         };
 
         await addItem(
@@ -419,6 +592,24 @@ export const handler = async (event: any) => {
             user_id as string,
             membership_amount,
         )
+
+        await sendEmailToAdmin(
+            clubDetails.support_email,
+            user.first_name,
+            user.surname,
+            clubDetails.club_name
+        )
+
+        if (clubDetails.use_submission_email_template) {
+            await sendEmailToMember(
+                user.email,
+                user.first_name,
+                user.surname,
+                clubDetails.club_name,
+                clubDetails.registration_submission_email_template_body,
+                clubDetails.club_from_email
+            )
+        }
 
         return createResponse(200, { message: "Registration form successfully submitted." }, origin);
 
