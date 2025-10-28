@@ -392,6 +392,9 @@ export async function sendAccountCreatedEmail(
         You can log in using the following link:<br/>
         <a href="https://${process.env.DOMAIN as string}/login">Log in to Clubby</a>
       </p>
+      <p>
+        To successfully register with ${clubName}, please complete the membership payment (This can be found in your member account under Payments & Billing).<br/>
+      </p>
       <p>Welcome to Clubby!<br/>— The Clubby Team</p>
     </body>
   </html>

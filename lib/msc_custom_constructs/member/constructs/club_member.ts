@@ -26,6 +26,7 @@ export class MSC_ClubMemberConstruct extends Construct {
         const submit_registration = new MSC_Lambda(this, `${id}-SubmitRegistration`, {
             code: "member/club_member/submit_registration",
             envVariables: {
+                DOMAIN: process.env.DOMAIN as string,
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 USERS_TABLE_NAME: props.users_table.tableName,
@@ -38,6 +39,9 @@ export class MSC_ClubMemberConstruct extends Construct {
             permissions: {
                 [props.registration_form_table.tableArn]: [
                     "dynamodb:Query"
+                ],
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                    "ses:SendEmail"
                 ],
                 [props.club_member_table.tableArn]: [
                     "dynamodb:PutItem",

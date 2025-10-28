@@ -1,4 +1,5 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { randomUUID, createHash } from "crypto";
 import {
     createResponse,
@@ -9,6 +10,8 @@ import {
     updateItem,
     removeItem
 } from "./function_helpers";
+
+const sesClient = new SESClient({ region: process.env.REGION });
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
@@ -105,7 +108,7 @@ function validateBillingField(billingFields: BillingField[], submittedFields: { 
             if (billing_field.input_type === "TEXT" && billing_field.field_id === sub_field.field_id) {
 
                 if (sub_field?.multiplier_value) {
-                    total_amount += (billing_field.amount ?? 0)*sub_field.multiplier_value;
+                    total_amount += (billing_field.amount ?? 0) * sub_field.multiplier_value;
                 } else {
                     total_amount += billing_field.amount ?? 0;
                 }
@@ -113,13 +116,13 @@ function validateBillingField(billingFields: BillingField[], submittedFields: { 
             } else if (billing_field.input_type === "DROPDOWN" && billing_field.field_id === sub_field.field_id) {
                 billing_field.billingOptions.forEach(billing_options_field => {
                     if (billing_options_field.option_order_id === sub_field?.option_order_id) {
-     
+
                         if (sub_field?.multiplier_value) {
-                            total_amount += billing_options_field.amount*sub_field.multiplier_value;
+                            total_amount += billing_options_field.amount * sub_field.multiplier_value;
                         } else {
                             total_amount += billing_options_field.amount;
                         }
-                        
+
                     }
                 })
             }
@@ -154,7 +157,7 @@ function validateStandardFields(standardFields: StandardField[], submittedFields
     return null;
 }
 
-async function getClubDetails(club_account_id: string): Promise<{club_name: string, currency: string, season_cycle: number} | null> {
+async function getClubDetails(club_account_id: string): Promise<{ support_email: string, club_name: string, currency: string, season_cycle: number } | null> {
     const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
         club_account_id: club_account_id
     });
@@ -163,7 +166,7 @@ async function getClubDetails(club_account_id: string): Promise<{club_name: stri
         return null
     }
 
-    return { club_name: club.club_name, currency: club.currency, season_cycle: club.season_cycle };
+    return { support_email: club.support_email, club_name: club.club_name, currency: club.currency, season_cycle: club.season_cycle };
 }
 
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
@@ -324,6 +327,68 @@ async function addSignature(
     return key
 }
 
+export async function sendEmailToAdmin(
+    toAddress: string,
+    firstName: string,
+    surname: string,
+    clubName: string,
+): Promise<void> {
+    const emailSubject = `New Member Registration for ${clubName}`;
+    const emailBody = `
+    <html>
+      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+        <p>Hi Admin,</p>
+  
+        <p>
+          A new member, <strong>${firstName} ${surname}</strong>, has submitted a registration form for your club, <strong>${clubName}</strong>.
+        </p>
+  
+        <p>
+          To review and complete their registration, please visit the <em>Members Pending</em> section using the link below:
+        </p>
+  
+        <p>
+          <a href="https://${process.env.DOMAIN as string}/manage/members" style="color: #004aad; text-decoration: none;">
+            View Members Pending
+          </a>
+        </p>
+  
+        <p>
+          Kind regards,<br/>
+          <strong>The Clubby Team</strong>
+        </p>
+      </body>
+    </html>
+  `;
+
+    const command = new SendEmailCommand({
+        Destination: {
+            ToAddresses: [toAddress],
+        },
+        Message: {
+            Body: {
+                Html: {
+                    Charset: "UTF-8",
+                    Data: emailBody,
+                },
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: emailSubject,
+            },
+        },
+        Source: `registrations@${process.env.DOMAIN as string}`,
+    });
+
+    try {
+        await sesClient.send(command);
+        console.log(`✅ Email sent to ${toAddress}`);
+    } catch (err) {
+        console.error("❌ Error sending email:", err);
+        throw err;
+    }
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -482,6 +547,13 @@ export const handler = async (event: any) => {
             current_reg_transaction_id,
             user_id as string,
             membership_amount,
+        )
+
+        await sendEmailToAdmin(
+            clubDetails.support_email,
+            user.first_name,
+            user.surname,
+            clubDetails.club_name
         )
 
         return createResponse(200, { message: "Registration form successfully submitted." }, origin);

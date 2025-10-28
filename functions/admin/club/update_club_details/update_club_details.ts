@@ -81,6 +81,18 @@ export const handler = async (event: any) => {
             expressionAttributeValues[":support_email"] = body.support_email;
         }
 
+        if (body?.registration_submission_email_template_body && typeof body.registration_submission_email_template_body === "string") {
+            updateParts.push("#registration_submission_email_template_body = :registration_submission_email_template_body");
+            expressionAttributeNames["#registration_submission_email_template_body"] = "registration_submission_email_template_body";
+            expressionAttributeValues[":registration_submission_email_template_body"] = body.registration_submission_email_template_body;
+        }
+
+        if (body?.registration_success_email_template_body && typeof body.registration_success_email_template_body === "string") {
+            updateParts.push("#registration_success_email_template_body = :registration_success_email_template_body");
+            expressionAttributeNames["#registration_success_email_template_body"] = "registration_success_email_template_body";
+            expressionAttributeValues[":registration_success_email_template_body"] = body.registration_success_email_template_body;
+        }
+
         if (updateParts.length === 0) {
             return createResponse(200, { message: "Nothing to update." }, origin);
         }
