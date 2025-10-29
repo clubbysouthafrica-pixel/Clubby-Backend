@@ -1,9 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { 
-  MSC_MemberNestedStack, 
-  MSC_AdminNestedStack, 
-  MSC_TablesConstruct, 
+import {
+  MSC_MemberNestedStack,
+  MSC_AdminNestedStack,
+  MSC_TablesConstruct,
   MSC_Layers,
   MSC_InternalInfraStack,
   MSC_MailingStack
@@ -38,7 +38,7 @@ export class MSC_Stack extends cdk.Stack {
       layers: layers,
     });
 
-    new MSC_AdminNestedStack(this, `AdminStack`, { 
+    new MSC_AdminNestedStack(this, `AdminStack`, {
       env: props?.env,
       signatures_bucket: buckets.signatures_bucket,
       member_user_pool: member_user_pool,
@@ -46,7 +46,7 @@ export class MSC_Stack extends cdk.Stack {
       club_deregistraiton_queue: club_deregistraiton_queue,
       transactions_table: tables.transactions_table,
       club_reporting_table: tables.club_reporting_table,
-      users_table: tables.users_table, 
+      users_table: tables.users_table,
       billing_table: tables.billing_table,
       club_table: tables.club_table,
       club_admin_table: tables.club_admin_table,

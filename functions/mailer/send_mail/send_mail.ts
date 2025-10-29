@@ -111,13 +111,11 @@ export const handler = async (event: any) => {
             } else if (emails_sent + totalEmails > free_email_limit) {
                 totalAmount = (emails_sent + totalEmails - free_email_limit) * email_fee
             }
-            // const paidEmails = Math.max(totalEmails - free_email_limit, 0);
-            // const totalAmount = paidEmails * email_fee;
-
-            await updateClubsEmailBilling(club_account_id, totalEmails, totalAmount);
 
             const chunkedEmails = chunkArray(emails, 45);
             await sendChunkedEmails(email_source, support_email, subject, email_body, chunkedEmails as string[][]);
+
+            await updateClubsEmailBilling(club_account_id, totalEmails, totalAmount);
         }
     } catch (error) {
         console.error("Error processing event:", error);
