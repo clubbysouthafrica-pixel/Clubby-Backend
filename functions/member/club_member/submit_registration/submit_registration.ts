@@ -295,7 +295,6 @@ async function addToTransactionsTable(
                 }
             },
             type: "REGISTRATION",
-            payment_type: "EFT/CASH",
             status: "PENDING"
         }
     )

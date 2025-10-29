@@ -62,7 +62,8 @@ async function partialRegistrationUpdateTransactionsTable(
             ":lifecycleValue": {
                 type: "CONFIRMATION",
                 description: "Payment confirmation",
-                amount: payment_amount
+                amount: payment_amount,
+                payment_type: "EFT/Cash"
             }
         }
     );
@@ -204,7 +205,8 @@ async function updateTransactionsTable(
             ":lifecycleValue": {
                 type: "CONFIRMATION",
                 description: "Payment confirmation",
-                amount: payment_amount
+                amount: payment_amount,
+                payment_type: "EFT/Cash"
             }
         }
     );
