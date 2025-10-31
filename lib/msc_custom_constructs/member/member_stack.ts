@@ -75,7 +75,6 @@ export class MSC_MemberNestedStack extends Stack {
             club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
             transactions_table: props.transactions_table,
-            image_bucket: props.image_bucket,
             layers: props.layers
         });
 

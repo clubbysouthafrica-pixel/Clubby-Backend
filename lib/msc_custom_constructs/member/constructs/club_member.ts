@@ -13,7 +13,6 @@ interface MSC_ClubMemberConstructProps {
     transactions_table: MSC_Table;
     club_table: MSC_Table,
     users_table: MSC_Table;
-    image_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
     registrations_table: MSC_Table;
     layers: MSC_Layers;
@@ -85,8 +84,7 @@ export class MSC_ClubMemberConstruct extends Construct {
         const get_all_member_clubs = new MSC_Lambda(this, `${id}-GetAllMemberClubs`, {
             code: "member/club_member/get_all_member_clubs",
             envVariables: {
-                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                IMAGE_BUCKET_NAME: props.image_bucket.bucketName
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
@@ -95,7 +93,6 @@ export class MSC_ClubMemberConstruct extends Construct {
             },
             layers: [props.layers.jwt_layer]
         });
-        props.image_bucket.grantRead(get_all_member_clubs);
 
         const club_resource = props.api_gateway.root.addResource("clubMember");
 
