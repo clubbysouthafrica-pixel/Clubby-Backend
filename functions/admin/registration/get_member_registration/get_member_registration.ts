@@ -130,7 +130,7 @@ export const handler = async (event: any) => {
                         } else {
                             new_page.fields.push({
                                 type: "STANDARD_SIGNATURE",
-                                signature_type: "text",
+                                signature_type: "name",
                                 label: field.field_name,
                                 value: reg.value,
                                 position: field.field_order_id
