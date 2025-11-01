@@ -1,4 +1,4 @@
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, S3Client, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createResponse, deconstructEvent, getItem, queryItems } from "./function_helpers";
 
@@ -15,25 +15,45 @@ export async function getSignatureUrl(key: string): Promise<string> {
     return signedUrl;
 }
 
-async function getClubImageUrls(club_account_id: string): Promise<Record<string, string>> {
+async function getClubImageUrls(club_account_id: string): Promise<Record<string, string | undefined>> {
+    const result: Record<string, string | undefined> = {
+        club_cover_url: undefined,
+        club_profile_url: undefined
+    };
+
     const cover_key = `club_cover/${club_account_id}_cover`;
-    const getCoverCommand = new GetObjectCommand({
-        Bucket: process.env.IMAGE_BUCKET_NAME,
-        Key: cover_key,
-    });
-    const get_cover_url = await getSignedUrl(s3_client, getCoverCommand, { expiresIn: 60 * 5 });
+    try {
+        await s3_client.send(new HeadObjectCommand({ Bucket: process.env.IMAGE_BUCKET_NAME, Key: cover_key }));
+        const getCoverCommand = new GetObjectCommand({
+            Bucket: process.env.IMAGE_BUCKET_NAME,
+            Key: cover_key,
+        });
+        result.club_cover_url = await getSignedUrl(s3_client, getCoverCommand, { expiresIn: 60 * 5 });
+    } catch (err: any) {
+        const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
+        if (status && status !== 404) {
+            console.error(`Error checking cover image ${cover_key}:`, err);
+        }
+        result.club_cover_url = undefined;
+    }
 
     const profile_key = `club_profile/${club_account_id}_profile`;
-    const getProfileCommand = new GetObjectCommand({
-        Bucket: process.env.IMAGE_BUCKET_NAME,
-        Key: profile_key,
-    });
-    const get_profile_url = await getSignedUrl(s3_client, getProfileCommand, { expiresIn: 60 * 5 });
-
-    return {
-        club_cover_url: get_cover_url,
-        club_profile_url: get_profile_url
+    try {
+        await s3_client.send(new HeadObjectCommand({ Bucket: process.env.IMAGE_BUCKET_NAME, Key: profile_key }));
+        const getProfileCommand = new GetObjectCommand({
+            Bucket: process.env.IMAGE_BUCKET_NAME,
+            Key: profile_key,
+        });
+        result.club_profile_url = await getSignedUrl(s3_client, getProfileCommand, { expiresIn: 60 * 5 });
+    } catch (err: any) {
+        const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
+        if (status && status !== 404) {
+            console.error(`Error checking profile image ${profile_key}:`, err);
+        }
+        result.club_profile_url = undefined;
     }
+
+    return result;
 }
 
 export const handler = async (event: any) => {
