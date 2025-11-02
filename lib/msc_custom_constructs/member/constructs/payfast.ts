@@ -9,6 +9,8 @@ interface MSC_PayfastConstructProps {
     token_authorizer: TokenAuthorizer;
     registrations_table: MSC_Table;
     club_member_table: MSC_Table;
+    club_reporting_table: MSC_Table;
+    transactions_table: MSC_Table;
     user_pool: MSC_Cognito;
     club_table: MSC_Table;
     users_table: MSC_Table;
@@ -55,6 +57,8 @@ export class MSC_PayfastConstruct extends Construct {
                 CLUB_NAME_INDEX: "ClubNameIndex",
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
             },
             permissions: {
                 [props.user_pool.userPoolArn]: [
@@ -64,10 +68,17 @@ export class MSC_PayfastConstruct extends Construct {
                     "dynamodb:Query"
                 ],
                 [props.registrations_table.tableArn]: [
-                    "dynamodb:GetItem"
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem"
                 ],
                 [props.club_member_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [props.club_reporting_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ],
+                [props.transactions_table.tableArn]: [
+                    "dynamodb:UpdateItem"
                 ]
             },
             layers: [props.layers.jwt_layer, axios_layer]
