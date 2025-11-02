@@ -6,6 +6,7 @@ const config = {
     merchant_id: "10043297",
     merchant_key: "5uv9um9zkr99m"
 }
+
 const pf = new PayFast(config);
 
 export const handler = async (event: any) => {
