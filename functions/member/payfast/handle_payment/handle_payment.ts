@@ -1,4 +1,4 @@
-import { getItem, queryItems } from "./function_helpers";
+import { getItem, queryItems, updateItem } from "./function_helpers";
 import { validatePayFastPayment } from "./payfast_validation";
 import {
     CognitoIdentityProviderClient,
@@ -25,8 +25,90 @@ export async function getUserSubByUsername(username: string): Promise<string | n
     }
 }
 
+async function updateTransactionsTable(
+    club_account_id: string,
+    current_reg_transaction_id: string,
+    payment_amount: number
+) {
+    await updateItem(
+        process.env.TRANSACTIONS_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            transaction_id: current_reg_transaction_id
+        },
+        `SET #amount_paid = #amount_paid + :payment_amount, #status = :status, #lifecycle.#ts = :lifecycleValue`,
+        {
+            "#amount_paid": "amount_paid",
+            "#status": "status",
+            "#lifecycle": "lifecycle",
+            "#ts": `${Date.now()}`
+        },
+        {
+            ":status": "PAID",
+            ":payment_amount": payment_amount,
+            ":lifecycleValue": {
+                type: "CONFIRMATION",
+                description: "Payment confirmation",
+                amount: payment_amount,
+                payment_type: "Online/Card"
+            }
+        }
+    );
+}
+
+async function updateClubReportingTable(
+    club_account_id: string,
+    year: number,
+    month: string,
+    payment_amount: number
+) {
+    await updateItem(
+        process.env.CLUB_REPORTING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: `${year}/${month}`
+        },
+        `SET 
+            #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
+            #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount,
+            #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount,
+            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount
+        `,
+        {
+            "#total_registration_pending_revenue": "total_registration_pending_revenue",
+            "#total_registration_revenue": "total_registration_revenue",
+            "#total_revenue": "total_revenue",
+            "#total_pending_revenue": "total_pending_revenue"
+        },
+        {
+            ":zero": 0,
+            ":payment_amount": payment_amount,
+        }
+    )
+}
+
+async function updateRegistrationsTable(
+    member_id: string,
+    current_reg_id: string,
+    payment_amount: number
+) {
+    await updateItem(
+        process.env.REGISTRATIONS_TABLE_NAME as string,
+        {
+            user_id: member_id,
+            registration_id: current_reg_id
+        },
+        "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount",
+        {
+            "#total_outstanding_amount": "total_outstanding_amount"
+        },
+        {
+            ":payment_amount": payment_amount
+        }
+    );
+}
+
 export const handler = async (event: any) => {
-    const cartTotal = 200.0;
     const passPhrase = process.env.PAYFAST_PASSPHRASE;
 
     const bodyString = event.body || "";
@@ -68,18 +150,42 @@ export const handler = async (event: any) => {
         return { statusCode: 400, body: "Invalid payment" };
     }
 
+    const amount_paid = registration.total_outstanding_amount / 100
+
     const isValid = await validatePayFastPayment(
         {
             headers: event.headers,
             body: Object.fromEntries(new URLSearchParams(event.body)),
             connection: { remoteAddress: event.requestContext?.identity?.sourceIp },
         },
-        registration.total_outstanding_amount / 100,
+        amount_paid,
         passPhrase
     );
 
     if (isValid) {
         console.log("✅ Payment verified successfully");
+
+        await updateTransactionsTable(
+            clubs[0].club_account_id,
+            club_member.current_reg_transaction_id,
+            amount_paid
+        );
+
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        await updateClubReportingTable(
+            clubs[0].club_account_id,
+            year,
+            month,
+            amount_paid
+        )
+
+        await updateRegistrationsTable(
+            user_id,
+            club_member.current_reg_id,
+            amount_paid
+        )
 
         return { statusCode: 200, body: "OK" };
     } else {
