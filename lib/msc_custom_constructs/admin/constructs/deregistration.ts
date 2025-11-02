@@ -12,7 +12,7 @@ interface MSC_DeregistrationConstructProps {
     billing_table: MSC_Table;
     transactions_table: MSC_Table;
     club_reporting_table: MSC_Table;
-    club_deregistraiton_queue: MSC_Queue;
+    club_deregistration_queue: MSC_Queue;
     registrations_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     club_history_bucket: MSC_Bucket;
@@ -27,14 +27,14 @@ export class MSC_DeregistrationConstruct extends Construct {
             code: "admin/deregistration/process_deregister_season",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
-                DEREGISTRATION_QUEUE_URL: props.club_deregistraiton_queue.queueUrl
+                DEREGISTRATION_QUEUE_URL: props.club_deregistration_queue.queueUrl
             },
             permissions: {
                 [props.club_table.tableArn]: [
                     "dynamodb:UpdateItem",
                     "dynamodb:GetItem"
                 ],
-                [props.club_deregistraiton_queue.queueArn]: [
+                [props.club_deregistration_queue.queueArn]: [
                     "sqs:SendMessage"
                 ]
             },
@@ -91,7 +91,7 @@ export class MSC_DeregistrationConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
         props.club_history_bucket.grantPut(deregister_season);
-        deregister_season.addEventSource(new SqsEventSource(props.club_deregistraiton_queue, {
+        deregister_season.addEventSource(new SqsEventSource(props.club_deregistration_queue, {
             batchSize: 1
         }));
 

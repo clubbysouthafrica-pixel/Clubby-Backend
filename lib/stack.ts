@@ -18,7 +18,7 @@ export class MSC_Stack extends cdk.Stack {
     const mail_queue = new MSC_Queue(this, `SendMail`, {
       queue_name: 'SendMail',
     });
-    const club_deregistraiton_queue = new MSC_Queue(this, `ClubDeregistration`, {
+    const club_deregistration_queue = new MSC_Queue(this, `ClubDeregistration`, {
       queue_name: 'ClubDeregistration',
       timeout: 900
     });
@@ -43,7 +43,7 @@ export class MSC_Stack extends cdk.Stack {
       signatures_bucket: buckets.signatures_bucket,
       member_user_pool: member_user_pool,
       admin_user_pool: admin_user_pool,
-      club_deregistraiton_queue: club_deregistraiton_queue,
+      club_deregistration_queue: club_deregistration_queue,
       transactions_table: tables.transactions_table,
       club_reporting_table: tables.club_reporting_table,
       users_table: tables.users_table,
