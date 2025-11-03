@@ -8,7 +8,6 @@ import {
     MSC_ClubAdminClubConstruct,
     MSC_AdminRegistrationFormConstruct,
     MSC_ClubMemberClubConstruct,
-    MSC_ImagesConstruct,
     MSC_MailerConstruct,
     MSC_ReportingConstruct,
     MSC_DeregistrationConstruct,
@@ -104,14 +103,6 @@ export class MSC_AdminNestedStack extends Stack {
             mail_queue: props.mail_queue
         });
 
-        new MSC_ImagesConstruct(this, `${id}-Images`, {
-            api_gateway: api_gateway,
-            image_bucket: props.image_bucket,
-            club_table: props.club_table,
-            layers: props.layers,
-            token_authorizer: jwt_construct.token_authorizer
-        });
-
         new MSC_AdminUserConstruct(this, `${id}-User`, {
             api_gateway: api_gateway,
             users_table: props.users_table,
@@ -123,7 +114,8 @@ export class MSC_AdminNestedStack extends Stack {
             api_gateway: api_gateway,
             club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
-            layers: props.layers
+            layers: props.layers,
+            image_bucket: props.image_bucket
         });
 
         new MSC_ClubAdminClubConstruct(this, `${id}-ClubAdmin`, {

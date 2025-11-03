@@ -4,7 +4,6 @@ export { MSC_AdminClubConstruct } from "./club";
 export { MSC_ClubAdminClubConstruct } from "./club_admin";
 export { MSC_AdminRegistrationFormConstruct } from "./registration_form";
 export { MSC_ClubMemberClubConstruct } from "./club_member";
-export { MSC_ImagesConstruct } from "./images";
 export { MSC_MailerConstruct } from "./mailer";
 export { MSC_ReportingConstruct } from "./reporting";
 export { MSC_DeregistrationConstruct } from "./deregistration";

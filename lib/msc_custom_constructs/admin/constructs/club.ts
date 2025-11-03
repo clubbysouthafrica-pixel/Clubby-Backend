@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Layers } from "../../lambda_layers";
@@ -7,6 +7,7 @@ import { MSC_Layers } from "../../lambda_layers";
 interface MSC_AdminClubConstructProps {
     api_gateway: MSC_APIGateway;
     club_table: MSC_Table;
+    image_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
     layers: MSC_Layers;
 }
@@ -18,7 +19,8 @@ export class MSC_AdminClubConstruct extends Construct {
         const get_club = new MSC_Lambda(this, `${id}-GetClub`, {
             code: "admin/club/get_club",
             envVariables: {
-                CLUB_TABLE_NAME: props.club_table.tableName
+                CLUB_TABLE_NAME: props.club_table.tableName,
+                IMAGE_BUCKET_NAME: props.image_bucket.bucketName
             },
             permissions: {
                 [props.club_table.tableArn]: [
@@ -27,6 +29,8 @@ export class MSC_AdminClubConstruct extends Construct {
             },
             layers: [props.layers.jwt_layer]
         });
+        props.image_bucket.grantPut(get_club);
+        props.image_bucket.grantRead(get_club);
 
         const update_club_details = new MSC_Lambda(this, `${id}-UpdateClubDetails`, {
             code: "admin/club/update_club_details",
