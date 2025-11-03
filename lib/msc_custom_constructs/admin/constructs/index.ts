@@ -8,3 +8,4 @@ export { MSC_MailerConstruct } from "./mailer";
 export { MSC_ReportingConstruct } from "./reporting";
 export { MSC_DeregistrationConstruct } from "./deregistration";
 export { MSC_TransactionsConstruct } from "./transactions";
+export { MSC_PayFastConstruct } from "./payfast";

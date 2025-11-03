@@ -11,7 +11,8 @@ import {
     MSC_MailerConstruct,
     MSC_ReportingConstruct,
     MSC_DeregistrationConstruct,
-    MSC_TransactionsConstruct
+    MSC_TransactionsConstruct,
+    MSC_PayFastConstruct
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
@@ -61,6 +62,13 @@ export class MSC_AdminNestedStack extends Stack {
             layers: props.layers
         });
 
+        new MSC_PayFastConstruct(this, `${id}-PayFast`, {
+            api_gateway: api_gateway,
+            token_authorizer: jwt_construct.token_authorizer,
+            club_table: props.club_table,
+            layers: props.layers
+        });
+
         new MSC_TransactionsConstruct(this, `${id}-Transactions`, {
             api_gateway: api_gateway,
             layers: props.layers,
@@ -68,7 +76,7 @@ export class MSC_AdminNestedStack extends Stack {
             transactions_table: props.transactions_table
         })
 
-        new  MSC_ReportingConstruct(this, `${id}-Reporting`, {
+        new MSC_ReportingConstruct(this, `${id}-Reporting`, {
             api_gateway: api_gateway,
             club_table: props.club_table,
             billing_table: props.billing_table,

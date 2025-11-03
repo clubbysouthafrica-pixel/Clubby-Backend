@@ -31,7 +31,8 @@ export const handler = async (event: any) => {
             registration_submission_email_template_body: item?.registration_submission_email_template_body,
             registration_success_email_template_body: item?.registration_success_email_template_body,
             use_submission_email_template: item?.use_submission_email_template ?? false,
-            use_success_email_template: item?.use_success_email_template ?? false
+            use_success_email_template: item?.use_success_email_template ?? false,
+            payfast_enabled: item?.payfast_enabled ?? false
         }, origin);
 
     } catch (error) {
