@@ -1,7 +1,7 @@
-import { SecretsManagerClient, DeleteSecretCommand } from "@aws-sdk/client-secrets-manager";
+import { SSMClient, DeleteParameterCommand } from "@aws-sdk/client-ssm";
 import { createResponse, deconstructEvent, updateItem } from "./function_helpers";
 
-const sm_client = new SecretsManagerClient({ region: process.env.REGION });
+const ssm_client = new SSMClient({ region: process.env.REGION });
 
 type Body = {
 	club_account_id?: string;
@@ -23,16 +23,16 @@ export const handler = async (event: any) => {
 			return createResponse(400, { message: validationError }, origin);
 		}
 
-		const secretName = `payfast_details_${parsed.club_account_id}`;
+		const paramName = `payfast_details_${parsed.club_account_id}`;
 
 		try {
-			await sm_client.send(new DeleteSecretCommand({
-				SecretId: secretName
+			await ssm_client.send(new DeleteParameterCommand({
+				Name: paramName
 			}));
 		} catch (err: any) {
 			const code = err?.name || err?.Code || err?.code;
-			if (code !== "ResourceNotFoundException") {
-				console.error("DeleteSecret error:", err);
+			if (code !== "ParameterNotFound") {
+				console.error("DeleteParameter error:", err);
 				throw err;
 			}
 		}
@@ -45,7 +45,7 @@ export const handler = async (event: any) => {
 			{ ":disabled": false }
 		);
 
-		return createResponse(200, { message: "PayFast details removed and club disabled for PayFast." }, origin);
+	return createResponse(200, { message: "PayFast parameter removed and club disabled for PayFast." }, origin);
 
 	} catch (error) {
 		console.error("Error resetting PayFast details:", error);

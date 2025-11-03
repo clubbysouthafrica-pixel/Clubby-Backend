@@ -3,6 +3,7 @@ import { MSC_Lambda, MSC_APIGateway, MSC_LambdaLayer, MSC_Table, MSC_Cognito } f
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Layers } from "../../lambda_layers";
+import { Stack } from "aws-cdk-lib";
 
 interface MSC_PayfastConstructProps {
     api_gateway: MSC_APIGateway;
@@ -26,6 +27,10 @@ export class MSC_PayfastConstruct extends Construct {
             description: "Axios Lambda Layer"
         });
 
+        const region = Stack.of(this).region;
+        const account = Stack.of(this).account;
+        const ssmParamArn = `arn:aws:ssm:${region}:${account}:parameter/payfast_details_*`;
+
         const get_checkout_url = new MSC_Lambda(this, `${id}-GetCheckoutUrl`, {
             code: "member/payfast/get_checkout_url",
             envVariables: {
@@ -34,6 +39,7 @@ export class MSC_PayfastConstruct extends Construct {
                 USERS_TABLE_NAME: props.users_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
             },
             permissions: {
                 [props.users_table.tableArn]: [
@@ -44,6 +50,9 @@ export class MSC_PayfastConstruct extends Construct {
                 ],
                 [props.club_member_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [ssmParamArn]: [
+                    "ssm:GetParameter"
                 ]
             },
             layers: [props.layers.jwt_layer, axios_layer]

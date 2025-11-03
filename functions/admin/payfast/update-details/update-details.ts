@@ -1,8 +1,8 @@
-import { SecretsManagerClient, CreateSecretCommand, PutSecretValueCommand, DescribeSecretCommand } from "@aws-sdk/client-secrets-manager";
-import { GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import { SSMClient, PutParameterCommand } from "@aws-sdk/client-ssm";
 import { createResponse, deconstructEvent, updateItem } from "./function_helpers";
+import { PayFast } from "./payfast-helper";
 
-const sm_client = new SecretsManagerClient({ region: process.env.REGION });
+const ssm_client = new SSMClient({ region: process.env.REGION });
 
 type PayfastDetailsBody = {
     club_account_id?: string;
@@ -29,69 +29,74 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: validationError }, origin);
         }
 
-        const secretName = `payfast_details_${parsed.club_account_id}`;
+        const config: { 
+            merchant_id: string;
+            merchant_key: string;
+            passphrase?: string;
+            sandbox: boolean;
+         } = {
+            merchant_id: parsed.merchant_id as string,
+            merchant_key: parsed.merchant_key as string,
+            sandbox: process.env.ENVIRONMENT === "Dev" ? true : false,
+        }
+        if (parsed.passphrase) config.passphrase = parsed.passphrase;
+        const pf = new PayFast(config);
 
-        const baseSecret: Record<string, string> = {
+        const paymentData = {
+            return_url: `https://clubby.co.za/payfast/return`,
+            cancel_url: `https://clubby.co.za/payfast/cancel`,
+            notify_url: `https://clubby.co.za/payfast/notify`,
+            name_first: "MCS",
+            name_last: "Verify",
+            email_address: "noreply@myclubsoftware.io",
+            amount: "5.00",
+            item_name: "Connectivity Test",
+            item_description: "Verifying PayFast credentials",
+        };
+
+        const urlString = pf.createStringfromObject(paymentData);
+        const hash = pf.createSignature(urlString);
+        const paymentObject = pf.createPaymentObject(paymentData, hash);
+        const paymentUrl = await pf.generatePaymentUrl(paymentObject);
+
+        if (!paymentUrl) {
+            return createResponse(400, { message: "PayFast connectivity failed. Please ensure the PayFast credentials are correct." }, origin);
+        }
+
+        const paramName = `payfast_details_${parsed.club_account_id}`;
+        const valueObj: Record<string, string> = {
             merchant_id: parsed.merchant_id!,
             merchant_key: parsed.merchant_key!,
         };
-
-        let exists = false;
-        try {
-            await sm_client.send(new DescribeSecretCommand({ SecretId: secretName }));
-            exists = true;
-        } catch (err: any) {
-            const code = err?.name || err?.Code || err?.code;
-            if (code !== "ResourceNotFoundException") {
-                console.error("DescribeSecret error:", err);
-                throw err;
-            }
+        if (parsed.passphrase && parsed.passphrase.trim() !== "") {
+            valueObj.passphrase = parsed.passphrase;
         }
 
-        if (exists) {
-            if (parsed.passphrase && parsed.passphrase.trim() !== "") {
-                baseSecret.passphrase = parsed.passphrase;
-            } else {
-                try {
-                    const current = await sm_client.send(new GetSecretValueCommand({ SecretId: secretName }));
-                    if (current.SecretString) {
-                        const currentObj = JSON.parse(current.SecretString);
-                        if (currentObj?.passphrase) {
-                            baseSecret.passphrase = currentObj.passphrase;
-                        }
-                    }
-                } catch (e) {
-                    console.warn("Could not read existing secret to preserve passphrase:", e);
-                }
-            }
-
-            await sm_client.send(new PutSecretValueCommand({
-                SecretId: secretName,
-                SecretString: JSON.stringify(baseSecret),
+        try {
+            await ssm_client.send(new PutParameterCommand({
+                Name: paramName,
+                Type: "SecureString",
+                Value: JSON.stringify(valueObj),
+                Overwrite: false,
+                Tier: "Standard",
             }));
+
             await updateItem(
                 process.env.CLUB_TABLE_NAME as string,
-                {
-                    club_account_id: parsed.club_account_id as string
-                },
-                "SET #payfast_enabled = :payfast_enabled",
-                {
-                    "#payfast_enabled": "payfast_enabled"
-                },
-                {
-                    ":payfast_enabled": true
-                }
+                { club_account_id: parsed.club_account_id as string },
+                "SET #payfast_enabled = :enabled",
+                { "#payfast_enabled": "payfast_enabled" },
+                { ":enabled": true }
             );
-            return createResponse(200, { message: "Secret updated" }, origin);
-        } else {
-            if (parsed.passphrase && parsed.passphrase.trim() !== "") {
-                baseSecret.passphrase = parsed.passphrase;
+
+            return createResponse(200, { message: "Parameter created and PayFast connectivity verified", payment_url: paymentUrl }, origin);
+        } catch (err: any) {
+            const code = err?.name || err?.Code || err?.code;
+            if (code === "ParameterAlreadyExists") {
+                return createResponse(200, { message: "Parameter already exists and PayFast connectivity verified", payment_url: paymentUrl }, origin);
             }
-            await sm_client.send(new CreateSecretCommand({
-                Name: secretName,
-                SecretString: JSON.stringify(baseSecret),
-            }));
-            return createResponse(200, { message: "Secret created" }, origin);
+            console.error("PutParameter error:", err);
+            throw err;
         }
     } catch (error) {
         console.error("Error storing PayFast details:", error);

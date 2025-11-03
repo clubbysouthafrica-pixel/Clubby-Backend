@@ -1,8 +1,9 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_LambdaLayer, MSC_Table, MSC_Cognito } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_LambdaLayer, MSC_Table } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Layers } from "../../lambda_layers";
+import { Stack } from "aws-cdk-lib";
 
 interface MSC_PayFastConstructProps {
     api_gateway: MSC_APIGateway;
@@ -15,22 +16,30 @@ export class MSC_PayFastConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_PayFastConstructProps) {
         super(scope, id);
 
+        const region = Stack.of(this).region;
+        const account = Stack.of(this).account;
+        const ssmParamArn = `arn:aws:ssm:${region}:${account}:parameter/payfast_details_*`;
+
+        const axios_layer = new MSC_LambdaLayer(this, `${id}-JWKS`, {
+            code: "axios_code",
+            description: "Axios Lambda Layer"
+        });
+
         const update_details = new MSC_Lambda(this, `${id}-UpdateDetails`, {
             code: "admin/payfast/update-details",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
+                ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
             },
             permissions: {
                 [props.club_table.tableArn]: [
                     "dynamodb:UpdateItem"
                 ],
-                [`arn:aws:secretsmanager:${process.env.REGION}:${process.env.ACCOUNT}:secret:payfast_details_*`]: [
-                    "secretsmanager:CreateSecret",
-                    "secretsmanager:PutSecretValue",
-                    "secretsmanager:DescribeSecret"
+                [ssmParamArn]: [
+                    "ssm:PutParameter"
                 ]
             },
-            layers: [props.layers.jwt_layer]
+            layers: [props.layers.jwt_layer, axios_layer]
         });
 
         const reset_details = new MSC_Lambda(this, `${id}-ResetDetails`, {
@@ -42,8 +51,8 @@ export class MSC_PayFastConstruct extends Construct {
                 [props.club_table.tableArn]: [
                     "dynamodb:UpdateItem"
                 ],
-                [`arn:aws:secretsmanager:${process.env.REGION}:${process.env.ACCOUNT}:secret:payfast_details_*`]: [
-                    "secretsmanager:DeleteSecret"
+                [ssmParamArn]: [
+                    "ssm:DeleteParameter"
                 ]
             },
             layers: [props.layers.jwt_layer]

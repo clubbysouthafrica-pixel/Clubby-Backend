@@ -1,13 +1,8 @@
 import { deconstructEvent, createResponse, getItem } from './function_helpers';
-import PayFast from './payfast';
+import PayFast from './payfast-helper';
+import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 
-const config = {
-    sandbox: true,
-    merchant_id: "10043297",
-    merchant_key: "5uv9um9zkr99m"
-}
-
-const pf = new PayFast(config);
+const ssm_client = new SSMClient({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
 
@@ -49,6 +44,40 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Registration not found." }, origin);
         }
 
+        // Fetch PayFast configuration from Parameter Store
+        const paramName = `payfast_details_${query_string_params.club_account_id}`;
+        let pfConfig: { merchant_id: string; merchant_key: string; passphrase?: string | null } | null = null;
+        try {
+            const param = await ssm_client.send(new GetParameterCommand({ Name: paramName, WithDecryption: true }));
+            const raw = param.Parameter?.Value;
+            if (!raw) {
+                return createResponse(400, { message: 'Payment configuration not found.' }, origin);
+            }
+            const parsedCfg = JSON.parse(raw);
+            if (!parsedCfg.merchant_id || !parsedCfg.merchant_key) {
+                return createResponse(400, { message: 'Payment configuration incomplete.' }, origin);
+            }
+            pfConfig = {
+                merchant_id: parsedCfg.merchant_id,
+                merchant_key: parsedCfg.merchant_key,
+                passphrase: parsedCfg.passphrase ?? null,
+            };
+        } catch (err: any) {
+            const code = err?.name || err?.Code || err?.code;
+            if (code === 'ParameterNotFound') {
+                return createResponse(400, { message: 'Payment configuration not found.' }, origin);
+            }
+            console.error('Error fetching PayFast config from SSM:', err);
+            return createResponse(500, { message: 'Internal Server Error' }, origin);
+        }
+
+        const pf = new PayFast({
+            merchant_id: pfConfig.merchant_id,
+            merchant_key: pfConfig.merchant_key,
+            passphrase: pfConfig.passphrase ?? null,
+            sandbox: process.env.ENVIRONMENT === "Dev" ? true : false,
+        });
+
         const paymentData = {
             return_url: `${process.env.DOMAIN}/clubs/${query_string_params.club_account_id}`,
             cancel_url: `${process.env.DOMAIN}/clubs/${query_string_params.club_account_id}`,
@@ -62,7 +91,7 @@ export const handler = async (event: any) => {
             item_description: club_member.club_name,
         };
 
-        const urlString = pf.createStringfromObject(paymentData);
+    const urlString = pf.createStringfromObject(paymentData);
         const hash = pf.createSignature(urlString);
         const paymentObject = pf.createPaymentObject(paymentData, hash);
         const generatePaymentUrl = await pf.generatePaymentUrl(paymentObject);
