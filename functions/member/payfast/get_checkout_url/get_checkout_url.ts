@@ -84,7 +84,6 @@ export const handler = async (event: any) => {
             notify_url: process.env.NOTIFY_URL,
             name_first: user.first_name,
             name_last: user.surname,
-            // custom_str1: club_member.club_name,
             email_address: user.email,
             amount: registration?.total_outstanding_amount / 100,
             item_name: 'Registration Fee',
