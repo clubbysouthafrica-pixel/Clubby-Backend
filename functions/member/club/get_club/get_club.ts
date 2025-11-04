@@ -136,6 +136,7 @@ export const handler = async (event: any) => {
             support_email: item["support_email"],
             country_of_operation: item["country_of_operation"],
             joined: item["joined"],
+            payfast_enabled: item?.payfast_enabled ?? false,
             onboarded,
             club_member_exists,
             registered,
