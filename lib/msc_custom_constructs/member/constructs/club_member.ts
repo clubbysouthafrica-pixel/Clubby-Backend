@@ -16,6 +16,8 @@ interface MSC_ClubMemberConstructProps {
     signatures_bucket: MSC_Bucket;
     registrations_table: MSC_Table;
     layers: MSC_Layers;
+    mail_queue: MSC_Queue;
+    billing_table: MSC_Table;
 }
 
 export class MSC_ClubMemberConstruct extends Construct {
@@ -33,7 +35,9 @@ export class MSC_ClubMemberConstruct extends Construct {
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
+                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
+                SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
             },
             permissions: {
                 [props.registration_form_table.tableArn]: [
@@ -62,6 +66,12 @@ export class MSC_ClubMemberConstruct extends Construct {
                 ],
                 [props.club_reporting_table.tableArn]: [
                     "dynamodb:UpdateItem"
+                ],
+                [props.mail_queue.queueArn]: [
+                    "sqs:SendMessage"
+                ],
+                [props.billing_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]

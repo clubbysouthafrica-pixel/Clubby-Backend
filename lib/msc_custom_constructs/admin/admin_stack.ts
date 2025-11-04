@@ -167,7 +167,8 @@ export class MSC_AdminNestedStack extends Stack {
             registration_form_table: props.registration_form_table,
             billing_table: props.billing_table,
             registrations_table: props.registrations_table,
-            layers: props.layers
+            layers: props.layers,
+            mail_queue: props.mail_queue
         });
     }
 }

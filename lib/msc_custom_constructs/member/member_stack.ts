@@ -1,6 +1,6 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MSC_APIGateway, MSC_Bucket, MSC_Cognito } from '../../msc_service_constructs';
+import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_Queue } from '../../msc_service_constructs';
 import { MSC_JWTConstruct } from '../authorization';
 import {
     MSC_MemberLoginConstruct,
@@ -27,6 +27,8 @@ export interface MSC_MemberNestedStackProps extends StackProps {
     image_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
     layers: MSC_Layers;
+    mail_queue: MSC_Queue;
+    billing_table: MSC_Table;
 }
 
 export class MSC_MemberNestedStack extends Stack {
@@ -89,7 +91,9 @@ export class MSC_MemberNestedStack extends Stack {
             club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
             transactions_table: props.transactions_table,
-            layers: props.layers
+            layers: props.layers,
+            mail_queue: props.mail_queue,
+            billing_table: props.billing_table,
         });
 
         new MSC_MemberRegistrationFormConstruct(this, `${id}-RegistrationForm`, {
