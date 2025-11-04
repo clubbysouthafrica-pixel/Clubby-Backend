@@ -340,7 +340,7 @@ export const handler = async (event: any) => {
         const registered_on = Date.now()
 
         await updateClubsRegistrationBilling(body.club_account_id, club.member_registration_fee_to_club);
-        await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount)
+        if (body.payment_amount > 0) await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount)
         await updateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
         await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on)
         await updateClubMember(body.club_account_id, body.member_id)
