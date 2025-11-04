@@ -150,7 +150,7 @@ export const handler = async (event: any) => {
         return { statusCode: 400, body: "Invalid payment" };
     }
 
-    const amount_paid = registration.total_outstanding_amount / 100
+    const amount_paid = registration.total_outstanding_amount;
 
     const isValid = await validatePayFastPayment(
         {
@@ -158,7 +158,7 @@ export const handler = async (event: any) => {
             body: Object.fromEntries(new URLSearchParams(event.body)),
             connection: { remoteAddress: event.requestContext?.identity?.sourceIp },
         },
-        amount_paid,
+        amount_paid / 100,
         passPhrase
     );
 
