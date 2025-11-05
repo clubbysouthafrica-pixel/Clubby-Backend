@@ -18,19 +18,20 @@ export class MSC_InternalInfraUserConstruct extends Construct {
         const create_admin = new MSC_Lambda(this, `${id}-CreateAdmin`, {
             code: "internal_infra/user/create_admin",
             envVariables: {
-                USER_POOL_CLIENT_ID: props.admin_pool.userPoolClient.userPoolClientId,
                 USER_POOL_ID: props.admin_pool.userPoolId,
                 USERS_TABLE_NAME: props.users_table.tableName,
+                DOMAIN: process.env.DOMAIN as string,
                 USER_TYPE: "ADMIN",
                 ADMIN_TOKEN: "FHJ289489JDJD"
             },
             permissions: {
                 [props.admin_pool.userPoolArn]: [
-                    "cognito-idp:SignUp",
-                    "cognito-idp:InitiateAuth",
-                    "cognito-idp:AdminInitiateAuth",
-                    "cognito-idp:AdminConfirmSignUp",
-                    "cognito-idp:AdminUpdateUserAttributes"
+                    "cognito-idp:AdminCreateUser",
+                    "cognito-idp:AdminSetUserPassword",
+                    "cognito-idp:AdminGetUser"
+                ],
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                    "ses:SendEmail"
                 ],
                 [props.users_table.tableArn]: [
                     "dynamodb:PutItem"

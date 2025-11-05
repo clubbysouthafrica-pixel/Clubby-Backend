@@ -74,12 +74,26 @@ export class MSC_AdminLoginConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const activate_user = new MSC_Lambda(this, `${id}-ActivateUser`, {
+            code: "login/activate_user",
+            envVariables: {
+                USER_POOL_CLIENT_ID: props.admin_user_pool.userPoolClient.userPoolClientId,
+            },
+            permissions: {
+                [props.admin_user_pool.userPoolArn]: [
+                    "cognito-idp:AdminRespondToAuthChallenge"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const admin_resource = props.api_gateway.root.addResource("admin");
 
         const sign_in_resource = admin_resource.addResource("signIn");
         const refresh_token_resource = admin_resource.addResource("refreshToken");
         const forgot_password_resource = admin_resource.addResource("forgotPassword");
         const reset_password_resource = admin_resource.addResource("resetPassword");
+        const activate_user_resource = admin_resource.addResource("activateUser");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -89,5 +103,6 @@ export class MSC_AdminLoginConstruct extends Construct {
         addCorsEnabledMethod(refresh_token_resource, refresh_token, methodOptions);
         addCorsEnabledMethod(forgot_password_resource, forgot_password, methodOptions);
         addCorsEnabledMethod(reset_password_resource, reset_password, methodOptions);
+        addCorsEnabledMethod(activate_user_resource, activate_user, methodOptions);
     }
 }

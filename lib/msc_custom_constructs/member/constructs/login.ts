@@ -60,7 +60,7 @@ export class MSC_MemberLoginConstruct extends Construct {
                 ]
             },
             layers: [props.layers.jwt_layer]
-        })
+        });
 
         const sign_in = new MSC_Lambda(this, `${id}-SignIn`, {
             code: "login/sign_in",
