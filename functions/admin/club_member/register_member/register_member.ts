@@ -1,4 +1,3 @@
-import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import {
     createResponse,
     deconstructEvent,
@@ -6,8 +5,6 @@ import {
     getItem,
     sendSqsMessage,
 } from "./function_helpers";
-
-const sesClient = new SESClient({ region: process.env.REGION });
 
 async function getClubEmailSendingLimit(club_account_id: string, emails: string[]): Promise<string | Record<string, string | number>> {
     const club = await getItem(

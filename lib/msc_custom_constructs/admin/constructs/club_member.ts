@@ -60,7 +60,9 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
+                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
+                SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl
             },
             permissions: {
                 [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
@@ -95,6 +97,12 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 ],
                 [props.club_reporting_table.tableArn]: [
                     "dynamodb:UpdateItem"
+                ],
+                [props.mail_queue.queueArn]: [
+                    "sqs:SendMessage"
+                ],
+                [props.billing_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
@@ -112,7 +120,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
-                SENDING_LIMIT: process.env.EMAIL_SENDING_LIMIT as string
             },
             permissions: {
                 [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
