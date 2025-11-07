@@ -371,7 +371,7 @@ export async function sendAccountCreatedEmail(
     <body style="font-family: Arial, sans-serif; color: #333;">
       <p>Hi ${firstName},</p>
       <p>
-        An administrator from <strong>${clubName}</strong> has submitted a registration form on your behalf. As a result, an account has been created for you on <strong>Clubby</strong>, giving you access to your affiliated club.
+        A registration for <strong>${clubName}</strong> has been submitted on your behalf. As a result, an account has been created for you on <strong>Clubby</strong>, giving you access to your affiliated club.
       </p>
       <p>Here are your login details:</p>
       <ul>
