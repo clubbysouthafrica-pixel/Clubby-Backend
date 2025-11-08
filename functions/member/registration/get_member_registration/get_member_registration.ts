@@ -178,7 +178,7 @@ export const handler = async (event: any) => {
         }
 
         pages.sort((a, b) => (a.page_index ?? 0) - (b.page_index ?? 0));
-        return createResponse(200, { pages }, origin);
+        return createResponse(200, { pages, deregistration_reason: member_registration?.deregistration_reason }, origin);
 
     } catch (error) {
         console.error("Error:", error);
