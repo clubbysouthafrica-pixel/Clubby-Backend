@@ -196,12 +196,6 @@ function validateStandardFields(standardFields: StandardField[], submittedFields
     return null;
 }
 
-async function getClub(club_account_id: string): Promise<Record<string, any> | null> {
-    return await getItem(process.env.CLUB_TABLE_NAME as string, {
-        club_account_id: club_account_id
-    });
-}
-
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
     const club_member = await getItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
@@ -546,7 +540,9 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Registration form does not exist for the club." }, origin);
         }
 
-        const club = await getClub(body.club_account_id)
+        const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
+            club_account_id: body.club_account_id
+        });
         if (!club) {
             return createResponse(500, { message: "Club does not exist." }, origin);
         }

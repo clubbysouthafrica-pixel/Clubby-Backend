@@ -158,18 +158,6 @@ function validateStandardFields(standardFields: StandardField[], submittedFields
     return null;
 }
 
-async function getClubDetails(club_account_id: string): Promise<Record<string, any> | null> {
-    const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
-        club_account_id: club_account_id
-    });
-
-    if (club == null) {
-        return null
-    }
-
-    return club;
-}
-
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
     const club_member = await getItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
@@ -451,8 +439,10 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Registration form does not exist for the club." }, origin);
         }
 
-        const clubDetails = await getClubDetails(body.club_account_id);
-        if (!clubDetails) {
+        const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
+            club_account_id: body.club_account_id
+        });
+        if (!club) {
             return createResponse(400, { message: "Club does not exist." }, origin);
         }
 
@@ -534,7 +524,7 @@ export const handler = async (event: any) => {
                         const signature_id = randomUUID()
                         const key = await addSignature(
                             body.club_account_id,
-                            clubDetails.season_cycle,
+                            club.season_cycle,
                             signature_id,
                             field.value
                         )
@@ -568,9 +558,9 @@ export const handler = async (event: any) => {
             member_surname: user.surname,
             registered: false,
             registration_payment_reference: generateShortReference(user_id as string),
-            currency: clubDetails.currency,
-            club_name: clubDetails.club_name,
-            season_cycle: clubDetails.season_cycle
+            currency: club.currency,
+            club_name: club.club_name,
+            season_cycle: club.season_cycle
         };
 
         await addItem(
@@ -589,28 +579,28 @@ export const handler = async (event: any) => {
         )
 
         await sendEmailToAdmin(
-            clubDetails.support_email,
+            club.support_email,
             user.first_name,
             user.surname,
-            clubDetails.club_name
+            club.club_name
         )
 
-        if (clubDetails.use_submission_email_template) {
+        if (club.use_submission_email_template) {
             const club_sending_limit = await getClubEmailSendingLimit(body.club_account_id, [user.email]);
             if (typeof club_sending_limit === 'string') {
                 console.log(club_sending_limit);
             } else {
 
-                let finalBody = clubDetails.registration_success_email_template_body
+                let finalBody = club.registration_success_email_template_body
                     .replace(/{{member_name}}/g, `${user.first_name} ${user.surname}`)
-                    .replace(/{{club_name}}/g, clubDetails.club_name)
-                    .replace(/{{club_email}}/g, clubDetails.support_email);
+                    .replace(/{{club_name}}/g, club.club_name)
+                    .replace(/{{club_email}}/g, club.support_email);
 
                 await sendSqsMessage(
                     process.env.SEND_EMAIL_QUEUE_URL as string,
                     {
                         emails: [user.email],
-                        subject: `Registration Submission for ${clubDetails.club_name}`,
+                        subject: `Registration Submission for ${club.club_name}`,
                         email_body: finalBody,
                         club_account_id: body.club_account_id,
                         ...club_sending_limit
