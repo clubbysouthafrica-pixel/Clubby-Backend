@@ -9,14 +9,17 @@ export const handler = async (event: any) => {
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
     try {
-        const clubs = await scanItems(process.env.CLUB_TABLE_NAME as string)
+        const clubs = await scanItems(process.env.CLUB_TABLE_NAME as string);
 
-        const items = await Promise.all(clubs.map(async (item) => {        
+        const visibleClubs = clubs.filter((c: any) => c?.hide_from_public !== true);
+
+        const items = await Promise.all(visibleClubs.map(async (item: any) => {
             return {
                 currency: item.currency,
                 club_name: item.club_name,
                 club_account_id: item.club_account_id,
-                club_type: item.club_type
+                club_type: item.club_type,
+                hide_from_public: item.hide_from_public === true ? true : false
             };
         }));
 

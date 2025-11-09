@@ -30,7 +30,7 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
             permissions: {
                 [props.registration_form_table.tableArn]: [
                     "dynamodb:PutItem",
-                    "dynamodb:DeleteItem"
+                    "dynamodb:UpdateItem"
                 ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"

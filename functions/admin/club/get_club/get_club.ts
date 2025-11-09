@@ -76,6 +76,7 @@ export const handler = async (event: any) => {
             support_email: item["support_email"],
             country_of_operation: item["country_of_operation"],
             joined: item["joined"],
+            hide_from_public: item?.hide_from_public ?? false,
             images: {
                 cover: { uploadUrl: cover_upload_url, fetchUrl: cover_fetch_url },
                 profile: { uploadUrl: profile_upload_url, fetchUrl: profile_fetch_url },

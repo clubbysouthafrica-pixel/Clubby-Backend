@@ -32,7 +32,9 @@ export const handler = async (event: any) => {
             registration_success_email_template_body: item?.registration_success_email_template_body,
             use_submission_email_template: item?.use_submission_email_template ?? false,
             use_success_email_template: item?.use_success_email_template ?? false,
-            payfast_enabled: item?.payfast_enabled ?? false
+            payfast_enabled: item?.payfast_enabled ?? false,
+            club_url: item?.club_url ?? undefined,
+            hide_from_public: item?.hide_from_public ?? false
         }, origin);
 
     } catch (error) {

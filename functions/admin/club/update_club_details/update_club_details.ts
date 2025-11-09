@@ -99,10 +99,22 @@ export const handler = async (event: any) => {
             expressionAttributeValues[":use_success_email_template"] = body.use_success_email_template;
         }
 
+        if (body?.club_url && typeof body.club_url === "string") {
+            updateParts.push("#club_url = :club_url");
+            expressionAttributeNames["#club_url"] = "club_url";
+            expressionAttributeValues[":club_url"] = body.club_url;
+        }
+
         if (typeof body?.use_submission_email_template === "boolean") {
             updateParts.push("#use_submission_email_template = :use_submission_email_template");
             expressionAttributeNames["#use_submission_email_template"] = "use_submission_email_template";
             expressionAttributeValues[":use_submission_email_template"] = body.use_submission_email_template;
+        }
+
+        if (typeof body.hide_from_public === "boolean") {
+            updateParts.push("#hide_from_public = :hide_from_public");
+            expressionAttributeNames["#hide_from_public"] = "hide_from_public";
+            expressionAttributeValues[":hide_from_public"] = body.hide_from_public;
         }
 
         if (updateParts.length === 0) {
