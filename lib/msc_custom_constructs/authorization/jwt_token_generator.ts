@@ -1,14 +1,16 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Cognito } from "../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Cognito, MSC_LambdaLayer } from "../../msc_service_constructs";
 import { TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { Duration } from "aws-cdk-lib";
-import { MSC_Layers } from "../lambda_layers";
 
 interface MSC_JWTConstructProps {
     api_gateway: MSC_APIGateway;
     user_pool: MSC_Cognito;
     user_type: "member" | "admin";
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+        jwks_rsa_layer: MSC_LambdaLayer;
+    }
 }
 
 export class MSC_JWTConstruct extends Construct {

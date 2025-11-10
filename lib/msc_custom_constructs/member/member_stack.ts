@@ -1,6 +1,6 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_Queue } from '../../msc_service_constructs';
+import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_LambdaLayer, MSC_Queue } from '../../msc_service_constructs';
 import { MSC_JWTConstruct } from '../authorization';
 import {
     MSC_MemberLoginConstruct,
@@ -12,8 +12,7 @@ import {
     MSC_TransactionsConstruct,
     MSC_PayfastConstruct
 } from "./constructs";
-import { MSC_Table } from "../../msc_service_constructs"
-import { MSC_Layers } from '../lambda_layers';
+import { MSC_Table } from "../../msc_service_constructs";
 
 export interface MSC_MemberNestedStackProps extends StackProps {
     users_table: MSC_Table;
@@ -26,9 +25,13 @@ export interface MSC_MemberNestedStackProps extends StackProps {
     transactions_table: MSC_Table;
     image_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
-    layers: MSC_Layers;
     mail_queue: MSC_Queue;
     billing_table: MSC_Table;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+        jwks_rsa_layer: MSC_LambdaLayer;
+        axios_layer: MSC_LambdaLayer;
+    };
 }
 
 export class MSC_MemberNestedStack extends Stack {

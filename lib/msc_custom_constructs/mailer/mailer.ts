@@ -1,13 +1,15 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Construct } from 'constructs';
-import { MSC_Lambda, MSC_Queue, MSC_Table } from '../../msc_service_constructs';
+import { MSC_Lambda, MSC_LambdaLayer, MSC_Queue, MSC_Table } from '../../msc_service_constructs';
 import { MSC_Layers } from '../lambda_layers';
 
 export interface MSC_MailingStackProps extends StackProps {
     mail_queue: MSC_Queue;
     billing_table: MSC_Table;
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+    };
 }
 
 export class MSC_MailingStack extends Stack {

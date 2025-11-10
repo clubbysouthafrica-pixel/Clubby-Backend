@@ -6,6 +6,7 @@ interface MSC_LayersProps {}
 export class MSC_Layers extends Construct {
     public readonly jwt_layer: MSC_LambdaLayer;
     public readonly jwks_rsa_layer: MSC_LambdaLayer;
+    public readonly axios_layer: MSC_LambdaLayer;
     constructor(scope: Construct, id: string, props: MSC_LayersProps) {
         super(scope, `${id}-LambdaLayers`);
 
@@ -17,6 +18,11 @@ export class MSC_Layers extends Construct {
         this.jwks_rsa_layer = new MSC_LambdaLayer(this, `${id}-JWKS`, {
             code: "jwks-rsa_code",
             description: "JKS-RSA Lambda Layer"
+        });
+
+        this.axios_layer = new MSC_LambdaLayer(this, `${id}-AXIOS`, {
+            code: "axios_code",
+            description: "Axios Lambda Layer"
         });
     }
 }

@@ -1,8 +1,7 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_Cognito, MSC_Queue } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_Cognito, MSC_Queue, MSC_LambdaLayer } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
-import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_ClubMemberClubConstructProps {
     users_table: MSC_Table;
@@ -17,7 +16,9 @@ interface MSC_ClubMemberClubConstructProps {
     signatures_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
     mail_queue: MSC_Queue;
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+    };
     billing_table: MSC_Table;
 }
 

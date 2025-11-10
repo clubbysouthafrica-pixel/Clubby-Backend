@@ -29,13 +29,15 @@ export class MSC_Stack extends cdk.Stack {
     const tables = new MSC_TablesConstruct(this, stack_id, {});
     const buckets = new MSC_BucketsConstruct(this, stack_id, {});
 
-    const layers = new MSC_Layers(this, stack_id, {});
+    const all_layers = new MSC_Layers(this, stack_id, {});
 
     new MSC_MailingStack(this, `MailerStack`, {
       env: props?.env,
       mail_queue: mail_queue,
       billing_table: tables.billing_table,
-      layers: layers,
+      layers: {
+        jwt_layer: all_layers.jwt_layer
+      },
     });
 
     new MSC_AdminNestedStack(this, `AdminStack`, {
@@ -56,13 +58,19 @@ export class MSC_Stack extends cdk.Stack {
       image_bucket: buckets.image_bucket,
       club_history_bucket: buckets.club_history_bucket,
       mail_queue: mail_queue,
-      layers
+      layers: {
+        jwt_layer: all_layers.jwt_layer,
+        jwks_rsa_layer: all_layers.jwks_rsa_layer,
+        axios_layer: all_layers.axios_layer
+      }
     });
 
     new MSC_InternalInfraStack(this, `InternalInfra`, {
       env: props?.env,
       admin_pool: admin_user_pool,
-      layers: layers,
+      layers: {
+        jwt_layer: all_layers.jwt_layer,
+      },
       club_admin_table: tables.club_admin_table,
       users_table: tables.users_table,
       club_table: tables.club_table
@@ -82,7 +90,11 @@ export class MSC_Stack extends cdk.Stack {
       registration_form_table: tables.registration_form_table,
       image_bucket: buckets.image_bucket,
       mail_queue: mail_queue,
-      layers,
+      layers: {
+        jwt_layer: all_layers.jwt_layer,
+        jwks_rsa_layer: all_layers.jwks_rsa_layer,
+        axios_layer: all_layers.axios_layer
+      }
     });
   }
 }

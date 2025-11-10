@@ -2,14 +2,16 @@ import { Construct } from "constructs";
 import { MSC_Lambda, MSC_APIGateway, MSC_LambdaLayer, MSC_Table } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
-import { MSC_Layers } from "../../lambda_layers";
 import { Stack } from "aws-cdk-lib";
 
 interface MSC_PayFastConstructProps {
     api_gateway: MSC_APIGateway;
     token_authorizer: TokenAuthorizer;
     club_table: MSC_Table;
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+        axios_layer: MSC_LambdaLayer;
+    };
 }
 
 export class MSC_PayFastConstruct extends Construct {
@@ -19,11 +21,6 @@ export class MSC_PayFastConstruct extends Construct {
         const region = Stack.of(this).region;
         const account = Stack.of(this).account;
         const ssmParamArn = `arn:aws:ssm:${region}:${account}:parameter/payfast_details_*`;
-
-        const axios_layer = new MSC_LambdaLayer(this, `${id}-JWKS`, {
-            code: "axios_code",
-            description: "Axios Lambda Layer"
-        });
 
         const update_details = new MSC_Lambda(this, `${id}-UpdateDetails`, {
             code: "admin/payfast/update-details",
@@ -39,7 +36,7 @@ export class MSC_PayFastConstruct extends Construct {
                     "ssm:PutParameter"
                 ]
             },
-            layers: [props.layers.jwt_layer, axios_layer]
+            layers: [props.layers.jwt_layer, props.layers.axios_layer]
         });
 
         const reset_details = new MSC_Lambda(this, `${id}-ResetDetails`, {

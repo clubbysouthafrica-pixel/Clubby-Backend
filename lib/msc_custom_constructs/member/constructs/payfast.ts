@@ -2,7 +2,6 @@ import { Construct } from "constructs";
 import { MSC_Lambda, MSC_APIGateway, MSC_LambdaLayer, MSC_Table, MSC_Cognito } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
-import { MSC_Layers } from "../../lambda_layers";
 import { Stack } from "aws-cdk-lib";
 
 interface MSC_PayfastConstructProps {
@@ -15,17 +14,15 @@ interface MSC_PayfastConstructProps {
     user_pool: MSC_Cognito;
     club_table: MSC_Table;
     users_table: MSC_Table;
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+        axios_layer: MSC_LambdaLayer;
+    };
 }
 
 export class MSC_PayfastConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_PayfastConstructProps) {
         super(scope, id);
-
-        const axios_layer = new MSC_LambdaLayer(this, `${id}-JWKS`, {
-            code: "axios_code",
-            description: "Axios Lambda Layer"
-        });
 
         const region = Stack.of(this).region;
         const account = Stack.of(this).account;
@@ -55,7 +52,7 @@ export class MSC_PayfastConstruct extends Construct {
                     "ssm:GetParameter"
                 ]
             },
-            layers: [props.layers.jwt_layer, axios_layer]
+            layers: [props.layers.jwt_layer, props.layers.axios_layer]
         });
 
         const handle_payment = new MSC_Lambda(this, `${id}-HandlePayment`, {
@@ -90,7 +87,7 @@ export class MSC_PayfastConstruct extends Construct {
                     "dynamodb:UpdateItem"
                 ]
             },
-            layers: [props.layers.jwt_layer, axios_layer]
+            layers: [props.layers.jwt_layer, props.layers.axios_layer]
         });
 
         const pay_fast_resource = props.api_gateway.root.addResource("payfast");
