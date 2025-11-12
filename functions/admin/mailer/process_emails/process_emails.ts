@@ -37,7 +37,7 @@ function validateBody(body: any): string | null {
     return null;
 }
 
-async function get_club_email_sending_limit(club_account_id: string, emails: string[]): Promise<string | Record<string,string | number>> {
+async function getClubEmailSendingLimit(club_account_id: string, emails: string[]): Promise<string | Record<string,string | number>> {
     const club = await getItem(
         process.env.CLUB_TABLE_NAME as string,
         {
@@ -91,7 +91,7 @@ export const handler = async (event: any) => {
             return createResponse(500, { message: get_sent_24_hour_message }, origin);
         }
 
-        const club_sending_limit = await get_club_email_sending_limit(body.club_account_id, body.emails);
+        const club_sending_limit = await getClubEmailSendingLimit(body.club_account_id, body.emails);
 
         if (typeof club_sending_limit === 'string') {
             return createResponse(400, { message: club_sending_limit }, origin);
@@ -106,7 +106,7 @@ export const handler = async (event: any) => {
                 club_account_id: body.club_account_id,
                 ...club_sending_limit
             },
-            "Bulk_Email"
+            "ChargeableEmails"
         );
 
         return createResponse(200, { message: "Emails successfully queued." }, origin);

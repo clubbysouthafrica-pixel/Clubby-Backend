@@ -1,9 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { 
-  MSC_MemberNestedStack, 
-  MSC_AdminNestedStack, 
-  MSC_TablesConstruct, 
+import {
+  MSC_MemberNestedStack,
+  MSC_AdminNestedStack,
+  MSC_TablesConstruct,
   MSC_Layers,
   MSC_InternalInfraStack,
   MSC_MailingStack
@@ -18,7 +18,7 @@ export class MSC_Stack extends cdk.Stack {
     const mail_queue = new MSC_Queue(this, `SendMail`, {
       queue_name: 'SendMail',
     });
-    const club_deregistraiton_queue = new MSC_Queue(this, `ClubDeregistration`, {
+    const club_deregistration_queue = new MSC_Queue(this, `ClubDeregistration`, {
       queue_name: 'ClubDeregistration',
       timeout: 900
     });
@@ -29,24 +29,26 @@ export class MSC_Stack extends cdk.Stack {
     const tables = new MSC_TablesConstruct(this, stack_id, {});
     const buckets = new MSC_BucketsConstruct(this, stack_id, {});
 
-    const layers = new MSC_Layers(this, stack_id, {});
+    const all_layers = new MSC_Layers(this, stack_id, {});
 
     new MSC_MailingStack(this, `MailerStack`, {
       env: props?.env,
       mail_queue: mail_queue,
       billing_table: tables.billing_table,
-      layers: layers,
+      layers: {
+        jwt_layer: all_layers.jwt_layer
+      },
     });
 
-    new MSC_AdminNestedStack(this, `AdminStack`, { 
+    new MSC_AdminNestedStack(this, `AdminStack`, {
       env: props?.env,
       signatures_bucket: buckets.signatures_bucket,
       member_user_pool: member_user_pool,
       admin_user_pool: admin_user_pool,
-      club_deregistraiton_queue: club_deregistraiton_queue,
+      club_deregistration_queue: club_deregistration_queue,
       transactions_table: tables.transactions_table,
       club_reporting_table: tables.club_reporting_table,
-      users_table: tables.users_table, 
+      users_table: tables.users_table,
       billing_table: tables.billing_table,
       club_table: tables.club_table,
       club_admin_table: tables.club_admin_table,
@@ -56,13 +58,19 @@ export class MSC_Stack extends cdk.Stack {
       image_bucket: buckets.image_bucket,
       club_history_bucket: buckets.club_history_bucket,
       mail_queue: mail_queue,
-      layers
+      layers: {
+        jwt_layer: all_layers.jwt_layer,
+        jwks_rsa_layer: all_layers.jwks_rsa_layer,
+        axios_layer: all_layers.axios_layer
+      }
     });
 
     new MSC_InternalInfraStack(this, `InternalInfra`, {
       env: props?.env,
       admin_pool: admin_user_pool,
-      layers: layers,
+      layers: {
+        jwt_layer: all_layers.jwt_layer,
+      },
       club_admin_table: tables.club_admin_table,
       users_table: tables.users_table,
       club_table: tables.club_table
@@ -75,12 +83,18 @@ export class MSC_Stack extends cdk.Stack {
       registrations_table: tables.registrations_table,
       club_reporting_table: tables.club_reporting_table,
       transactions_table: tables.transactions_table,
+      billing_table: tables.billing_table,
       users_table: tables.users_table,
       club_table: tables.club_table,
       club_member_table: tables.club_member_table,
       registration_form_table: tables.registration_form_table,
       image_bucket: buckets.image_bucket,
-      layers,
+      mail_queue: mail_queue,
+      layers: {
+        jwt_layer: all_layers.jwt_layer,
+        jwks_rsa_layer: all_layers.jwks_rsa_layer,
+        axios_layer: all_layers.axios_layer
+      }
     });
   }
 }

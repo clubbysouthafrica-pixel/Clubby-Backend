@@ -1,4 +1,4 @@
-import { createResponse, deconstructEvent, getItem, addItem, removeItem } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, addItem, removeItem, updateItem } from "./function_helpers";
 import { randomUUID } from 'crypto';
 
 export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
@@ -188,11 +188,18 @@ export const handler = async (event: any) => {
         if (body.deleteFields && body.deleteFields.length > 0) {
             for (const field_id of body.deleteFields) {
                 try {
-                    await removeItem(
+                    await updateItem(
                         process.env.REGISTRATION_FORM_TABLE_NAME as string,
                         {
                             club_account_id: body.club_account_id,
                             field_id: field_id
+                        },
+                        'SET #visible = :visible',
+                        {
+                            "#visible": "visible"
+                        },
+                        {
+                            ":visible": false
                         }
                     );
                 } catch (error: any) {

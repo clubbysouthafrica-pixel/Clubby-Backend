@@ -55,17 +55,22 @@ async function sendChunkedEmails(source: string, supportEmail: string, subject: 
         await Promise.all(batch.map(async (chunk) => {
             const footer = `\n\n---\nPlease do not reply to this email. For further support, contact us at ${supportEmail}`;
             const params = {
-                Source: source,
-                Destination: { ToAddresses: chunk },
+                Destination: {
+                    ToAddresses: chunk,
+                },
                 Message: {
-                    Subject: { Data: subject, Charset: "UTF-8" },
                     Body: {
-                        Text: {
-                            Data: source === supportEmail ? body : `${body}\n\n${footer}`,
-                            Charset: "UTF-8"
-                        }
-                    }
-                }
+                        Html: {
+                            Charset: "UTF-8",
+                            Data: `${body}\n\n${footer}`,
+                        },
+                    },
+                    Subject: {
+                        Charset: "UTF-8",
+                        Data: subject,
+                    },
+                },
+                Source: source,
             };
 
             try {
@@ -111,13 +116,11 @@ export const handler = async (event: any) => {
             } else if (emails_sent + totalEmails > free_email_limit) {
                 totalAmount = (emails_sent + totalEmails - free_email_limit) * email_fee
             }
-            // const paidEmails = Math.max(totalEmails - free_email_limit, 0);
-            // const totalAmount = paidEmails * email_fee;
-
-            await updateClubsEmailBilling(club_account_id, totalEmails, totalAmount);
 
             const chunkedEmails = chunkArray(emails, 45);
             await sendChunkedEmails(email_source, support_email, subject, email_body, chunkedEmails as string[][]);
+
+            await updateClubsEmailBilling(club_account_id, totalEmails, totalAmount);
         }
     } catch (error) {
         console.error("Error processing event:", error);

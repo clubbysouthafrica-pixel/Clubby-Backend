@@ -1,8 +1,7 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_LambdaLayer } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
-import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_MemberRegistrationFormConstructProps {
     api_gateway: MSC_APIGateway;
@@ -11,7 +10,9 @@ interface MSC_MemberRegistrationFormConstructProps {
     registrations_table: MSC_Table;
     signatures_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+    };
 }
 
 export class MSC_MemberRegistrationFormConstruct extends Construct {
@@ -65,7 +66,7 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
             authorizer: props.token_authorizer
         }
 
-        addCorsEnabledMethod(get_form_resource, get_form, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(get_form_resource, get_form, { methodResponses: [] }, undefined, "GET");
         addCorsEnabledMethod(get_member_registration_resource, get_member_registration, methodOptions, undefined, "GET");
     }
 }

@@ -1,15 +1,16 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_LambdaLayer } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
-import { AuthorizationType, LambdaIntegration, MethodOptions, MockIntegration, PassthroughBehavior, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
-import { MSC_Layers } from "../../lambda_layers";
+import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 
 interface MSC_MemberUserConstructProps {
     api_gateway: MSC_APIGateway;
     users_table: MSC_Table;
     club_member_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+    };
 }
 
 export class MSC_MemberUserConstruct extends Construct {

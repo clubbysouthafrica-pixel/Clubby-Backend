@@ -1,8 +1,7 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_Cognito } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_Cognito, MSC_Queue, MSC_LambdaLayer } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
-import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_ClubMemberClubConstructProps {
     users_table: MSC_Table;
@@ -16,7 +15,10 @@ interface MSC_ClubMemberClubConstructProps {
     club_reporting_table: MSC_Table;
     signatures_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
-    layers: MSC_Layers;
+    mail_queue: MSC_Queue;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+    };
     billing_table: MSC_Table;
 }
 
@@ -59,7 +61,9 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
+                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
+                SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl
             },
             permissions: {
                 [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
@@ -94,6 +98,12 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 ],
                 [props.club_reporting_table.tableArn]: [
                     "dynamodb:UpdateItem"
+                ],
+                [props.mail_queue.queueArn]: [
+                    "sqs:SendMessage"
+                ],
+                [props.billing_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
@@ -109,7 +119,8 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
+                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
+                SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
             },
             permissions: {
                 [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
@@ -126,7 +137,8 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                     "dynamodb:GetItem"
                 ],
                 [props.billing_table.tableArn]: [
-                    "dynamodb:UpdateItem"
+                    "dynamodb:UpdateItem",
+                    "dynamodb:GetItem"
                 ],
                 [props.transactions_table.tableArn]: [
                     "dynamodb:UpdateItem"
@@ -137,6 +149,9 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 ],
                 [props.club_reporting_table.tableArn]: [
                     "dynamodb:UpdateItem"
+                ],
+                [props.mail_queue.queueArn]: [
+                    "sqs:SendMessage"
                 ]
             },
             layers: [props.layers.jwt_layer]
@@ -156,6 +171,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
 
         addCorsEnabledMethod(get_all_club_members_resource, get_all_club_members, methodOptions, undefined, "GET");
         addCorsEnabledMethod(register_member_resource, register_member, methodOptions);
-        addCorsEnabledMethod(submit_registration_resource, submit_registration, methodOptions)
+        addCorsEnabledMethod(submit_registration_resource, submit_registration, { methodResponses: [] })
     }
 }

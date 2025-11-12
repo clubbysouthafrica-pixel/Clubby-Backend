@@ -1,15 +1,16 @@
 import { Construct } from "constructs";
-import { MSC_Cognito, MSC_Lambda, MSC_APIGateway } from "../../../msc_service_constructs";
+import { MSC_Cognito, MSC_Lambda, MSC_APIGateway, MSC_LambdaLayer } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { MethodOptions } from "aws-cdk-lib/aws-apigateway";
 import { MSC_Table } from "../../../msc_service_constructs";
-import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_MemberLoginConstructProps {
     api_gateway: MSC_APIGateway;
     users_table: MSC_Table;
     user_pool: MSC_Cognito;
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+    };
 }
 
 export class MSC_MemberLoginConstruct extends Construct {
@@ -60,7 +61,7 @@ export class MSC_MemberLoginConstruct extends Construct {
                 ]
             },
             layers: [props.layers.jwt_layer]
-        })
+        });
 
         const sign_in = new MSC_Lambda(this, `${id}-SignIn`, {
             code: "login/sign_in",

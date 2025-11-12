@@ -22,15 +22,6 @@ export const handler = async (event: any) => {
 
         const items = await Promise.all(clubs.map(async item => {
             delete item.user_id;
-            const cover_key = `club_cover/${item.club_account_id}_cover`;
-            const getCoverCommand = new GetObjectCommand({
-                Bucket: process.env.IMAGE_BUCKET_NAME,
-                Key: cover_key,
-            });
-            const get_cover_url = await getSignedUrl(s3_client, getCoverCommand, { expiresIn: 60 * 5 });
-
-            item.club_cover_url = get_cover_url
-            
             return item;
         }));
 

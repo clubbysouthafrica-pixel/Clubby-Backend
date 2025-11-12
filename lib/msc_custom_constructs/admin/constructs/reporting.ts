@@ -1,8 +1,7 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_LambdaLayer } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
-import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_ReportingConstructProps {
     api_gateway: MSC_APIGateway;
@@ -12,7 +11,9 @@ interface MSC_ReportingConstructProps {
     billing_table: MSC_Table;
     club_reporting_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+    };
 }
 
 export class MSC_ReportingConstruct extends Construct {
@@ -55,7 +56,7 @@ export class MSC_ReportingConstruct extends Construct {
         const mcs_billing = new MSC_Lambda(this, `${id}-McsBilling`, {
             code: "admin/reporting/mcs_billing",
             envVariables: {
-                MONTHLY_BILLING_TABLE_NAME : props.billing_table.tableName,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
             },

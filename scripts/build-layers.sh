@@ -2,7 +2,7 @@
 set -e
 
 LAYER_BASE="layer-code"
-LAYER_DIRS=("jwt_code" "jwks-rsa_code")
+LAYER_DIRS=("jwt_code" "jwks-rsa_code" "axios_code")
 
 for layer in "${LAYER_DIRS[@]}"; do
   echo "Setting up layer: $layer"

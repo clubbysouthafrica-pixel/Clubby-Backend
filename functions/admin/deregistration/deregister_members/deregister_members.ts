@@ -46,7 +46,7 @@ async function updateClubMemberTable(user_id: string, club_account_id: string) {
     );
 }
 
-async function updateRegistrationsTable(user_id: string, registration_id: string) {
+async function updateRegistrationsTable(user_id: string, registration_id: string, reason: string) {
     await updateItem(
         process.env.REGISTRATIONS_TABLE_NAME as string,
         {
@@ -55,15 +55,18 @@ async function updateRegistrationsTable(user_id: string, registration_id: string
         },
         `SET 
             #deregistered = :deregistered,
-            #deregistered_on = :deregistered_on
+            #deregistered_on = :deregistered_on,
+            #deregistration_reason = :deregistration_reason
         `,
         {
             "#deregistered": "deregistered",
-            "#deregistered_on": "deregistered_on"
+            "#deregistered_on": "deregistered_on",
+            "#deregistration_reason": "deregistration_reason"
         },
         {
             ":deregistered": true,
-            ":deregistered_on": Date.now()
+            ":deregistered_on": Date.now(),
+            ":deregistration_reason": reason
         }
     );
 }
@@ -99,9 +102,9 @@ export const handler = async (event: any) => {
             }
             club_members.push(member);
 
-            await updateClubMemberTable(member.user_id, body.club_account_id)
+            await updateClubMemberTable(member.user_id, body.club_account_id);
             await updateClubReportingTable(body.club_account_id)
-            await updateRegistrationsTable(member.user_id, member.current_reg_id)
+            await updateRegistrationsTable(member.user_id, member.current_reg_id, body?.deregistration_reason ?? "Deregistered by admin")
         }
 
         return createResponse(200, { message: "Successfully deregistered members" }, origin);

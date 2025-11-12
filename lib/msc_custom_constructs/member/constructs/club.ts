@@ -1,8 +1,7 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_LambdaLayer } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
-import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_MemberClubConstructProps {
     api_gateway: MSC_APIGateway;
@@ -13,7 +12,9 @@ interface MSC_MemberClubConstructProps {
     token_authorizer: TokenAuthorizer;
     image_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+    };
 }
 
 export class MSC_MemberClubConstruct extends Construct {
@@ -52,8 +53,7 @@ export class MSC_MemberClubConstruct extends Construct {
         const get_all_clubs = new MSC_Lambda(this, `${id}-GetAllClubs`, {
             code: "member/club/get_all_clubs",
             envVariables: {
-                CLUB_TABLE_NAME: props.club_table.tableName,
-                IMAGE_BUCKET_NAME: props.image_bucket.bucketName
+                CLUB_TABLE_NAME: props.club_table.tableName
             },
             permissions: {
                 [props.club_table.tableArn]: [
@@ -62,7 +62,6 @@ export class MSC_MemberClubConstruct extends Construct {
             },
             layers: [props.layers.jwt_layer]
         });
-        props.image_bucket.grantRead(get_all_clubs);
 
         const get_club_bank_details = new MSC_Lambda(this, `${id}-GetClubBankDetails`, {
             code: "member/club/get_club_bank_details",

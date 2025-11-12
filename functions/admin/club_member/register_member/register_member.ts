@@ -1,12 +1,47 @@
-import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import {
     createResponse,
     deconstructEvent,
     updateItem,
     getItem,
+    sendSqsMessage,
 } from "./function_helpers";
 
-const sesClient = new SESClient({ region: process.env.REGION });
+async function getClubEmailSendingLimit(club_account_id: string, emails: string[]): Promise<string | Record<string, string | number>> {
+    const club = await getItem(
+        process.env.CLUB_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id
+        }
+    );
+
+    if (!club) {
+        return "Club does not exist."
+    }
+
+    const now = new Date();
+    const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const monthly_bill = await getItem(
+        process.env.MONTHLY_BILLING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: year_month
+        }
+    )
+
+    const emails_sent = monthly_bill?.total_emails ?? 0;
+
+    if (emails_sent + emails.length > club.maximum_monthly_emails) {
+        return `Monthly email limit reached. Could not send registration email. Available emails: ${club?.maximum_monthly_emails - emails_sent}.`
+    }
+
+    return {
+        support_email: club.support_email,
+        email_source: club.club_from_email,
+        free_email_limit: club.free_email_limit,
+        email_fee: club.fee_per_email_to_club,
+        emails_sent: emails_sent
+    }
+}
 
 async function updateClubsRegistrationBilling(club_account_id: string, fee: number) {
     const now = new Date();
@@ -62,7 +97,8 @@ async function partialRegistrationUpdateTransactionsTable(
             ":lifecycleValue": {
                 type: "CONFIRMATION",
                 description: "Payment confirmation",
-                amount: payment_amount
+                amount: payment_amount,
+                payment_type: "EFT/Cash"
             }
         }
     );
@@ -204,7 +240,8 @@ async function updateTransactionsTable(
             ":lifecycleValue": {
                 type: "CONFIRMATION",
                 description: "Payment confirmation",
-                amount: payment_amount
+                amount: payment_amount,
+                payment_type: "EFT/Cash"
             }
         }
     );
@@ -228,48 +265,6 @@ async function updateClubMember(
             ":registered": true
         }
     );
-}
-
-export async function sendEmailToMember(
-    toAddress: string,
-    firstName: string,
-    surname: string,
-    clubName: string,
-    emailBody: string,
-    clubFromEmail: string,
-): Promise<void> {
-    const emailSubject = `Registration Submission for ${clubName}`;
-
-    let finalBody = emailBody
-        .replace(/{{member_name}}/g, `${firstName} ${surname}`)
-        .replace(/{{club_name}}/g, clubName);
-
-    const command = new SendEmailCommand({
-        Destination: {
-            ToAddresses: [toAddress],
-        },
-        Message: {
-            Body: {
-                Html: {
-                    Charset: "UTF-8",
-                    Data: finalBody,
-                },
-            },
-            Subject: {
-                Charset: "UTF-8",
-                Data: emailSubject,
-            },
-        },
-        Source: clubFromEmail,
-    });
-
-    try {
-        await sesClient.send(command);
-        console.log(`✅ Email sent to ${toAddress}`);
-    } catch (err) {
-        console.error("❌ Error sending email:", err);
-        throw err;
-    }
 }
 
 export const handler = async (event: any) => {
@@ -336,20 +331,35 @@ export const handler = async (event: any) => {
         const registered_on = Date.now()
 
         await updateClubsRegistrationBilling(body.club_account_id, club.member_registration_fee_to_club);
-        await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount)
+        if (body.payment_amount > 0) await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount)
         await updateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
         await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on)
         await updateClubMember(body.club_account_id, body.member_id)
 
         if (club?.use_success_email_template) {
-            await sendEmailToMember(
-                club_member.member_email,
-                club_member.member_first_name,
-                club_member.member_surname,
-                club.club_name,
-                club.registration_success_email_template_body,
-                club.club_from_email
-            )
+
+            const club_sending_limit = await getClubEmailSendingLimit(body.club_account_id, [club_member.member_email]);
+            if (typeof club_sending_limit === 'string') {
+                return createResponse(200, { message: club_sending_limit }, origin);
+            }
+
+
+            let finalBody = club.registration_success_email_template_body
+                .replace(/{{member_name}}/g, `${club_member.member_first_name} ${club_member.member_surname}`)
+                .replace(/{{club_name}}/g, club.club_name)
+                .replace(/{{club_email}}/g, club.support_email);
+
+            await sendSqsMessage(
+                process.env.SEND_EMAIL_QUEUE_URL as string,
+                {
+                    emails: [club_member.member_email],
+                    subject: `Registration Submission for ${club.club_name}`,
+                    email_body: finalBody,
+                    club_account_id: body.club_account_id,
+                    ...club_sending_limit
+                },
+                "ChargeableEmails"
+            );
         }
 
         return createResponse(200, { registered: true, message: "Member outstanding balance updated." }, origin);

@@ -135,16 +135,18 @@ async function handleRegistrations(club_account_id: string, cycle_name: string) 
                         user_id: registration.user_id,
                         registration_id: registration.registration_id
                     },
-                    "SET #deregistered = :deregistered, #last_season_registration = :last_season_registration, #deregistered_on = :deregistered_on",
+                    "SET #deregistered = :deregistered, #last_season_registration = :last_season_registration, #deregistered_on = :deregistered_on, #deregistration_reason = :deregistration_reason",
                     {
                         "#deregistered": "deregistered",
                         "#last_season_registration": "last_season_registration",
-                        "#deregistered_on": "deregistered_on"
+                        "#deregistered_on": "deregistered_on",
+                        "#deregistration_reason": "deregistration_reason"
                     },
                     {
                         ":deregistered": true,
                         ":last_season_registration": true,
-                        ":deregistered_on": Date.now()
+                        ":deregistered_on": Date.now(),
+                        ":deregistration_reason": "Season ended"
                     }
                 )
 

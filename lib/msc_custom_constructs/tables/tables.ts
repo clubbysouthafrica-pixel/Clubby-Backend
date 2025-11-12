@@ -7,7 +7,6 @@ interface MSC_TablesProps {
 }
 
 export class MSC_TablesConstruct extends Construct {
-    public readonly club_account_table: MSC_Table;
     public readonly users_table: MSC_Table;
     public readonly club_member_table: MSC_Table;
     public readonly club_admin_table: MSC_Table;

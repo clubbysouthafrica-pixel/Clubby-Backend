@@ -1,6 +1,6 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_Queue } from '../../msc_service_constructs';
+import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_Queue, MSC_LambdaLayer } from '../../msc_service_constructs';
 import {
     MSC_AdminLoginConstruct,
     MSC_AdminUserConstruct,
@@ -8,15 +8,14 @@ import {
     MSC_ClubAdminClubConstruct,
     MSC_AdminRegistrationFormConstruct,
     MSC_ClubMemberClubConstruct,
-    MSC_ImagesConstruct,
     MSC_MailerConstruct,
     MSC_ReportingConstruct,
     MSC_DeregistrationConstruct,
-    MSC_TransactionsConstruct
+    MSC_TransactionsConstruct,
+    MSC_PayFastConstruct
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
-import { MSC_Layers } from '../lambda_layers';
 import { MSC_MemberUserConstruct } from './constructs/member_user';
 
 export interface MSC_AdminNestedStackProps extends StackProps {
@@ -30,13 +29,17 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     member_user_pool: MSC_Cognito;
     registration_form_table: MSC_Table;
     club_reporting_table: MSC_Table;
-    club_deregistraiton_queue: MSC_Queue;
+    club_deregistration_queue: MSC_Queue;
     club_member_table: MSC_Table;
     image_bucket: MSC_Bucket;
     club_history_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
     mail_queue: MSC_Queue;
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+        jwks_rsa_layer: MSC_LambdaLayer;
+        axios_layer: MSC_LambdaLayer;
+    };
 }
 
 export class MSC_AdminNestedStack extends Stack {
@@ -62,6 +65,13 @@ export class MSC_AdminNestedStack extends Stack {
             layers: props.layers
         });
 
+        new MSC_PayFastConstruct(this, `${id}-PayFast`, {
+            api_gateway: api_gateway,
+            token_authorizer: jwt_construct.token_authorizer,
+            club_table: props.club_table,
+            layers: props.layers
+        });
+
         new MSC_TransactionsConstruct(this, `${id}-Transactions`, {
             api_gateway: api_gateway,
             layers: props.layers,
@@ -69,7 +79,7 @@ export class MSC_AdminNestedStack extends Stack {
             transactions_table: props.transactions_table
         })
 
-        new  MSC_ReportingConstruct(this, `${id}-Reporting`, {
+        new MSC_ReportingConstruct(this, `${id}-Reporting`, {
             api_gateway: api_gateway,
             club_table: props.club_table,
             billing_table: props.billing_table,
@@ -85,7 +95,7 @@ export class MSC_AdminNestedStack extends Stack {
             transactions_table: props.transactions_table,
             club_table: props.club_table,
             billing_table: props.billing_table,
-            club_deregistraiton_queue: props.club_deregistraiton_queue,
+            club_deregistration_queue: props.club_deregistration_queue,
             club_member_table: props.club_member_table,
             club_reporting_table: props.club_reporting_table,
             club_history_bucket: props.club_history_bucket,
@@ -104,14 +114,6 @@ export class MSC_AdminNestedStack extends Stack {
             mail_queue: props.mail_queue
         });
 
-        new MSC_ImagesConstruct(this, `${id}-Images`, {
-            api_gateway: api_gateway,
-            image_bucket: props.image_bucket,
-            club_table: props.club_table,
-            layers: props.layers,
-            token_authorizer: jwt_construct.token_authorizer
-        });
-
         new MSC_AdminUserConstruct(this, `${id}-User`, {
             api_gateway: api_gateway,
             users_table: props.users_table,
@@ -123,7 +125,8 @@ export class MSC_AdminNestedStack extends Stack {
             api_gateway: api_gateway,
             club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
-            layers: props.layers
+            layers: props.layers,
+            image_bucket: props.image_bucket
         });
 
         new MSC_ClubAdminClubConstruct(this, `${id}-ClubAdmin`, {
@@ -167,7 +170,8 @@ export class MSC_AdminNestedStack extends Stack {
             registration_form_table: props.registration_form_table,
             billing_table: props.billing_table,
             registrations_table: props.registrations_table,
-            layers: props.layers
+            layers: props.layers,
+            mail_queue: props.mail_queue
         });
     }
 }

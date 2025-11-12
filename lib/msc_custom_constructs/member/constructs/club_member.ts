@@ -1,8 +1,7 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_Queue } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_Queue, MSC_LambdaLayer } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
-import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_ClubMemberConstructProps {
     api_gateway: MSC_APIGateway;
@@ -13,10 +12,13 @@ interface MSC_ClubMemberConstructProps {
     transactions_table: MSC_Table;
     club_table: MSC_Table,
     users_table: MSC_Table;
-    image_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
     registrations_table: MSC_Table;
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+    };
+    mail_queue: MSC_Queue;
+    billing_table: MSC_Table;
 }
 
 export class MSC_ClubMemberConstruct extends Construct {
@@ -34,7 +36,9 @@ export class MSC_ClubMemberConstruct extends Construct {
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
+                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
+                SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
             },
             permissions: {
                 [props.registration_form_table.tableArn]: [
@@ -63,6 +67,12 @@ export class MSC_ClubMemberConstruct extends Construct {
                 ],
                 [props.club_reporting_table.tableArn]: [
                     "dynamodb:UpdateItem"
+                ],
+                [props.mail_queue.queueArn]: [
+                    "sqs:SendMessage"
+                ],
+                [props.billing_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
@@ -85,8 +95,7 @@ export class MSC_ClubMemberConstruct extends Construct {
         const get_all_member_clubs = new MSC_Lambda(this, `${id}-GetAllMemberClubs`, {
             code: "member/club_member/get_all_member_clubs",
             envVariables: {
-                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                IMAGE_BUCKET_NAME: props.image_bucket.bucketName
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
@@ -95,7 +104,6 @@ export class MSC_ClubMemberConstruct extends Construct {
             },
             layers: [props.layers.jwt_layer]
         });
-        props.image_bucket.grantRead(get_all_member_clubs);
 
         const club_resource = props.api_gateway.root.addResource("clubMember");
 

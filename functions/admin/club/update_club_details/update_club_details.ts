@@ -10,19 +10,24 @@ function validateBody(body: Record<string, string>): string | null {
 
     if (body?.bank_details) {
         if (typeof body.bank_details !== 'object') {
-            return "Invalid body. Required attribute types: bank_details (object)."
+            return "Please fill in bank details first."
         }
 
         const bank_details: Record<string, string> = body.bank_details;
 
         if (bank_details.bank == null || bank_details.account_number == null || bank_details.branch_code == null || bank_details.account_type == null) {
-            return "Invalid body. Required bank_details attribute types: bank, account_number, branch_code, account_type."
+            return "Please fill in bank details first. All bank details must be provided."
         }
 
         if (typeof bank_details.bank !== "string" || typeof bank_details.account_number !== "string" || typeof bank_details.branch_code !== "string" || typeof bank_details.account_type !== "string") {
-            return "Invalid body. Required bank_details attribute types: bank (string), account_number (string), branch_code (string), account_type (string)."
+            return "Please fill in bank details first. All bank details must be provided."
+        }
+
+        if (bank_details.bank.trim() === "" || bank_details.account_number.trim() === "" || bank_details.branch_code.trim() === "" || bank_details.account_type.trim() === "") {
+            return "Please fill in bank details first. All bank details must be provided."
         }
     }
+
     return null
 }
 
@@ -93,16 +98,28 @@ export const handler = async (event: any) => {
             expressionAttributeValues[":registration_success_email_template_body"] = body.registration_success_email_template_body;
         }
 
-        if (body?.use_success_email_template && typeof body.use_success_email_template === "boolean") {
+        if (typeof body?.use_success_email_template === "boolean") {
             updateParts.push("#use_success_email_template = :use_success_email_template");
             expressionAttributeNames["#use_success_email_template"] = "use_success_email_template";
             expressionAttributeValues[":use_success_email_template"] = body.use_success_email_template;
         }
 
-        if (body?.use_submission_email_template && typeof body.use_submission_email_template === "boolean") {
+        if (body?.club_url && typeof body.club_url === "string") {
+            updateParts.push("#club_url = :club_url");
+            expressionAttributeNames["#club_url"] = "club_url";
+            expressionAttributeValues[":club_url"] = body.club_url;
+        }
+
+        if (typeof body?.use_submission_email_template === "boolean") {
             updateParts.push("#use_submission_email_template = :use_submission_email_template");
             expressionAttributeNames["#use_submission_email_template"] = "use_submission_email_template";
             expressionAttributeValues[":use_submission_email_template"] = body.use_submission_email_template;
+        }
+
+        if (typeof body.hide_from_public === "boolean") {
+            updateParts.push("#hide_from_public = :hide_from_public");
+            expressionAttributeNames["#hide_from_public"] = "hide_from_public";
+            expressionAttributeValues[":hide_from_public"] = body.hide_from_public;
         }
 
         if (updateParts.length === 0) {

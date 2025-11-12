@@ -1,0 +1,195 @@
+import { getItem, queryItems, updateItem } from "./function_helpers";
+import { validatePayFastPayment } from "./payfast_validation";
+import {
+    CognitoIdentityProviderClient,
+    AdminGetUserCommand,
+} from "@aws-sdk/client-cognito-identity-provider";
+
+const client = new CognitoIdentityProviderClient({ region: process.env.REGION });
+
+export async function getUserSubByUsername(username: string): Promise<string | null> {
+    try {
+        const res = await client.send(
+            new AdminGetUserCommand({
+                UserPoolId: process.env.USER_POOL_ID,
+                Username: username,
+            })
+        );
+
+        const sub = res.UserAttributes?.find((a) => a.Name === "sub")?.Value ?? null;
+        return sub;
+    } catch (err: any) {
+        if (err.name === "UserNotFoundException") return null;
+        console.error("AdminGetUser error:", err);
+        return null
+    }
+}
+
+async function updateTransactionsTable(
+    club_account_id: string,
+    current_reg_transaction_id: string,
+    payment_amount: number
+) {
+    await updateItem(
+        process.env.TRANSACTIONS_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            transaction_id: current_reg_transaction_id
+        },
+        `SET #amount_paid = #amount_paid + :payment_amount, #status = :status, #lifecycle.#ts = :lifecycleValue`,
+        {
+            "#amount_paid": "amount_paid",
+            "#status": "status",
+            "#lifecycle": "lifecycle",
+            "#ts": `${Date.now()}`
+        },
+        {
+            ":status": "PAID",
+            ":payment_amount": payment_amount,
+            ":lifecycleValue": {
+                type: "CONFIRMATION",
+                description: "Payment confirmation",
+                amount: payment_amount,
+                payment_type: "Online/Card"
+            }
+        }
+    );
+}
+
+async function updateClubReportingTable(
+    club_account_id: string,
+    year: number,
+    month: string,
+    payment_amount: number
+) {
+    await updateItem(
+        process.env.CLUB_REPORTING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: `${year}/${month}`
+        },
+        `SET 
+            #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
+            #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount,
+            #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount,
+            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount
+        `,
+        {
+            "#total_registration_pending_revenue": "total_registration_pending_revenue",
+            "#total_registration_revenue": "total_registration_revenue",
+            "#total_revenue": "total_revenue",
+            "#total_pending_revenue": "total_pending_revenue"
+        },
+        {
+            ":zero": 0,
+            ":payment_amount": payment_amount,
+        }
+    )
+}
+
+async function updateRegistrationsTable(
+    member_id: string,
+    current_reg_id: string,
+    payment_amount: number
+) {
+    await updateItem(
+        process.env.REGISTRATIONS_TABLE_NAME as string,
+        {
+            user_id: member_id,
+            registration_id: current_reg_id
+        },
+        "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount",
+        {
+            "#total_outstanding_amount": "total_outstanding_amount"
+        },
+        {
+            ":payment_amount": payment_amount
+        }
+    );
+}
+
+export const handler = async (event: any) => {
+    const passPhrase = process.env.PAYFAST_PASSPHRASE;
+
+    const bodyString = event.body || "";
+    const params = new URLSearchParams(bodyString);
+
+    const email = params.get("email_address") ?? "";
+    const user_id = await getUserSubByUsername(email)
+
+    if (!user_id) {
+        return { statusCode: 400, body: "Invalid payment" };
+    }
+
+    const clubs = await queryItems(
+        process.env.CLUB_TABLE_NAME as string,
+        "club_name = :club_name",
+        { ":club_name": params.get("item_description") ?? "" },
+        process.env.CLUB_NAME_INDEX as string
+    );
+    if (clubs?.length !== 1) {
+        return { statusCode: 400, body: "Invalid payment" };
+    }
+
+    const club_member = await getItem(
+        process.env.CLUB_MEMBER_TABLE_NAME as string,
+        {
+            club_account_id: clubs[0].club_account_id,
+            user_id: user_id
+        }
+    );
+    if (club_member == null) {
+        return { statusCode: 400, body: "Invalid payment" };
+    }
+
+    const registration = await getItem(process.env.REGISTRATIONS_TABLE_NAME as string, {
+        user_id: user_id as string,
+        registration_id: club_member.current_reg_id
+    });
+    if (registration == null) {
+        return { statusCode: 400, body: "Invalid payment" };
+    }
+
+    const amount_paid = registration.total_outstanding_amount;
+
+    const isValid = await validatePayFastPayment(
+        {
+            headers: event.headers,
+            body: Object.fromEntries(new URLSearchParams(event.body)),
+            connection: { remoteAddress: event.requestContext?.identity?.sourceIp },
+        },
+        amount_paid / 100,
+        passPhrase
+    );
+
+    if (isValid) {
+        console.log("✅ Payment verified successfully");
+
+        await updateTransactionsTable(
+            clubs[0].club_account_id,
+            club_member.current_reg_transaction_id,
+            amount_paid
+        );
+
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        await updateClubReportingTable(
+            clubs[0].club_account_id,
+            year,
+            month,
+            amount_paid
+        )
+
+        await updateRegistrationsTable(
+            user_id,
+            club_member.current_reg_id,
+            amount_paid
+        )
+
+        return { statusCode: 200, body: "OK" };
+    } else {
+        console.error("❌ Payment verification failed");
+        return { statusCode: 400, body: "Invalid payment" };
+    }
+};

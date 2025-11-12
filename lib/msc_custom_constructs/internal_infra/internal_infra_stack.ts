@@ -1,20 +1,21 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MSC_APIGateway, MSC_Cognito, MSC_Queue } from '../../msc_service_constructs';
+import { MSC_APIGateway, MSC_Cognito, MSC_LambdaLayer } from '../../msc_service_constructs';
 import {
     MSC_InternalInfraClubConstruct,
     MSC_InternalInfraClubAdminConstruct,
     MSC_InternalInfraUserConstruct
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs";
-import { MSC_Layers } from '../lambda_layers';
 
 export interface MSC_InternalInfraStackProps extends StackProps {
     club_table: MSC_Table;
     users_table: MSC_Table;
     club_admin_table: MSC_Table;
     admin_pool: MSC_Cognito;
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+    };
 }
 
 export class MSC_InternalInfraStack extends Stack {

@@ -1,8 +1,7 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_LambdaLayer } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
-import { MSC_Layers } from "../../lambda_layers";
 
 interface MSC_AdminRegistrationFormConstructProps {
     api_gateway: MSC_APIGateway;
@@ -13,7 +12,9 @@ interface MSC_AdminRegistrationFormConstructProps {
     club_admin_table: MSC_Table;
     signatures_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
-    layers: MSC_Layers;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+    };
 }
 
 export class MSC_AdminRegistrationFormConstruct extends Construct {
@@ -30,7 +31,7 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
             permissions: {
                 [props.registration_form_table.tableArn]: [
                     "dynamodb:PutItem",
-                    "dynamodb:DeleteItem"
+                    "dynamodb:UpdateItem"
                 ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"

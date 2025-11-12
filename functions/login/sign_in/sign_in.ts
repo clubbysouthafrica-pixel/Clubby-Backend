@@ -1,6 +1,7 @@
 import {
   CognitoIdentityProviderClient,
-  InitiateAuthCommand
+  InitiateAuthCommand,
+  ResendConfirmationCodeCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 import jwt from 'jsonwebtoken';
 import { createResponse, deconstructEvent, getItem } from "./function_helpers";
@@ -70,6 +71,18 @@ export const handler = async (event: any) => {
 
   } catch (error: any) {
     console.error('Sign-in error: ', error);
+    if (error?.name === 'UserNotConfirmedException') {
+      try {
+        const resend = new ResendConfirmationCodeCommand({
+          ClientId: process.env.USER_POOL_CLIENT_ID,
+          Username: body.username,
+        });
+        await cognitoClient.send(resend);
+      } catch (resendErr: any) {
+        console.error('Resend verification error: ', resendErr);
+      }
+    }
+
     const message = error?.message || "Internal Server Error";
     const statusCode = error?.$metadata?.httpStatusCode || 500;
     return createResponse(statusCode, { message }, origin);
