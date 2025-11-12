@@ -18,13 +18,15 @@ export const handler = async (event: any) => {
             return createResponse(200, {}, origin);
         }
 
+        const hasBankDetails = item?.bank && item?.account_number && item?.branch_code && item?.account_type;
+
         return createResponse(200, {
-            bank_details: {
-                bank: item?.bank,
-                account_number: item?.account_number,
-                branch_code: item?.branch_code,
-                account_type: item?.account_type
-            },
+            bank_details: hasBankDetails ? {
+                bank: item.bank,
+                account_number: item.account_number,
+                branch_code: item.branch_code,
+                account_type: item.account_type
+            } : undefined,
             country_of_operation: item?.country_of_operation,
             currency: item?.currency,
             support_email: item?.support_email,
