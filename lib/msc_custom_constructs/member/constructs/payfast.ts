@@ -78,7 +78,8 @@ export class MSC_PayfastConstruct extends Construct {
                     "dynamodb:UpdateItem"
                 ],
                 [props.club_member_table.tableArn]: [
-                    "dynamodb:GetItem"
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem"
                 ],
                 [props.club_reporting_table.tableArn]: [
                     "dynamodb:UpdateItem"

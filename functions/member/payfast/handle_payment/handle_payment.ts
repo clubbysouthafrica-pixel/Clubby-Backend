@@ -98,12 +98,34 @@ async function updateRegistrationsTable(
             user_id: member_id,
             registration_id: current_reg_id
         },
-        "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount",
+        "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #registered_on = :registered_on",
         {
-            "#total_outstanding_amount": "total_outstanding_amount"
+            "#total_outstanding_amount": "total_outstanding_amount",
+            "#registered_on": "registered_on"
         },
         {
-            ":payment_amount": payment_amount
+            ":payment_amount": payment_amount,
+            ":registered_on": Date.now()
+        }
+    );
+}
+
+async function updateClubMembersTable(
+    club_account_id: string,
+    member_id: string
+) {
+    await updateItem(
+        process.env.CLUB_MEMBER_TABLE_NAME as string,
+        {
+            user_id: member_id,
+            club_account_id: club_account_id,
+        },
+        "SET #reg = :registered",
+        {
+            "#reg": "registered"
+        },
+        {
+            ":registered": true
         }
     );
 }
@@ -179,13 +201,18 @@ export const handler = async (event: any) => {
             year,
             month,
             amount_paid
-        )
+        );
 
         await updateRegistrationsTable(
             user_id,
             club_member.current_reg_id,
             amount_paid
-        )
+        );
+
+        await updateClubMembersTable(
+            clubs[0].club_account_id,
+            user_id
+        );
 
         return { statusCode: 200, body: "OK" };
     } else {
