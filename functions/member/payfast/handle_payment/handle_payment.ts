@@ -72,16 +72,21 @@ async function updateClubReportingTable(
             #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
             #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount,
             #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount,
-            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount
+            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount,
+            #total_registered_members = if_not_exists(#total_registered_members, :zero) + :one,
+            #total_pending_members = if_not_exists(#total_pending_members, :zero) - :one,
         `,
         {
             "#total_registration_pending_revenue": "total_registration_pending_revenue",
             "#total_registration_revenue": "total_registration_revenue",
             "#total_revenue": "total_revenue",
-            "#total_pending_revenue": "total_pending_revenue"
+            "#total_pending_revenue": "total_pending_revenue",
+            "#total_registered_members": "total_registered_members",
+            "#total_pending_members": "total_pending_members",
         },
         {
             ":zero": 0,
+            ":one": 1,
             ":payment_amount": payment_amount,
         }
     )
