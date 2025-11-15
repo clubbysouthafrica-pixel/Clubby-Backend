@@ -25,6 +25,36 @@ export async function getUserSubByUsername(username: string): Promise<string | n
     }
 }
 
+async function updateClubsRegistrationBilling(club_account_id: string, fee: number) {
+    const now = new Date();
+    const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    await updateItem(
+        process.env.MONTHLY_BILLING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: year_month,
+        },
+        `SET 
+            #total_registered_users = if_not_exists(#total_registered_users, :zero) + :one,
+            #total_amount = if_not_exists(#total_amount, :zero) + :member_registration_fee,
+            #outstanding_amount = if_not_exists(#outstanding_amount, :zero) + :member_registration_fee,
+            #registration_amount = if_not_exists(#registration_amount, :zero) + :member_registration_fee
+        `,
+        {
+            "#total_registered_users": "total_registered_users",
+            "#total_amount": "total_amount",
+            "#outstanding_amount": "outstanding_amount",
+            "#registration_amount": "registration_amount"
+        },
+        {
+            ":one": 1,
+            ":zero": 0,
+            ":member_registration_fee": fee,
+        }
+    );
+}
+
 async function updateTransactionsTable(
     club_account_id: string,
     current_reg_transaction_id: string,
@@ -72,16 +102,21 @@ async function updateClubReportingTable(
             #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
             #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount,
             #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount,
-            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount
+            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount,
+            #total_registered_members = if_not_exists(#total_registered_members, :zero) + :one,
+            #total_pending_members = if_not_exists(#total_pending_members, :zero) - :one
         `,
         {
             "#total_registration_pending_revenue": "total_registration_pending_revenue",
             "#total_registration_revenue": "total_registration_revenue",
             "#total_revenue": "total_revenue",
-            "#total_pending_revenue": "total_pending_revenue"
+            "#total_pending_revenue": "total_pending_revenue",
+            "#total_registered_members": "total_registered_members",
+            "#total_pending_members": "total_pending_members",
         },
         {
             ":zero": 0,
+            ":one": 1,
             ":payment_amount": payment_amount,
         }
     )
@@ -98,12 +133,34 @@ async function updateRegistrationsTable(
             user_id: member_id,
             registration_id: current_reg_id
         },
-        "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount",
+        "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #registered_on = :registered_on",
         {
-            "#total_outstanding_amount": "total_outstanding_amount"
+            "#total_outstanding_amount": "total_outstanding_amount",
+            "#registered_on": "registered_on"
         },
         {
-            ":payment_amount": payment_amount
+            ":payment_amount": payment_amount,
+            ":registered_on": Date.now()
+        }
+    );
+}
+
+async function updateClubMembersTable(
+    club_account_id: string,
+    member_id: string
+) {
+    await updateItem(
+        process.env.CLUB_MEMBER_TABLE_NAME as string,
+        {
+            user_id: member_id,
+            club_account_id: club_account_id,
+        },
+        "SET #reg = :registered",
+        {
+            "#reg": "registered"
+        },
+        {
+            ":registered": true
         }
     );
 }
@@ -179,12 +236,22 @@ export const handler = async (event: any) => {
             year,
             month,
             amount_paid
-        )
+        );
 
         await updateRegistrationsTable(
             user_id,
             club_member.current_reg_id,
             amount_paid
+        );
+
+        await updateClubMembersTable(
+            clubs[0].club_account_id,
+            user_id
+        );
+
+        await updateClubsRegistrationBilling(
+            clubs[0].club_account_id,
+            clubs[0].member_registration_fee_to_club
         )
 
         return { statusCode: 200, body: "OK" };

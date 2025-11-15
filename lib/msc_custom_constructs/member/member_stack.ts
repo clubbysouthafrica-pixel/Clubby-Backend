@@ -65,7 +65,8 @@ export class MSC_MemberNestedStack extends Stack {
             users_table: props.users_table,
             club_table: props.club_table,
             club_reporting_table: props.club_reporting_table,
-            transactions_table: props.transactions_table
+            transactions_table: props.transactions_table,
+            billing_table: props.billing_table,
         });
 
         new MSC_TransactionsConstruct(this, `${id}-Transactions`, {
