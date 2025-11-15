@@ -25,6 +25,36 @@ export async function getUserSubByUsername(username: string): Promise<string | n
     }
 }
 
+async function updateClubsRegistrationBilling(club_account_id: string, fee: number) {
+    const now = new Date();
+    const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    await updateItem(
+        process.env.MONTHLY_BILLING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: year_month,
+        },
+        `SET 
+            #total_registered_users = if_not_exists(#total_registered_users, :zero) + :one,
+            #total_amount = if_not_exists(#total_amount, :zero) + :member_registration_fee,
+            #outstanding_amount = if_not_exists(#outstanding_amount, :zero) + :member_registration_fee,
+            #registration_amount = if_not_exists(#registration_amount, :zero) + :member_registration_fee
+        `,
+        {
+            "#total_registered_users": "total_registered_users",
+            "#total_amount": "total_amount",
+            "#outstanding_amount": "outstanding_amount",
+            "#registration_amount": "registration_amount"
+        },
+        {
+            ":one": 1,
+            ":zero": 0,
+            ":member_registration_fee": fee,
+        }
+    );
+}
+
 async function updateTransactionsTable(
     club_account_id: string,
     current_reg_transaction_id: string,
@@ -74,7 +104,7 @@ async function updateClubReportingTable(
             #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount,
             #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount,
             #total_registered_members = if_not_exists(#total_registered_members, :zero) + :one,
-            #total_pending_members = if_not_exists(#total_pending_members, :zero) - :one,
+            #total_pending_members = if_not_exists(#total_pending_members, :zero) - :one
         `,
         {
             "#total_registration_pending_revenue": "total_registration_pending_revenue",
@@ -218,6 +248,11 @@ export const handler = async (event: any) => {
             clubs[0].club_account_id,
             user_id
         );
+
+        await updateClubsRegistrationBilling(
+            clubs[0].club_account_id,
+            clubs[0].member_registration_fee_to_club
+        )
 
         return { statusCode: 200, body: "OK" };
     } else {
