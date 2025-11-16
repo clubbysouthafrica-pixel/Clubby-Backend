@@ -468,7 +468,7 @@ export const handler = async (event: any) => {
                 return createResponse(200, { message: "Registration form successfully submitted. A registration email is supposed to be sent however the club has reached its monthly limit." }, origin);
             } else {
 
-                let finalBody = club.registration_success_email_template_body
+                let finalBody = club.registration_submission_email_template_body
                     .replace(/{{member_name}}/g, `${user.first_name} ${user.surname}`)
                     .replace(/{{club_name}}/g, club.club_name)
                     .replace(/{{club_email}}/g, club.support_email);
