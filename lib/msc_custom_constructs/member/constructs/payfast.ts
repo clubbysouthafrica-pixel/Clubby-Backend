@@ -74,8 +74,8 @@ export class MSC_PayfastConstruct extends Construct {
                 [props.user_pool.userPoolArn]: [
                     "cognito-idp:AdminGetUser"
                 ],
-                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
-                    "ses:SendEmail"
+                [props.mail_queue.queueArn]: [
+                    "sqs:SendMessage"
                 ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
