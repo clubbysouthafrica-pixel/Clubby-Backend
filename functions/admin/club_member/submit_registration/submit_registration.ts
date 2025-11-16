@@ -11,31 +11,14 @@ import {
     updateItem,
     sendSqsMessage,
     removeItem,
-    validateBillingField
+    validateBillingField,
+    validateStandardFields,
+    StandardField,
+    BillingField
 } from "./function_helpers";
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
-
-interface StandardField {
-    field_type: "STANDARD";
-    field_id: string;
-    field_name: string;
-    required: boolean;
-    input_type: InputTypes;
-    options?: string[];
-}
-
-interface BillingField {
-    field_type: "BILLING";
-    field_id: string;
-    field_name: string;
-    currency: CurrencyType;
-    required: boolean;
-    input_type: InputTypes;
-    billingOptions: Record<string, any>[];
-    amount?: number;
-}
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 const sesClient = new SESClient({ region: process.env.REGION });
@@ -114,31 +97,6 @@ function validateRequestBody(body: any) {
         if (typeof field !== 'object') return 'All standard_field indexes must be objects.';
         if (!field.field_id || field.value === undefined || field.value == null || typeof field.field_id !== 'string') {
             return 'All standard_fields must have STRING keys: field_id and value.';
-        }
-    }
-
-    return null;
-}
-
-function validateStandardFields(standardFields: StandardField[], submittedFields: { name: string; value: string; field_id: string }[]): string | null {
-    const requiredFields = standardFields.filter(f => f.required);
-    const field_ids = submittedFields.map(f => f.field_id);
-    const allValid = requiredFields.every(req => {
-        if (!field_ids.includes(req.field_id)) {
-            return false;
-        }
-        return true;
-    });
-
-    if (!allValid) {
-        const missingField = requiredFields.find(req => !field_ids.includes(req.field_id));
-        return `The following required field is missing. Field ID: ${missingField?.field_id}.`;
-    }
-
-    const known_field_ids = standardFields.map(f => f.field_id);
-    for (const field of submittedFields) {
-        if (!known_field_ids.includes(field.field_id)) {
-            return `The following provided field does not exist in this club's registration form. Field ID: ${field.field_id}.`;
         }
     }
 
