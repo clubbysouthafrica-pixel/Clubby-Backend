@@ -11,3 +11,4 @@ export {
     BillingField, 
     StandardField
 } from "./submit_registration";
+export { getClubEmailSendingLimit } from "./club_email_sending_limit";

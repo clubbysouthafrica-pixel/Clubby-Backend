@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_LambdaLayer, MSC_Table, MSC_Cognito } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_LambdaLayer, MSC_Table, MSC_Cognito, MSC_Queue } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { Stack } from "aws-cdk-lib";
@@ -19,6 +19,7 @@ interface MSC_PayfastConstructProps {
         axios_layer: MSC_LambdaLayer;
     };
     billing_table: MSC_Table;
+    mail_queue: MSC_Queue;
 }
 
 export class MSC_PayfastConstruct extends Construct {
@@ -67,10 +68,14 @@ export class MSC_PayfastConstruct extends Construct {
                 CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
+                SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
             },
             permissions: {
                 [props.user_pool.userPoolArn]: [
                     "cognito-idp:AdminGetUser"
+                ],
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                    "ses:SendEmail"
                 ],
                 [`${props.club_table.tableArn}/index/ClubNameIndex`]: [
                     "dynamodb:Query"
