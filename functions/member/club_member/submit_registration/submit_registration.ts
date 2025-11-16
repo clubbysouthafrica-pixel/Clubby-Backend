@@ -232,30 +232,52 @@ export async function sendEmailToAdmin(
     const emailSubject = `New Member Registration for ${clubName}`;
     const emailBody = `
     <html>
-      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-        <p>Hi Admin,</p>
-  
-        <p>
-          A new member, <strong>${firstName} ${surname}</strong>, has submitted a registration form for your club, <strong>${clubName}</strong>.
-        </p>
-  
-        <p>
-          To review and complete their registration, please visit the <em>Members Pending</em> section using the link below:
-        </p>
-  
-        <p>
-          <a href="https://${process.env.DOMAIN as string}/manage/members" style="color: #004aad; text-decoration: none;">
-            View Members Pending
-          </a>
-        </p>
-  
-        <p>
-          Kind regards,<br/>
-          <strong>The Clubby Team</strong>
-        </p>
+      <body style="margin:0;padding:0;background:#f7f7f9;font-family: Arial, Helvetica, sans-serif;color:#1f2937;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f7f9;padding:24px 0;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                <tr>
+                  <td style="padding:24px 24px 0 24px;">
+                    <h1 style="margin:0 0 12px 0;font-size:20px;line-height:28px;color:#111827;">New Member Registration</h1>
+                    <p style="margin:0 0 16px 0;line-height:1.6;">A new member, <strong>${firstName} ${surname}</strong>, has submitted a registration form for your club, <strong>${clubName}</strong>.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 0 24px;">
+                    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin-bottom:16px;">
+                      <p style="margin:0 0 8px 0;font-weight:bold;color:#111827;">Member Details</p>
+                      <p style="margin:0;line-height:1.6;"><strong>Name:</strong> ${firstName} ${surname}<br/>
+                      <strong>Club:</strong> ${clubName}</p>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 0 24px;">
+                    <p style="margin:0 0 16px 0;line-height:1.6;">To review and complete their registration, please visit the Members Pending section.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;">
+                    <a href="https://${process.env.DOMAIN as string}/manage/members" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;padding:10px 16px;font-weight:600;">View Members Pending</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;">
+                    <p style="margin:0;line-height:1.6;color:#374151;">Need help? Email us at <a href="mailto:admin@${process.env.DOMAIN as string}" style="color:#2563eb;text-decoration:none;">admin@${process.env.DOMAIN as string}</a>.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;border-top:1px solid #e5e7eb;">
+                    <p style="margin:12px 0 0 0;line-height:1.6;color:#6b7280;">Kind regards,<br/>The Clubby Team</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
-    </html>
-  `;
+    </html>`;
 
     const command = new SendEmailCommand({
         Destination: {

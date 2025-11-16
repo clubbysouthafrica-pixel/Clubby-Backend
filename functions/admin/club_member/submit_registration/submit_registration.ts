@@ -270,31 +270,59 @@ export async function sendAccountCreatedEmail(
     const emailSubject = "Your Clubby Account Has Been Created";
     const emailBody = `
     <html>
-    <body style="font-family: Arial, sans-serif; color: #333;">
-      <p>Hi ${firstName},</p>
-      <p>
-        A registration for <strong>${clubName}</strong> has been submitted on your behalf. As a result, an account has been created for you on <strong>Clubby</strong>, giving you access to your affiliated club.
-      </p>
-      <p>Here are your login details:</p>
-      <ul>
-        <li><strong>Email:</strong> ${toAddress}</li>
-        <li><strong>Temporary Password:</strong> ${tempPassword}</li>
-      </ul>
-      <p>
-        When you first log in, you'll be prompted to set a new password.
-      </p>
-      <p>
-        You can log in using the following link:<br/>
-        <a href="https://${process.env.DOMAIN as string}/login">Log in to Clubby</a>
-      </p>
-      <p>
-        To successfully register with ${clubName}, please complete the membership payment (This can be found in your member account under Payments & Billing).<br/>
-      </p>
-      <p>Welcome to Clubby!<br/>— The Clubby Team</p>
-    </body>
-  </html>
-  
-    `;
+      <body style="margin:0;padding:0;background:#f7f7f9;font-family: Arial, Helvetica, sans-serif;color:#1f2937;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f7f9;padding:24px 0;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                <tr>
+                  <td style="padding:24px 24px 0 24px;">
+                    <h1 style="margin:0 0 12px 0;font-size:20px;line-height:28px;color:#111827;">Welcome to Clubby, ${firstName}!</h1>
+                    <p style="margin:0 0 16px 0;line-height:1.6;">A registration for <strong>${clubName}</strong> has been submitted on your behalf. As a result, an account has been created for you on Clubby, giving you access to your affiliated club.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 0 24px;">
+                    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin-bottom:16px;">
+                      <p style="margin:0 0 8px 0;font-weight:bold;color:#111827;">Your sign-in details</p>
+                      <p style="margin:0;line-height:1.6;"><strong>Email:</strong> ${toAddress}<br/>
+                      <strong>Temporary password:</strong> ${tempPassword}</p>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 0 24px;">
+                    <p style="margin:0 0 12px 0;line-height:1.6;">First-time sign-in steps:</p>
+                    <ol style="margin:0 0 16px 20px;padding:0;line-height:1.8;">
+                      <li>Open the member portal using the button below.</li>
+                      <li>Sign in with your email and temporary password.</li>
+                      <li>Follow the prompt to set a new secure password.</li>
+                    </ol>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;">
+                    <a href="https://${process.env.DOMAIN as string}/login" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;padding:10px 16px;font-weight:600;">Go to Member Login</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;">
+                    <p style="margin:0 0 8px 0;line-height:1.6;color:#374151;">To successfully register with ${clubName}, please complete the membership payment. You can find this in your member account under Payments & Billing.</p>
+                    <p style="margin:0 0 8px 0;line-height:1.6;color:#374151;">Security tip: For your protection, please change your password after your first login and keep your credentials confidential.</p>
+                    <p style="margin:0;line-height:1.6;color:#374151;">Need help? Email us at <a href="mailto:admin@${process.env.DOMAIN as string}" style="color:#2563eb;text-decoration:none;">admin@${process.env.DOMAIN as string}</a>.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;border-top:1px solid #e5e7eb;">
+                    <p style="margin:12px 0 0 0;line-height:1.6;color:#6b7280;">Welcome to Clubby!<br/>The Clubby Team</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>`;
 
     const command = new SendEmailCommand({
         Destination: {

@@ -53,7 +53,30 @@ async function sendChunkedEmails(source: string, supportEmail: string, subject: 
         const batch = allEmails.slice(i, i + rateLimit);
 
         await Promise.all(batch.map(async (chunk) => {
-            const footer = `\n\n---\nPlease do not reply to this email. For further support, contact us at ${supportEmail}`;
+            const wrappedBody = `
+            <html>
+              <body style="margin:0;padding:0;background:#f7f7f9;font-family: Arial, Helvetica, sans-serif;color:#1f2937;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f7f9;padding:24px 0;">
+                  <tr>
+                    <td align="center">
+                      <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                        <tr>
+                          <td style="padding:24px;">
+                            ${body}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:0 24px 24px 24px;border-top:1px solid #e5e7eb;">
+                            <p style="margin:12px 0 0 0;line-height:1.6;color:#6b7280;font-size:14px;">Please do not reply to this email. For further support, contact us at <a href="mailto:${supportEmail}" style="color:#2563eb;text-decoration:none;">${supportEmail}</a>.</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </body>
+            </html>`;
+            
             const params = {
                 Destination: {
                     ToAddresses: chunk,
@@ -62,7 +85,7 @@ async function sendChunkedEmails(source: string, supportEmail: string, subject: 
                     Body: {
                         Html: {
                             Charset: "UTF-8",
-                            Data: `${body}\n\n${footer}`,
+                            Data: wrappedBody,
                         },
                     },
                     Subject: {
