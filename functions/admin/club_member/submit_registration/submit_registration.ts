@@ -15,7 +15,8 @@ import {
     validateStandardFields,
     billingFieldMapping,
     StandardField,
-    BillingField
+    BillingField,
+    getClubEmailSendingLimit
 } from "./function_helpers";
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
@@ -426,36 +427,6 @@ export async function createClubbyUser(email: string, first_name: string, surnam
     }
 }
 
-async function getClubEmailSendingLimit(club: any, club_account_id: string, emails: string[]): Promise<string | Record<string, string | number>> {
-    if (!club) {
-        return "Club does not exist."
-    }
-
-    const now = new Date();
-    const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const monthly_bill = await getItem(
-        process.env.MONTHLY_BILLING_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id,
-            year_month: year_month
-        }
-    )
-
-    const emails_sent = monthly_bill?.total_emails ?? 0;
-
-    if (emails_sent + emails.length > club.maximum_monthly_emails) {
-        return `Monthly email limit reached. Could not send registration email. Available emails: ${club?.maximum_monthly_emails - emails_sent}.`
-    }
-
-    return {
-        support_email: club.support_email,
-        email_source: club.club_from_email,
-        free_email_limit: club.free_email_limit,
-        email_fee: club.fee_per_email_to_club,
-        emails_sent: emails_sent
-    }
-}
-
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -597,7 +568,7 @@ export const handler = async (event: any) => {
 
         if (club?.use_submission_email_template) {
 
-            const club_sending_limit = await getClubEmailSendingLimit(club, body.club_account_id, [body.member_email]);
+            const club_sending_limit = await getClubEmailSendingLimit(body.club_account_id, [body.member_email], club);
             if (typeof club_sending_limit === 'string') {
                 return createResponse(200, { message: club_sending_limit }, origin);
             }

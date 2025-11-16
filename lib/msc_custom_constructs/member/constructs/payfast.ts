@@ -77,6 +77,9 @@ export class MSC_PayfastConstruct extends Construct {
                 [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
                     "ses:SendEmail"
                 ],
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
                 [`${props.club_table.tableArn}/index/ClubNameIndex`]: [
                     "dynamodb:Query"
                 ],

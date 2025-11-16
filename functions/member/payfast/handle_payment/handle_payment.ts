@@ -256,7 +256,7 @@ export const handler = async (event: any) => {
 
         if (clubs[0]?.use_success_email_template) {
 
-            const club_sending_limit = await getClubEmailSendingLimit(clubs[0].club_account_id, [club_member.member_email]);
+            const club_sending_limit = await getClubEmailSendingLimit(clubs[0].club_account_id, [club_member.member_email], clubs[0]);
             if (typeof club_sending_limit === 'string') {
                 console.log(`⚠️ ${club_sending_limit}`);
                 return { statusCode: 200, body: "OK" };

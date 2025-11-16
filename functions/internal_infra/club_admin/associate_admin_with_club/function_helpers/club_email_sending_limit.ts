@@ -1,12 +1,15 @@
 import { getItem } from "./database_functions";
 
-export async function getClubEmailSendingLimit(club_account_id: string, emails: string[]): Promise<string | Record<string, string | number>> {
-    const club = await getItem(
-        process.env.CLUB_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id
-        }
-    );
+export async function getClubEmailSendingLimit(club_account_id: string, emails: string[], temp_club: Record<string, any> | null = null): Promise<string | Record<string, string | number>> {
+    let club: Record<string, any> | null = temp_club;
+    if (!club) {
+        club = await getItem(
+            process.env.CLUB_TABLE_NAME as string,
+            {
+                club_account_id: club_account_id
+            }
+        );
+    }
 
     if (!club) {
         return "Club does not exist."
