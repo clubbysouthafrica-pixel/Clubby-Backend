@@ -97,3 +97,24 @@ export function validateStandardFields(standardFields: StandardField[], submitte
 
     return null;
 }
+
+export function billingFieldMapping(billing_fields: any, form: Record<string, any>[]): any {
+    return billing_fields.reduce((acc: Record<string, Record<string, string | number | undefined>>, field: {
+        value: string; field_id: string; option_order_id?: string; label?: string; multiplier_value?: number
+    }) => {
+        const f = form.find(f => f.field_id === field.field_id);
+
+        acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, multiplier_value: field?.multiplier_value };
+        if (f?.input_type === "DROPDOWN" && field?.label) {
+            acc[`reg_field_${field.field_id}`].label_value = field.label
+            acc[`reg_field_${field.field_id}`].type = "BILLING_DROPDOWN"
+
+            if (field?.option_order_id) {
+                acc[`reg_field_${field.field_id}`].option_order_id = field?.option_order_id
+            }
+        } else {
+            acc[`reg_field_${field.field_id}`].type = "BILLING_TEXT"
+        }
+        return acc;
+    }, {})
+}

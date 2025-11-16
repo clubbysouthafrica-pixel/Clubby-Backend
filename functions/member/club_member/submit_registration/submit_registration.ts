@@ -13,7 +13,8 @@ import {
     validateBillingField,
     validateStandardFields,
     StandardField,
-    BillingField
+    BillingField,
+    billingFieldMapping
 } from "./function_helpers";
 
 const sesClient = new SESClient({ region: process.env.REGION });
@@ -390,24 +391,7 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: standardFieldValidation }, origin);
         }
 
-        const billing_fields = body.billing_fields.reduce((acc: Record<string, Record<string, string | number | undefined>>, field: {
-            value: string; field_id: string; option_order_id?: string; label?: string; multiplier_value?: number
-        }) => {
-            const f = form.find(f => f.field_id === field.field_id);
-
-            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, multiplier_value: field?.multiplier_value };
-            if (f?.input_type === "DROPDOWN" && field?.label) {
-                acc[`reg_field_${field.field_id}`].label_value = field.label
-                acc[`reg_field_${field.field_id}`].type = "BILLING_DROPDOWN"
-
-                if (field?.option_order_id) {
-                    acc[`reg_field_${field.field_id}`].option_order_id = field?.option_order_id
-                }
-            } else {
-                acc[`reg_field_${field.field_id}`].type = "BILLING_TEXT"
-            }
-            return acc;
-        }, {})
+        const billing_fields = billingFieldMapping(body.billing_fields, form);
 
         const standard_fields: Record<string, Record<string, string>> = {};
         for (const field of body.standard_fields) {
@@ -495,7 +479,7 @@ export const handler = async (event: any) => {
         if (club.use_submission_email_template) {
             const club_sending_limit = await getClubEmailSendingLimit(body.club_account_id, [user.email]);
             if (typeof club_sending_limit === 'string') {
-                console.log(club_sending_limit);
+                return createResponse(200, { message: "Registration form successfully submitted. A registration email is supposed to be sent however the club has reached its monthly limit." }, origin);
             } else {
 
                 let finalBody = club.registration_success_email_template_body
