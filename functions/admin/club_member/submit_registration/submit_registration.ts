@@ -155,7 +155,8 @@ async function addToRegistrationsTable(
     billing_fields: any,
     standard_fields: any,
     membership_amount: number,
-    registration_submitted_on: number
+    registration_submitted_on: number,
+    transaction_id: string
 ): Promise<string> {
     const member_registrations = await queryItems(
         process.env.REGISTRATIONS_TABLE_NAME as string,
@@ -192,6 +193,7 @@ async function addToRegistrationsTable(
             total_outstanding_amount: membership_amount,
             deregistered: false,
             registration_submitted_on,
+            transaction_id,
             ...billing_fields,
             ...standard_fields,
         }
@@ -524,16 +526,17 @@ export const handler = async (event: any) => {
 
         const registration_submitted_on = Date.now()
 
+        const current_reg_transaction_id = randomUUID();
+
         const current_reg_id = await addToRegistrationsTable(
             body.club_account_id,
             member_user_id,
             billing_fields,
             standard_fields,
             membership_amount,
-            registration_submitted_on
+            registration_submitted_on,
+            current_reg_transaction_id
         )
-
-        const current_reg_transaction_id = randomUUID();
 
         const item = {
             club_account_id: body.club_account_id,
