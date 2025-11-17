@@ -116,10 +116,7 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
 
     if (club_member == null) {
         return false;
-    } else if (club_member.resubmission_required) {
-        return false;
     }
-
     return true;
 }
 
