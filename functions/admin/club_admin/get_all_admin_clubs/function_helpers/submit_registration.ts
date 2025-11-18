@@ -133,14 +133,12 @@ export function validateStandardFields(standardFields: StandardField[], submitte
 export function billingFieldMapping(billing_fields: any, form: Record<string, any>[]): any {
 
     const discount_fields: { percentage?: number; applicable_billing_fields: string[] }[] = []
-    form.forEach((bf: any) => {
-        if (bf.input_type === "DISCOUNT") {
-            bf.discountOptions.forEach((option: any) => {
-                discount_fields.push({
-                    percentage: option.percentage,
-                    applicable_billing_fields: option.applicable_billing_fields
-                });
-            })
+    billing_fields.forEach((bf: any) => {
+        if (bf.applicable_billing_fields) {
+            discount_fields.push({
+                percentage: bf.percentage,
+                applicable_billing_fields: bf.applicable_billing_fields
+            });
         }
     })
 
