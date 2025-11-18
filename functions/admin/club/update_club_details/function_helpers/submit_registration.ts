@@ -1,3 +1,5 @@
+import { formatAmount } from "./format_amount";
+
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO' | 'CHECKBOX' | 'SIGNATURE' | 'DISCOUNT';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP';
 
@@ -21,11 +23,11 @@ export interface BillingField {
     amount?: number;
 }
 
-interface SubmittedField { 
-    name?: string; 
-    value: string; 
-    field_id: string; 
-    option_order_id?: string; 
+interface SubmittedField {
+    name?: string;
+    value: string;
+    field_id: string;
+    option_order_id?: string;
     multiplier_value?: number;
     percentage?: number;
     applicable_billing_fields: string[];
@@ -129,12 +131,30 @@ export function validateStandardFields(standardFields: StandardField[], submitte
 }
 
 export function billingFieldMapping(billing_fields: any, form: Record<string, any>[]): any {
+
+    const discount_fields: { percentage?: number; applicable_billing_fields: string[] }[] = []
+    billing_fields.forEach((bf: any) => {
+        if (bf.input_type === "DISCOUNT") {
+            discount_fields.push({
+                percentage: bf.percentage,
+                applicable_billing_fields: bf.applicable_billing_fields
+            });
+        }
+    })
+
     return billing_fields.reduce((acc: Record<string, Record<string, string | number | undefined | string[]>>, field: {
         value: string; field_id: string; option_order_id?: string; label?: string; multiplier_value?: number, percentage?: number;
     }) => {
         const f = form.find(f => f.field_id === field.field_id);
 
         acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, multiplier_value: field?.multiplier_value };
+
+        discount_fields.forEach(df => {
+            if (df.applicable_billing_fields.includes(field.field_id) && df.percentage) {
+                acc[`reg_field_${field.field_id}`].value = String(Number(acc[`reg_field_${field.field_id}`].value) * (df.percentage / 100));
+            }
+        })
+
         if (f?.input_type === "DROPDOWN" && field?.label) {
             acc[`reg_field_${field.field_id}`].label_value = field.label
             acc[`reg_field_${field.field_id}`].type = "BILLING_DROPDOWN"
@@ -142,7 +162,7 @@ export function billingFieldMapping(billing_fields: any, form: Record<string, an
             if (field?.option_order_id) {
                 acc[`reg_field_${field.field_id}`].option_order_id = field?.option_order_id
             }
-       } else if (f?.input_type === "DISCOUNT") {
+        } else if (f?.input_type === "DISCOUNT") {
             acc[`reg_field_${field.field_id}`].label_value = field.label
             acc[`reg_field_${field.field_id}`].type = "BILLING_DISCOUNT"
 
@@ -150,11 +170,12 @@ export function billingFieldMapping(billing_fields: any, form: Record<string, an
                 acc[`reg_field_${field.field_id}`].option_order_id = field?.option_order_id
             }
             if (field?.percentage) {
-                acc[`reg_field_${field.field_id}`].percentage = field.percentage;
+                acc[`reg_field_${field.field_id}`].value = field.percentage;
             }
         } else {
             acc[`reg_field_${field.field_id}`].type = "BILLING_TEXT"
         }
+
         return acc;
     }, {})
 }
