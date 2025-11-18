@@ -151,6 +151,17 @@ export const handler = async (event: any) => {
                         break;
                     }
 
+                    else if (key.includes(field.field_id) && reg.type === "BILLING_DISCOUNT") {
+                        new_page.fields.push({
+                            type: "BILLING_TOTAL",
+                            label: "Total Amount",
+                            value: `${reg.label_value} - ${reg.value}% off`,
+                            position: field.field_order_id
+                        });
+                        found = true;
+                        break;
+                    }
+
                     else if (key.includes(field.field_id) && reg.type.includes("BILLING_")) {
                         new_page.fields.push({
                             type: "BILLING",
