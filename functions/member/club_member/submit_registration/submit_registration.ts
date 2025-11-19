@@ -458,12 +458,14 @@ export const handler = async (event: any) => {
             membership_amount,
         )
 
-        await sendEmailToAdmin(
-            club.support_email,
-            user.first_name,
-            user.surname,
-            club.club_name
-        )
+        if (club.notify_on_member_registration !== false) {
+            await sendEmailToAdmin(
+                club.support_email,
+                user.first_name,
+                user.surname,
+                club.club_name
+            )
+        }
 
         if (club.use_submission_email_template) {
             const club_sending_limit = await getClubEmailSendingLimit(body.club_account_id, [user.email]);
