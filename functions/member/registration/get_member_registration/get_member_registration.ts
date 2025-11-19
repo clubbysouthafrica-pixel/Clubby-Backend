@@ -172,7 +172,8 @@ export const handler = async (event: any) => {
                             label: field.field_name,
                             value: reg.label_value ? `${reg.label_value} - ${reg.value === 0 ? "FREE" : formatAmount(reg.value, query_string_params.currency)}` : formatAmount(reg.value, query_string_params.currency),
                             quantity: reg.multiplier_value > 1 ? reg.multiplier_value : undefined,
-                            position: field.field_order_id
+                            position: field.field_order_id,
+                            discount: reg?.discount ?? undefined,
                         });
                         found = true;
                         break;
