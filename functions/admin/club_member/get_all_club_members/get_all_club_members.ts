@@ -118,6 +118,15 @@ export const handler = async (event: any) => {
                         type: "standard"
                     }
                 )
+            } else if (field.field_type === "STANDARD" && field.input_type === "CHECKBOX") {
+                filters.push(
+                    {
+                        key: `standard:${field.field_name}`,
+                        field_name: field.field_name,
+                        options: ["true", "false"],
+                        type: "standard"
+                    }
+                )
             }
         })
 
