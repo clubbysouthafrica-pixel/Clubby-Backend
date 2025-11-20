@@ -29,7 +29,8 @@ export const handler = async (event: any) => {
             first_name: "first_name" in item ? item["first_name"] : undefined,
             postal_code: "postal_code" in item ? item["postal_code"] : undefined,
             suburb: "suburb" in item ? item["suburb"] : undefined,
-            surname: "surname" in item ? item["surname"] : undefined
+            surname: "surname" in item ? item["surname"] : undefined,
+            country: "country" in item ? item["country"] : undefined,
          }, origin);
 
     } catch (error) {
