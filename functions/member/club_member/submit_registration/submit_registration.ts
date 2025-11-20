@@ -185,7 +185,7 @@ async function addToTransactionsTable(
             transaction_id: transaction_id,
             user_id: user_id as string,
             amount_paid: 0,
-            income: true,
+            club_income: true,
             amount: membership_amount,
             creation_date: Date.now(),
             lifecycle: {
