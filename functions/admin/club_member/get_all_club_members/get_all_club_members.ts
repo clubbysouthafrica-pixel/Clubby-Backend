@@ -90,7 +90,8 @@ export const handler = async (event: any) => {
         )
 
         const filters: any[] = []
-        form?.forEach(field => {
+        for (const field of form || []) {
+            if (field?.visible !== true) continue
             if (field.field_type === "BILLING" && field.input_type === "DROPDOWN") {
                 filters.push(
                     {
@@ -127,8 +128,16 @@ export const handler = async (event: any) => {
                         type: "standard"
                     }
                 )
+            } else if (field.field_type === "STANDARD" && field.input_type === "TEXT") {
+                filters.push(
+                    {
+                        key: `standard:${field.field_name}`,
+                        field_name: field.field_name,
+                        type: "standard"
+                    }
+                )
             }
-        })
+        }
 
         return createResponse(200, { registered, unregistered, filters }, origin);
 
