@@ -243,6 +243,7 @@ async function addToTransactionsTable(
         {
             club_account_id: club_account_id,
             name: `${first_name} ${surname}`,
+            income: true,
             transaction_id: transaction_id,
             user_id: user_id as string,
             amount_paid: 0,
