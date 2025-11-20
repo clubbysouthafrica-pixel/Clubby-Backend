@@ -57,6 +57,7 @@ export class MSC_MemberNestedStack extends Stack {
 
         new MSC_PayfastConstruct(this, `${id}-Payfast`, {
             api_gateway: api_gateway,
+            mail_queue: props.mail_queue,
             token_authorizer: jwt_construct.token_authorizer,
             layers: props.layers,
             user_pool: props.member_user_pool,

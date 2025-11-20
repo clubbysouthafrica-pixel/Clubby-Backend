@@ -1,4 +1,4 @@
-import { getItem, queryItems, updateItem } from "./function_helpers";
+import { getItem, queryItems, sendSqsMessage, updateItem, getClubEmailSendingLimit } from "./function_helpers";
 import { validatePayFastPayment } from "./payfast_validation";
 import {
     CognitoIdentityProviderClient,
@@ -253,6 +253,33 @@ export const handler = async (event: any) => {
             clubs[0].club_account_id,
             clubs[0].member_registration_fee_to_club
         )
+
+        if (clubs[0]?.use_success_email_template) {
+
+            const club_sending_limit = await getClubEmailSendingLimit(clubs[0].club_account_id, [club_member.member_email], clubs[0]);
+            if (typeof club_sending_limit === 'string') {
+                console.log(`⚠️ ${club_sending_limit}`);
+                return { statusCode: 200, body: "OK" };
+            }
+
+
+            let finalBody = clubs[0].registration_success_email_template_body
+                .replace(/{{member_name}}/g, `${club_member.member_first_name} ${club_member.member_surname}`)
+                .replace(/{{club_name}}/g, clubs[0].club_name)
+                .replace(/{{club_email}}/g, clubs[0].support_email);
+
+            await sendSqsMessage(
+                process.env.SEND_EMAIL_QUEUE_URL as string,
+                {
+                    emails: [club_member.member_email],
+                    subject: `Registration Submission for ${clubs[0].club_name}`,
+                    email_body: finalBody,
+                    club_account_id: clubs[0].club_account_id,
+                    ...club_sending_limit
+                },
+                "ChargeableEmails"
+            );
+        }
 
         return { statusCode: 200, body: "OK" };
     } else {

@@ -6,7 +6,7 @@ import {
 
 function createBlankReport(report: any[], allFields: any) {
     allFields.forEach((field: Record<string, any>) => {
-        if (field.field_type !== "BILLING") return;
+        if (field.field_type !== "BILLING" || !field.visible) return;
 
         if (field.input_type === "TEXT") {
             report.push({

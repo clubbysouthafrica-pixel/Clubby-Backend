@@ -28,6 +28,13 @@ export interface BillingOption {
     id: string;
 }
 
+export interface DiscountOption {
+    label: string;
+    percentage: number;
+    id: string;
+    applicable_billing_fields: string[];
+}
+
 export interface BillingField {
     field_id?: string;
     field_name: string;
@@ -39,6 +46,7 @@ export interface BillingField {
     currency: CurrencyType;
     amount?: number;
     billingOptions?: BillingOption[];
+    discountOptions?: DiscountOption[]
     field_type: 'BILLING';
 }
 
@@ -46,10 +54,13 @@ function isBillingField(obj: any): obj is BillingField {
     const isDropdown = obj.input_type === 'DROPDOWN' && Array.isArray(obj.billingOptions) && obj.billingOptions.every(
         (opt: any) => typeof opt.label === 'string' && typeof opt.amount === 'number' && typeof opt.option_order_id === 'string'
     );
+    const isDiscount = obj.input_type === 'DISCOUNT' && Array.isArray(obj.discountOptions) && obj.discountOptions.every(
+        (opt: any) => typeof opt.label === 'string' && typeof opt.percentage === 'number' && typeof opt.option_order_id === 'string'
+    );
     const isText = obj.input_type === 'TEXT' && typeof obj.amount === 'number';
 
     return obj.field_type === 'BILLING' &&
-        (isDropdown || isText) &&
+        (isDropdown || isText || isDiscount) &&
         typeof obj === 'object' &&
         typeof obj.placeholder === 'string' &&
         typeof obj.field_name === 'string' &&
@@ -177,6 +188,8 @@ export const handler = async (event: any) => {
                     item.amount = field.amount;
                 } else if (field.input_type === 'DROPDOWN') {
                     item.billingOptions = field.billingOptions;
+                } else if (field.input_type === 'DISCOUNT') {
+                    item.discountOptions = field.discountOptions;
                 }
             } else if (isTextField(field)) {
                 item.field_text = field.field_text;

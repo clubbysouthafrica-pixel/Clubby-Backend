@@ -86,6 +86,12 @@ export const handler = async (event: any) => {
             expressionAttributeValues[":support_email"] = body.support_email;
         }
 
+        if (typeof body?.notify_on_member_registration === "boolean") {
+            updateParts.push("#notify_on_member_registration = :notify_on_member_registration");
+            expressionAttributeNames["#notify_on_member_registration"] = "notify_on_member_registration";
+            expressionAttributeValues[":notify_on_member_registration"] = body.notify_on_member_registration;
+        }
+
         if (body?.registration_submission_email_template_body && typeof body.registration_submission_email_template_body === "string") {
             updateParts.push("#registration_submission_email_template_body = :registration_submission_email_template_body");
             expressionAttributeNames["#registration_submission_email_template_body"] = "registration_submission_email_template_body";

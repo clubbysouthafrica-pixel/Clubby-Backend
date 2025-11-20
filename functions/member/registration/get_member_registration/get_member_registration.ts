@@ -17,7 +17,7 @@ async function getClubMemberRegistrationId(user_id: string, club_account_id: str
     return club_member?.current_reg_id
 }
 
-async function getRegistration(user_id: string, registration_id: string): Promise<any> {
+async function getRegistration(user_id: string, registration_id: string): Promise<any | null> {
     return await getItem(
         process.env.REGISTRATIONS_TABLE_NAME as string,
         {
@@ -96,6 +96,10 @@ export const handler = async (event: any) => {
         const registration_id = await getClubMemberRegistrationId(user_id as string, query_string_params.club_account_id);
         const member_registration = await getRegistration(user_id as string, registration_id);
 
+        if (member_registration == null) {
+            return createResponse(400, { message: "Member registration not found." }, origin);
+        }
+
         const registration_form = await getRegistrationForm(query_string_params.club_account_id)
 
         const pages: Record<string, any>[] = [];
@@ -151,13 +155,25 @@ export const handler = async (event: any) => {
                         break;
                     }
 
+                    else if (key.includes(field.field_id) && reg.type === "BILLING_DISCOUNT") {
+                        new_page.fields.push({
+                            type: "BILLING",
+                            label: field.field_name,
+                            value: `${reg.label_value} - ${reg.value}% off`,
+                            position: field.field_order_id
+                        });
+                        found = true;
+                        break;
+                    }
+
                     else if (key.includes(field.field_id) && reg.type.includes("BILLING_")) {
                         new_page.fields.push({
                             type: "BILLING",
                             label: field.field_name,
                             value: reg.label_value ? `${reg.label_value} - ${reg.value === 0 ? "FREE" : formatAmount(reg.value, query_string_params.currency)}` : formatAmount(reg.value, query_string_params.currency),
                             quantity: reg.multiplier_value > 1 ? reg.multiplier_value : undefined,
-                            position: field.field_order_id
+                            position: field.field_order_id,
+                            discount: reg?.discount ?? undefined,
                         });
                         found = true;
                         break;

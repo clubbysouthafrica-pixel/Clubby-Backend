@@ -9,33 +9,19 @@ import {
     getItem,
     updateItem,
     removeItem,
-    sendSqsMessage
+    sendSqsMessage,
+    validateBillingField,
+    validateStandardFields,
+    StandardField,
+    BillingField,
+    billingFieldMapping,
+    getClubEmailSendingLimit
 } from "./function_helpers";
 
 const sesClient = new SESClient({ region: process.env.REGION });
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
-
-interface StandardField {
-    field_type: "STANDARD";
-    field_id: string;
-    field_name: string;
-    required: boolean;
-    input_type: InputTypes;
-    options?: string[];
-}
-
-interface BillingField {
-    field_type: "BILLING";
-    field_id: string;
-    field_name: string;
-    currency: CurrencyType;
-    required: boolean;
-    input_type: InputTypes;
-    billingOptions: Record<string, any>[];
-    amount?: number;
-}
 
 const s3_client = new S3Client({ region: process.env.REGION });
 
@@ -81,83 +67,6 @@ function validateRequestBody(body: any) {
     return null;
 }
 
-function validateBillingField(billingFields: BillingField[], submittedFields: { name: string; value: string; field_id: string; option_order_id?: string; multiplier_value?: number }[]): number | null | string {
-    const requiredFields = billingFields.filter(f => f.required);
-    const field_ids = submittedFields.map(f => f.field_id);
-    const allValid = requiredFields.every(req => {
-        if (!field_ids.includes(req.field_id)) {
-            return false;
-        }
-        return true;
-    });
-
-    if (!allValid) {
-        const missingField = requiredFields.find(req => !field_ids.includes(req.field_id));
-        return `The following required field is missing. Field ID: ${missingField?.field_id}.`;
-    }
-
-    const known_field_ids = billingFields.map(f => f.field_id);
-    for (const field of submittedFields) {
-        if (!known_field_ids.includes(field.field_id)) {
-            return `The following provided field does not exist in this club's registration form. Field ID: ${field.field_id}.`;
-        }
-    }
-
-    let total_amount = 0;
-    submittedFields.forEach(sub_field => {
-        billingFields.forEach(billing_field => {
-            if (billing_field.input_type === "TEXT" && billing_field.field_id === sub_field.field_id) {
-
-                if (sub_field?.multiplier_value) {
-                    total_amount += (billing_field.amount ?? 0) * sub_field.multiplier_value;
-                } else {
-                    total_amount += billing_field.amount ?? 0;
-                }
-
-            } else if (billing_field.input_type === "DROPDOWN" && billing_field.field_id === sub_field.field_id) {
-                billing_field.billingOptions.forEach(billing_options_field => {
-                    if (billing_options_field.option_order_id === sub_field?.option_order_id) {
-
-                        if (sub_field?.multiplier_value) {
-                            total_amount += billing_options_field.amount * sub_field.multiplier_value;
-                        } else {
-                            total_amount += billing_options_field.amount;
-                        }
-
-                    }
-                })
-            }
-        })
-    })
-
-    return total_amount;
-}
-
-function validateStandardFields(standardFields: StandardField[], submittedFields: { name: string; value: string; field_id: string }[]): string | null {
-    const requiredFields = standardFields.filter(f => f.required);
-    const field_ids = submittedFields.map(f => f.field_id);
-    const allValid = requiredFields.every(req => {
-        if (!field_ids.includes(req.field_id)) {
-            return false;
-        }
-        return true;
-    });
-
-    if (!allValid) {
-        const missingField = requiredFields.find(req => !field_ids.includes(req.field_id));
-        return `The following required field is missing. Field ID: ${missingField?.field_id}.`;
-    }
-
-    const known_field_ids = standardFields.map(f => f.field_id);
-    for (const field of submittedFields) {
-        if (!known_field_ids.includes(field.field_id)) {
-            return `The following provided field does not exist in this club's registration form. Field ID: ${field.field_id}.`;
-        }
-    }
-
-    return null;
-}
-
 async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
     const club_member = await getItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
@@ -182,7 +91,8 @@ async function addToRegistrationsTable(
     billing_fields: any,
     standard_fields: any,
     membership_amount: number,
-    registration_submitted_on: number
+    registration_submitted_on: number,
+    transaction_id: string
 ): Promise<string> {
     const member_registrations = await queryItems(
         process.env.REGISTRATIONS_TABLE_NAME as string,
@@ -219,6 +129,7 @@ async function addToRegistrationsTable(
             total_outstanding_amount: membership_amount,
             deregistered: false,
             registration_submitted_on,
+            transaction_id,
             ...billing_fields,
             ...standard_fields,
         }
@@ -324,30 +235,52 @@ export async function sendEmailToAdmin(
     const emailSubject = `New Member Registration for ${clubName}`;
     const emailBody = `
     <html>
-      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-        <p>Hi Admin,</p>
-  
-        <p>
-          A new member, <strong>${firstName} ${surname}</strong>, has submitted a registration form for your club, <strong>${clubName}</strong>.
-        </p>
-  
-        <p>
-          To review and complete their registration, please visit the <em>Members Pending</em> section using the link below:
-        </p>
-  
-        <p>
-          <a href="https://${process.env.DOMAIN as string}/manage/members" style="color: #004aad; text-decoration: none;">
-            View Members Pending
-          </a>
-        </p>
-  
-        <p>
-          Kind regards,<br/>
-          <strong>The Clubby Team</strong>
-        </p>
+      <body style="margin:0;padding:0;background:#f7f7f9;font-family: Arial, Helvetica, sans-serif;color:#1f2937;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f7f9;padding:24px 0;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                <tr>
+                  <td style="padding:24px 24px 0 24px;">
+                    <h1 style="margin:0 0 12px 0;font-size:20px;line-height:28px;color:#111827;">New Member Registration</h1>
+                    <p style="margin:0 0 16px 0;line-height:1.6;">A new member, <strong>${firstName} ${surname}</strong>, has submitted a registration form for your club, <strong>${clubName}</strong>.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 0 24px;">
+                    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin-bottom:16px;">
+                      <p style="margin:0 0 8px 0;font-weight:bold;color:#111827;">Member Details</p>
+                      <p style="margin:0;line-height:1.6;"><strong>Name:</strong> ${firstName} ${surname}<br/>
+                      <strong>Club:</strong> ${clubName}</p>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 0 24px;">
+                    <p style="margin:0 0 16px 0;line-height:1.6;">To review and complete their registration, please visit the Members Pending section.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;">
+                    <a href="https://${process.env.DOMAIN as string}/manage/members" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;padding:10px 16px;font-weight:600;">View Members Pending</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;">
+                    <p style="margin:0;line-height:1.6;color:#374151;">Need help? Email us at <a href="mailto:admin@${process.env.DOMAIN as string}" style="color:#2563eb;text-decoration:none;">admin@${process.env.DOMAIN as string}</a>.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;border-top:1px solid #e5e7eb;">
+                    <p style="margin:12px 0 0 0;line-height:1.6;color:#6b7280;">Kind regards,<br/>The Clubby Team</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
-    </html>
-  `;
+    </html>`;
 
     const command = new SendEmailCommand({
         Destination: {
@@ -374,43 +307,6 @@ export async function sendEmailToAdmin(
     } catch (err) {
         console.error("❌ Error sending email:", err);
         throw err;
-    }
-}
-
-async function getClubEmailSendingLimit(club_account_id: string, emails: string[]): Promise<string | Record<string, string | number>> {
-    const club = await getItem(
-        process.env.CLUB_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id
-        }
-    );
-
-    if (!club) {
-        return "Club does not exist."
-    }
-
-    const now = new Date();
-    const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const monthly_bill = await getItem(
-        process.env.MONTHLY_BILLING_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id,
-            year_month: year_month
-        }
-    )
-
-    const emails_sent = monthly_bill?.total_emails ?? 0;
-
-    if (emails_sent + emails.length > club.maximum_monthly_emails) {
-        return `Monthly email limit reached. Could not send registration email. Available emails: ${club?.maximum_monthly_emails - emails_sent}.`
-    }
-
-    return {
-        support_email: club.support_email,
-        email_source: club.club_from_email,
-        free_email_limit: club.free_email_limit,
-        email_fee: club.fee_per_email_to_club,
-        emails_sent: emails_sent
     }
 }
 
@@ -483,24 +379,7 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: standardFieldValidation }, origin);
         }
 
-        const billing_fields = body.billing_fields.reduce((acc: Record<string, Record<string, string | number | undefined>>, field: {
-            value: string; field_id: string; option_order_id?: string; label?: string; multiplier_value?: number
-        }) => {
-            const f = form.find(f => f.field_id === field.field_id);
-
-            acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, multiplier_value: field?.multiplier_value };
-            if (f?.input_type === "DROPDOWN" && field?.label) {
-                acc[`reg_field_${field.field_id}`].label_value = field.label
-                acc[`reg_field_${field.field_id}`].type = "BILLING_DROPDOWN"
-
-                if (field?.option_order_id) {
-                    acc[`reg_field_${field.field_id}`].option_order_id = field?.option_order_id
-                }
-            } else {
-                acc[`reg_field_${field.field_id}`].type = "BILLING_TEXT"
-            }
-            return acc;
-        }, {})
+        const billing_fields = billingFieldMapping(body.billing_fields, form);
 
         const standard_fields: Record<string, Record<string, string>> = {};
         for (const field of body.standard_fields) {
@@ -536,16 +415,17 @@ export const handler = async (event: any) => {
 
         const registration_submitted_on = Date.now()
 
+        const current_reg_transaction_id = randomUUID();
+
         const current_reg_id = await addToRegistrationsTable(
             body.club_account_id,
             user_id as string,
             billing_fields,
             standard_fields,
             membership_amount,
-            registration_submitted_on
+            registration_submitted_on,
+            current_reg_transaction_id
         )
-
-        const current_reg_transaction_id = randomUUID();
 
         const item = {
             club_account_id: body.club_account_id,
@@ -578,20 +458,22 @@ export const handler = async (event: any) => {
             membership_amount,
         )
 
-        await sendEmailToAdmin(
-            club.support_email,
-            user.first_name,
-            user.surname,
-            club.club_name
-        )
+        if (club.notify_on_member_registration !== false) {
+            await sendEmailToAdmin(
+                club.support_email,
+                user.first_name,
+                user.surname,
+                club.club_name
+            )
+        }
 
         if (club.use_submission_email_template) {
             const club_sending_limit = await getClubEmailSendingLimit(body.club_account_id, [user.email]);
             if (typeof club_sending_limit === 'string') {
-                console.log(club_sending_limit);
+                return createResponse(200, { message: "Registration form successfully submitted. A registration email is supposed to be sent however the club has reached its monthly limit." }, origin);
             } else {
 
-                let finalBody = club.registration_success_email_template_body
+                let finalBody = club.registration_submission_email_template_body
                     .replace(/{{member_name}}/g, `${user.first_name} ${user.surname}`)
                     .replace(/{{club_name}}/g, club.club_name)
                     .replace(/{{club_email}}/g, club.support_email);

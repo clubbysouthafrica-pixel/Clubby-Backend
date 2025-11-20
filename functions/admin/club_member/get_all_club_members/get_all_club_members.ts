@@ -100,6 +100,15 @@ export const handler = async (event: any) => {
                         type: "billing"
                     }
                 )
+            } else if (field.field_type === "BILLING" && field.input_type === "DISCOUNT") {
+                filters.push(
+                    {
+                        key: `billing:${field.field_name}`,
+                        field_name: field.field_name,
+                        options: field.discountOptions.map((discount_option: any) => discount_option.label),
+                        type: "billing"
+                    }
+                )
             } else if (field.field_type === "STANDARD" && field.input_type === "DROPDOWN") {
                 filters.push(
                     {

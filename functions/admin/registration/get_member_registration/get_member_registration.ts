@@ -151,13 +151,25 @@ export const handler = async (event: any) => {
                         break;
                     }
 
+                    else if (key.includes(field.field_id) && reg.type === "BILLING_DISCOUNT") {
+                        new_page.fields.push({
+                            type: "BILLING",
+                            label: field.field_name,
+                            value: `${reg.label_value} - ${reg.value}% off`,
+                            position: field.field_order_id
+                        });
+                        found = true;
+                        break;
+                    }
+
                     else if (key.includes(field.field_id) && reg.type.includes("BILLING_")) {
                         new_page.fields.push({
                             type: "BILLING",
                             label: field.field_name,
                             value: reg.label_value ? `${reg.label_value} - ${reg.value === 0 ? "FREE" : formatAmount(reg.value, query_string_params.currency)}` : formatAmount(reg.value, query_string_params.currency),
                             quantity: reg.multiplier_value > 1 ? reg.multiplier_value : undefined,
-                            position: field.field_order_id
+                            position: field.field_order_id,
+                            discount: reg?.discount ?? undefined,
                         });
                         found = true;
                         break;
@@ -178,12 +190,12 @@ export const handler = async (event: any) => {
         }
 
         pages.sort((a, b) => (a.page_index ?? 0) - (b.page_index ?? 0));
-        
-        return createResponse(200, { 
-            pages, 
-            registered_on: member_registration?.registered_on, 
-            deregistered_on: member_registration?.deregistered_on, 
-            registration_submitted_on: member_registration?.registration_submitted_on 
+
+        return createResponse(200, {
+            pages,
+            registered_on: member_registration?.registered_on,
+            deregistered_on: member_registration?.deregistered_on,
+            registration_submitted_on: member_registration?.registration_submitted_on
         }, origin);
 
     } catch (error) {
