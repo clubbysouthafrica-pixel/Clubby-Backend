@@ -71,12 +71,18 @@ export const handler = async (event: any) => {
             return createResponse(500, { message: 'Internal Server Error' }, origin);
         }
 
-        const pf = new PayFast({
-            merchant_id: pfConfig.merchant_id,
-            merchant_key: pfConfig.merchant_key,
-            passphrase: pfConfig.passphrase ?? null,
-            sandbox: process.env.ENVIRONMENT === "Dev" ? true : false,
-        });
+        const config: { 
+            merchant_id: string;
+            merchant_key: string;
+            passphrase?: string;
+            environment: string;
+         } = {
+            merchant_id: pfConfig.merchant_id as string,
+            merchant_key: pfConfig.merchant_key as string,
+            environment: process.env.ENVIRONMENT === "Dev" ? "sandbox" : "production",
+        }
+        if (pfConfig.passphrase) config.passphrase = pfConfig.passphrase;
+        const pf = new PayFast(config);
 
         const paymentData = {
             return_url: `${process.env.DOMAIN}/clubs/${query_string_params.club_account_id}`,
@@ -90,11 +96,13 @@ export const handler = async (event: any) => {
             item_description: club_member.club_name,
         };
 
-    const urlString = pf.createStringfromObject(paymentData);
+        const urlString = pf.createStringfromObject(paymentData);
         const hash = pf.createSignature(urlString);
         const paymentObject = pf.createPaymentObject(paymentData, hash);
         const generatePaymentUrl = await pf.generatePaymentUrl(paymentObject);
 
+        console.log("Generated PayFast payment URL:", generatePaymentUrl);
+        
         return createResponse(200, { payment_url: generatePaymentUrl }, origin);
 
     } catch (error) {
