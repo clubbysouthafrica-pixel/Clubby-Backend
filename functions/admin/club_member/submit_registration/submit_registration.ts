@@ -460,7 +460,7 @@ export const handler = async (event: any) => {
         }
 
         if (await registrationSubmitted(body.club_account_id, member_user_id as string)) {
-            return createResponse(500, { message: "A member with this email is already associated with the club or was in the past." }, origin);
+            return createResponse(500, { message: `A member with email ${body.member_email} is already associated with the club or was in the past. Please login as a member with this email to continue registration.` }, origin);
         }
 
         const billingFields: BillingField[] = [];
