@@ -147,10 +147,10 @@ export function billingFieldMapping(billing_fields: any, form: Record<string, an
     }) => {
         const f = form.find(f => f.field_id === field.field_id);
 
-        acc[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, multiplier_value: field?.multiplier_value };
+        acc[`reg_field_${field.field_id}`] = { value: Number(field.value), field_name: f?.field_name, multiplier_value: field?.multiplier_value };
         discount_fields.forEach(df => {
             if (df.applicable_billing_fields.includes(field.field_id) && df.percentage) {
-                acc[`reg_field_${field.field_id}`].value = String(Number(acc[`reg_field_${field.field_id}`].value) - Number(acc[`reg_field_${field.field_id}`].value) * (df.percentage / 100));
+                acc[`reg_field_${field.field_id}`].value = Number(acc[`reg_field_${field.field_id}`].value) - Number(acc[`reg_field_${field.field_id}`].value) * (df.percentage / 100);
                 acc[`reg_field_${field.field_id}`].discount = df.percentage;
             }
         })
