@@ -2,7 +2,6 @@ import * as crypto from 'crypto';
 import axios, { AxiosResponse } from 'axios';
 
 export interface PayFastConfig {
-    sandbox?: boolean;
     merchant_id?: string;
     merchant_key?: string;
     passphrase?: string | null;
@@ -20,7 +19,7 @@ export class PayFast {
     getApiUrl(): string {
         const env = this.config.environment;
 
-        if (env !== 'production') {
+        if (env && env === 'sandbox') {
             return 'https://sandbox.payfast.co.za';
         }
         return 'https://www.payfast.co.za';

@@ -103,6 +103,7 @@ export const handler = async (event: any) => {
                 "joined": new Date().getTime(),
                 use_submission_email_template: false,
                 use_success_email_template: false,
+                deregistration_in_progress: false,
                 ...EMAIL_TEMPLATE
             }
         );

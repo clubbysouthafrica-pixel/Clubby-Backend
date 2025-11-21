@@ -33,11 +33,11 @@ export const handler = async (event: any) => {
             merchant_id: string;
             merchant_key: string;
             passphrase?: string;
-            sandbox: boolean;
+            environment: string;
          } = {
             merchant_id: parsed.merchant_id as string,
             merchant_key: parsed.merchant_key as string,
-            sandbox: process.env.ENVIRONMENT === "Dev" ? true : false,
+            environment: process.env.ENVIRONMENT === "Dev" ? "sandbox" : "production",
         }
         if (parsed.passphrase) config.passphrase = parsed.passphrase;
         const pf = new PayFast(config);
@@ -62,6 +62,7 @@ export const handler = async (event: any) => {
         if (!paymentUrl) {
             return createResponse(400, { message: "PayFast connectivity failed. Please ensure the PayFast credentials are correct." }, origin);
         }
+        console.log("Generated PayFast payment URL:", paymentUrl);
 
         const paramName = `payfast_details_${parsed.club_account_id}`;
         const valueObj: Record<string, string> = {
