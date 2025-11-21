@@ -138,6 +138,7 @@ export const handler = async (event: any) => {
             joined: item["joined"],
             payfast_enabled: item?.payfast_enabled ?? false,
             club_url: item?.club_url ?? undefined,
+            deregistration_in_progress: item?.deregistration_in_progress ?? false,
             onboarded,
             club_member_exists,
             registered,
