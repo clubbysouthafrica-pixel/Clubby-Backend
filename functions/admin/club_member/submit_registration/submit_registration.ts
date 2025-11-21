@@ -105,7 +105,7 @@ function validateRequestBody(body: any) {
     return null;
 }
 
-async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
+async function alreadyAssociated(club_account_id: string, user_id: string): Promise<boolean> {
     const club_member = await getItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
         {
@@ -459,7 +459,7 @@ export const handler = async (event: any) => {
             return createResponse(500, { message: "Issue registering user" }, origin);
         }
 
-        if (await registrationSubmitted(body.club_account_id, member_user_id as string)) {
+        if (await alreadyAssociated(body.club_account_id, member_user_id as string)) {
             return createResponse(500, { message: `A member with email ${body.member_email} is already associated with the club or was in the past. Please login as a member with this email to continue registration.` }, origin);
         }
 
