@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_LambdaLayer } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_LambdaLayer, MSC_Bucket } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 
@@ -11,6 +11,7 @@ interface MSC_ReportingConstructProps {
     billing_table: MSC_Table;
     club_reporting_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
+    club_history_bucket: MSC_Bucket;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -23,11 +24,18 @@ export class MSC_ReportingConstruct extends Construct {
         const general_reporting = new MSC_Lambda(this, `${id}-GeneralReporting`, {
             code: "admin/reporting/general_reporting",
             envVariables: {
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName
+                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
+                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName
             },
             permissions: {
                 [props.club_reporting_table.tableArn]: [
                     "dynamodb:Query"
+                ],
+                [props.club_history_bucket.bucketArn]: [
+                    "s3:ListBucket"
+                ],
+                [`${props.club_history_bucket.bucketArn}/*`]: [
+                    "s3:GetObject"
                 ]
             },
             memory: 2048,
@@ -39,7 +47,8 @@ export class MSC_ReportingConstruct extends Construct {
             envVariables: {
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
-                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName
             },
             permissions: {
                 [`${props.registrations_table.tableArn}/index/ClubAccountIDIndex`]: [
@@ -47,6 +56,12 @@ export class MSC_ReportingConstruct extends Construct {
                 ],
                 [props.registration_form_table.tableArn]: [
                     "dynamodb:Query"
+                ],
+                [props.club_history_bucket.bucketArn]: [
+                    "s3:ListBucket"
+                ],
+                [`${props.club_history_bucket.bucketArn}/*`]: [
+                    "s3:GetObject"
                 ]
             },
             memory: 2048,
