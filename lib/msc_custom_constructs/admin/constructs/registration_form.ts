@@ -79,11 +79,25 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const update_admin_notes = new MSC_Lambda(this, `${id}-UpdateAdminNotes`, {
+            code: "admin/registration/update_admin_notes",
+            envVariables: {
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+            },
+            permissions: {
+                [props.registrations_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const registration_resource = props.api_gateway.root.addResource("registration");
 
         const create_registration_form_resource = registration_resource.addResource("createRegistrationForm");
         const get_form_resource = registration_resource.addResource("getForm");
-        const get_member_registration_resource = registration_resource.addResource("getMemberRegistration")
+        const get_member_registration_resource = registration_resource.addResource("getMemberRegistration");
+        const update_admin_notes_resource = registration_resource.addResource("updateAdminNotes");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -94,5 +108,6 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
         addCorsEnabledMethod(create_registration_form_resource, create_registration_form, methodOptions);
         addCorsEnabledMethod(get_form_resource, get_form, methodOptions, undefined, "GET");
         addCorsEnabledMethod(get_member_registration_resource, get_member_registration, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(update_admin_notes_resource, update_admin_notes, methodOptions);
     }
 }

@@ -195,7 +195,10 @@ export const handler = async (event: any) => {
             pages,
             registered_on: member_registration?.registered_on,
             deregistered_on: member_registration?.deregistered_on,
-            registration_submitted_on: member_registration?.registration_submitted_on
+            registration_submitted_on: member_registration?.registration_submitted_on,
+            admin_notes: member_registration?.admin_notes ?? undefined,
+            registration_id: registration_id,
+            member_id: query_string_params.user_id
         }, origin);
 
     } catch (error) {
