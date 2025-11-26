@@ -16,7 +16,7 @@ const processBillingData = (monthly_billing: Record<string, any>[], club: Record
             month_data: [],
             "Total registration charge": 0,
             "Total registered users": 0,
-            "Charge per registration": formatAmount(club.member_registration_fee_to_club, club.currency)
+            "Charge per registration": `${club.member_registration_fee_to_club}%`,
         },
         Emails: {
             month_data: [],
@@ -91,9 +91,7 @@ export const handler = async (event: any) => {
 
         let monthly_billing: Record<string, any>[] = [];
 
-        // Check if season_cycle is provided in body
         if (query_string_params?.season_cycle) {
-            // Fetch from S3
             if (!query_string_params.club_account_id) {
                 return createResponse(400, { message: "club_account_id is required." }, origin);
             }
