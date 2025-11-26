@@ -268,14 +268,14 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Club does not exist." }, origin);
         }
 
-        const registration_fee = await getItem(
+        const registration = await getItem(
             process.env.REGISTRATIONS_TABLE_NAME as string,
             {
                 user_id: club_member.user_id,
                 registration_id: club_member.current_reg_id
             }
         )
-        if (!registration_fee) {
+        if (!registration) {
             return createResponse(400, { message: "Registration fee does not exist." }, origin);
         }
 
@@ -283,7 +283,7 @@ export const handler = async (event: any) => {
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
 
-        if (registration_fee.total_outstanding_amount > body.payment_amount) {
+        if (registration.total_outstanding_amount > body.payment_amount) {
 
             await partialRegistrationUpdateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, body.payment_amount)
             await partialRegistrationUpdateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
@@ -294,7 +294,11 @@ export const handler = async (event: any) => {
 
         const registered_on = Date.now()
 
-        await updateClubsRegistrationBilling(body.club_account_id, club.member_registration_fee_to_club);
+        await updateClubsRegistrationBilling(
+            body.club_account_id,
+            registration.total_fee * (club.member_registration_fee_to_club / 100)
+        );
+
         if (body.payment_amount > 0) await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount)
         await updateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
         await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on)

@@ -251,8 +251,8 @@ export const handler = async (event: any) => {
 
         await updateClubsRegistrationBilling(
             clubs[0].club_account_id,
-            clubs[0].member_registration_fee_to_club
-        )
+            registration.total_fee * (clubs[0].member_registration_fee_to_club / 100)
+        );
 
         if (clubs[0]?.use_success_email_template) {
 
