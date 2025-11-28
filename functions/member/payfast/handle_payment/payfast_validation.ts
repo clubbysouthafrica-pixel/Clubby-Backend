@@ -3,7 +3,6 @@ import crypto from "crypto";
 import dns from "dns";
 import { IncomingHttpHeaders } from "http";
 
-const testingMode = false;
 const pfHost = process.env.ENVIRONMENT === "Dev" ? "sandbox.payfast.co.za" : "www.payfast.co.za";
 
 export interface PayFastData {
@@ -93,6 +92,8 @@ export function pfValidPaymentData(
   pfData: PayFastData
 ): boolean {
   const payfastAmount = parseFloat(pfData["amount_gross"]);
+  console.log('payfastAmount: ', payfastAmount);
+  console.log('cartTotal: ', cartTotal);
   return Math.abs(cartTotal - payfastAmount) <= 0.01;
 }
 
