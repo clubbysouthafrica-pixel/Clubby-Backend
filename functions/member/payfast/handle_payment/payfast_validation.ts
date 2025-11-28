@@ -116,8 +116,14 @@ export async function validatePayFastPayment(
   cartTotal: number,
   passPhrase?: string
 ): Promise<boolean> {
+  console.log('cartTotal: ', cartTotal);
+  console.log('req.body: ', JSON.stringify(req.body));
+  console.log('passPhrase: ', passPhrase);
   const pfData = req.body as any;
   const pfParamString = buildParamString(pfData);
+
+  console.log('pfParamString: ', pfParamString);
+  console.log('pfData.signature: ', JSON.stringify(pfData.signature));
 
   const [sigOk, ipOk, amtOk, srvOk] = await Promise.all([
     pfValidSignature(pfData, pfParamString, passPhrase),
@@ -125,6 +131,11 @@ export async function validatePayFastPayment(
     pfValidPaymentData(cartTotal, pfData),
     pfValidServerConfirmation(pfHost, pfParamString),
   ]);
+
+  console.log('sigOk: ', sigOk);
+  console.log('ipOk: ', ipOk);
+  console.log('amtOk: ', amtOk);
+  console.log('srvOk: ', srvOk);
 
   return sigOk && ipOk && amtOk && srvOk;
 }

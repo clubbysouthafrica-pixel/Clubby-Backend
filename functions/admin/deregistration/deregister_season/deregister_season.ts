@@ -121,11 +121,18 @@ async function handleRegistrations(club_account_id: string, cycle_name: string) 
             historical_reports.push(registration);
 
             if (registration?.deregistered) {
-                await removeItem(
+                await updateItem(
                     process.env.REGISTRATIONS_TABLE_NAME as string,
                     {
                         user_id: registration.user_id,
                         registration_id: registration.registration_id
+                    },
+                    "SET #last_season_registration = :last_season_registration",
+                    {
+                        "#last_season_registration": "last_season_registration"
+                    },
+                    {
+                        ":last_season_registration": true
                     }
                 )
             } else {
