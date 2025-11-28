@@ -4,7 +4,7 @@ import dns from "dns";
 import { IncomingHttpHeaders } from "http";
 
 const testingMode = false;
-const pfHost = testingMode ? "sandbox.payfast.co.za" : "www.payfast.co.za";
+const pfHost = process.env.ENVIRONMENT === "Dev" ? "sandbox.payfast.co.za" : "www.payfast.co.za";
 
 export interface PayFastData {
   [key: string]: string;

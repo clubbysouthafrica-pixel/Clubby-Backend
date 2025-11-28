@@ -61,6 +61,7 @@ export class MSC_PayfastConstruct extends Construct {
             code: "member/payfast/handle_payment",
             envVariables: {
                 USER_POOL_ID: props.user_pool.userPoolId,
+                ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 CLUB_NAME_INDEX: "ClubNameIndex",
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
