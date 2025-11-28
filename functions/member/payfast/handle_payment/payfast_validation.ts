@@ -3,7 +3,7 @@ import crypto from "crypto";
 import dns from "dns";
 import { IncomingHttpHeaders } from "http";
 
-const testingMode = true;
+const testingMode = false;
 const pfHost = testingMode ? "sandbox.payfast.co.za" : "www.payfast.co.za";
 
 export interface PayFastData {
