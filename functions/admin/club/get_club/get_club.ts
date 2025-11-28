@@ -79,10 +79,10 @@ export const handler = async (event: any) => {
             joined: item["joined"],
             hide_from_public: item?.hide_from_public ?? false,
             deregistration_in_progress: item?.deregistration_in_progress ?? false,
-            images: {
+            images: query_string_params?.includeImages === "true" ? {
                 cover: { uploadUrl: cover_upload_url, fetchUrl: cover_fetch_url },
                 profile: { uploadUrl: profile_upload_url, fetchUrl: profile_fetch_url },
-            }
+            } : undefined
         }, origin);
 
     } catch (error) {
