@@ -1,4 +1,5 @@
 import { formatAmount } from "./format_amount";
+import { randomUUID } from "crypto";
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO' | 'CHECKBOX' | 'SIGNATURE' | 'DISCOUNT';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP';
@@ -181,4 +182,51 @@ export function billingFieldMapping(billing_fields: any, form: Record<string, an
 
         return acc;
     }, {})
+}
+
+export async function standardFieldMapping(
+    submittedFields: any[],
+    form: Record<string, any>[],
+    addSignatureCallback: (clubAccountId: string, seasonCycle: number, signatureId: string, dataUrl: string) => Promise<string>,
+    clubAccountId: string,
+    seasonCycle: number
+): Promise<Record<string, Record<string, any>>> {
+    const standard_fields: Record<string, Record<string, any>> = {};
+    
+    for (const field of submittedFields) {
+        const f = form.find(f => f.field_id === field.field_id);
+
+        standard_fields[`reg_field_${field.field_id}`] = { 
+            value: field.value, 
+            field_name: f?.field_name, 
+            type: "STANDARD_TEXT" 
+        };
+
+        if (f?.input_type === "DROPDOWN") {
+            standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
+        } else if (f?.input_type === "CHECKBOX") {
+            standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
+        } else if (f?.input_type === "NUMBER") {
+            standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
+        } else if (f?.input_type === "SIGNATURE") {
+            standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_SIGNATURE"
+            
+            if (field?.signature_type) {
+                standard_fields[`reg_field_${field.field_id}`].signature_type = field.signature_type
+
+                if (field.signature_type === "signature") {
+                    const signature_id = randomUUID()
+                    const key = await addSignatureCallback(
+                        clubAccountId,
+                        seasonCycle,
+                        signature_id,
+                        field.value
+                    )
+                    standard_fields[`reg_field_${field.field_id}`].value = key
+                }
+            }
+        }
+    }
+
+    return standard_fields;
 }

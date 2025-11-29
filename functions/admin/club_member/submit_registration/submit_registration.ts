@@ -14,6 +14,7 @@ import {
     validateBillingField,
     validateStandardFields,
     billingFieldMapping,
+    standardFieldMapping,
     StandardField,
     BillingField,
     getClubEmailSendingLimit
@@ -490,37 +491,13 @@ export const handler = async (event: any) => {
 
         const billing_fields = billingFieldMapping(body.billing_fields, form);
 
-        const standard_fields: Record<string, Record<string, string>> = {};
-        for (const field of body.standard_fields) {
-            const f = form.find(f => f.field_id === field.field_id);
-
-            standard_fields[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, type: "STANDARD_TEXT" };
-            if (f?.input_type === "DROPDOWN") {
-                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
-            } else if (f?.input_type === "CHECKBOX") {
-                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
-            } else if (f?.input_type === "NUMBER") {
-                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
-            } else if (f?.input_type === "SIGNATURE") {
-
-                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_SIGNATURE"
-                if (field?.signature_type) {
-
-                    standard_fields[`reg_field_${field.field_id}`].signature_type = field.signature_type
-
-                    if (field.signature_type === "signature") {
-                        const signature_id = randomUUID()
-                        const key = await addSignature(
-                            body.club_account_id,
-                            club.season_cycle,
-                            signature_id,
-                            field.value
-                        )
-                        standard_fields[`reg_field_${field.field_id}`].value = key
-                    }
-                }
-            }
-        }
+        const standard_fields = await standardFieldMapping(
+            body.standard_fields,
+            form,
+            addSignature,
+            body.club_account_id,
+            club.season_cycle
+        );
 
         const registration_submitted_on = Date.now()
 

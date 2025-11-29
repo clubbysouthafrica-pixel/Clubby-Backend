@@ -8,6 +8,7 @@ export {
     validateBillingField, 
     validateStandardFields, 
     billingFieldMapping,
+    standardFieldMapping,
     BillingField, 
     StandardField
 } from "./submit_registration";
