@@ -28,7 +28,9 @@ export class MSC_DeregistrationConstruct extends Construct {
             code: "admin/deregistration/process_deregister_season",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
-                DEREGISTRATION_QUEUE_URL: props.club_deregistration_queue.queueUrl
+                DEREGISTRATION_QUEUE_URL: props.club_deregistration_queue.queueUrl,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
+                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
             },
             permissions: {
                 [props.club_table.tableArn]: [
@@ -37,6 +39,9 @@ export class MSC_DeregistrationConstruct extends Construct {
                 ],
                 [props.club_deregistration_queue.queueArn]: [
                     "sqs:SendMessage"
+                ],
+                [`${props.billing_table.tableArn}/index/ClubAccountIDIndex`]: [
+                    "dynamodb:Query"
                 ]
             },
             timeout: 10,
