@@ -83,7 +83,7 @@ export const handler = async (event: any) => {
 
         const club = await getItem(
             process.env.CLUB_TABLE_NAME as string,
-            { "club_account_id": query_string_params?.club_account_id || query_string_params.club_account_id }
+            { "club_account_id": query_string_params.club_account_id }
         );
         if (!club) {
             return createResponse(500, { message: "Club does not exist." }, origin);
@@ -118,7 +118,6 @@ export const handler = async (event: any) => {
                 throw err;
             }
         } else {
-            // Fetch from DynamoDB (current behavior)
             monthly_billing = await queryItems(
                 process.env.MONTHLY_BILLING_TABLE_NAME as string,
                 "club_account_id = :clubId",
