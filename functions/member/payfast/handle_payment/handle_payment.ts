@@ -284,6 +284,6 @@ export const handler = async (event: any) => {
         return { statusCode: 200, body: "OK" };
     } else {
         console.error("❌ Payment verification failed");
-        return { statusCode: 200, body: "OK" };
+        return { statusCode: 400, body: "Payment failed" };
     }
 };
