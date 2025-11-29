@@ -73,7 +73,8 @@ export class MSC_ReportingConstruct extends Construct {
             envVariables: {
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
-                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
+                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
+                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName
             },
             permissions: {
                 [`${props.billing_table.tableArn}/index/ClubAccountIDIndex`]: [
