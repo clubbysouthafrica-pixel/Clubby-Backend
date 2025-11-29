@@ -82,6 +82,12 @@ export class MSC_ReportingConstruct extends Construct {
                 ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [props.club_history_bucket.bucketArn]: [
+                    "s3:ListBucket"
+                ],
+                [`${props.club_history_bucket.bucketArn}/*`]: [
+                    "s3:GetObject"
                 ]
             },
             memory: 2048,
