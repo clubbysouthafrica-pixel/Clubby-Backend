@@ -12,4 +12,5 @@ export {
     BillingField, 
     StandardField
 } from "./submit_registration";
+export { getSignatureUrl } from "./get_signature_url";
 export { getClubEmailSendingLimit } from "./club_email_sending_limit";

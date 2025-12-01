@@ -1,8 +1,12 @@
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent, queryItems } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, getSignatureUrl, queryItems } from "./function_helpers";
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
+
+const s3_client = new S3Client({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
 
@@ -58,7 +62,113 @@ export const handler = async (event: any) => {
             });
         });
 
-        return createResponse(200, { pages }, origin);
+        if (user_id == null || user_id === undefined) {
+            return createResponse(200, { pages }, origin);
+        }
+
+        const club_member = await getItem(
+            process.env.CLUB_MEMBER_TABLE_NAME as string,
+            {
+                club_account_id: query_string_params.club_account_id,
+                user_id: user_id as string
+            }
+        );
+
+        const registration = await getItem(
+            process.env.REGISTRATIONS_TABLE_NAME as string,
+            {
+                user_id: user_id as string,
+                registration_id: club_member?.current_reg_id,
+            }
+        );
+
+        const sorted = pages
+            .sort((a, b) => a.page_index - b.page_index)
+            .map((p, index) => ({
+                ...p,
+                page_index: index,
+                fields: p.fields
+                    .sort((a: any, b: any) => Number(a.field_order_id) - Number(b.field_order_id))
+                    .map((f: any) => ({ ...f })),
+            }));
+
+        if (!registration) {
+            return createResponse(200, { pages }, origin);
+        }
+
+        const meta: Record<string, any> = {}
+        for (const key of Object.keys(registration)) {
+            if (key.includes("reg_field_")) {
+                if (registration[key]?.signature_type === "signature") {
+                    registration[key].value = await getSignatureUrl(registration[key].value);
+                }
+                meta[key.replace("reg_field_", "")] = registration[key]
+            }
+        }
+
+        const updatedPages = await Promise.all(
+            sorted.map(async (page) => ({
+                ...page,
+                fields: await Promise.all(
+                    page.fields.map(async (field: any) => {
+                        const metaField = meta[field.field_id];
+                        if (!metaField) return field;
+
+                        if (metaField?.signature_type) {
+                            return {
+                                ...field,
+                                value: metaField.value,
+                                signature_type: metaField.signature_type,
+                            };
+                        } else if (field.billingOptions) {
+                            const matchedOption = field.billingOptions.find(
+                                (opt: any) => opt.option_order_id === metaField.option_order_id
+                            );
+
+                            if (matchedOption) {
+                                return {
+                                    ...field,
+                                    value: matchedOption.label,
+                                    label: matchedOption.label,
+                                    selectedAmountCents: matchedOption.amount,
+                                    option_order_id: matchedOption.option_order_id,
+                                };
+                            }
+                        } else if (
+                            field.input_type === "DISCOUNT" &&
+                            field.discountOptions
+                        ) {
+                            const matchedOption = field.discountOptions.find(
+                                (opt: any) => opt.option_order_id === metaField.option_order_id
+                            );
+
+                            if (matchedOption) {
+                                return {
+                                    ...field,
+                                    percentage: metaField.value,
+                                    value: metaField.label_value,
+                                    label: metaField.label_value,
+                                    multiplier_value: metaField?.multiplier_value ?? undefined,
+                                    option_order_id: metaField.option_order_id,
+                                    applicable_billing_fields:
+                                        matchedOption.applicable_billing_fields,
+                                };
+                            }
+                        } else {
+                            return {
+                                ...field,
+                                value: metaField.value,
+                                multiplier_value: metaField?.multiplier_value ?? undefined,
+                            };
+                        }
+
+                        return field;
+                    })
+                ),
+            }))
+        );
+
+        return createResponse(200, { pages: updatedPages, club_name: club_member?.club_name, currency: club_member?.currency }, origin);
 
 
     } catch (error: any) {

@@ -23,14 +23,24 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
             code: "member/registration/get_form",
             envVariables: {
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
             },
             permissions: {
                 [props.registration_form_table.tableArn]: [
                     "dynamodb:Query"
+                ],
+                [props.club_member_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.registrations_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
         });
+        props.signatures_bucket.grantRead(get_form);
 
         const get_member_registration = new MSC_Lambda(this, `${id}-GetMemberRegistration`, {
             code: "member/registration/get_member_registration",
@@ -60,13 +70,13 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
         const get_form_resource = registration_resource.addResource("getForm");
         const get_member_registration_resource = registration_resource.addResource("getMemberRegistration")
 
-        const methodOptions: MethodOptions = {
-            methodResponses: [],
-            authorizationType: AuthorizationType.CUSTOM,
-            authorizer: props.token_authorizer
-        }
+        // const methodOptions: MethodOptions = {
+        //     methodResponses: [],
+        //     authorizationType: AuthorizationType.CUSTOM,
+        //     authorizer: props.token_authorizer
+        // }
 
         addCorsEnabledMethod(get_form_resource, get_form, { methodResponses: [] }, undefined, "GET");
-        addCorsEnabledMethod(get_member_registration_resource, get_member_registration, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(get_member_registration_resource, get_member_registration, { methodResponses: [] }, undefined, "GET");
     }
 }
