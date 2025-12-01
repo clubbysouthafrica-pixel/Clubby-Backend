@@ -74,6 +74,10 @@ export const handler = async (event: any) => {
             }
         );
 
+        if (club_member == null || club_member === undefined) {
+            return createResponse(200, { pages }, origin);
+        }
+
         const registration = await getItem(
             process.env.REGISTRATIONS_TABLE_NAME as string,
             {
