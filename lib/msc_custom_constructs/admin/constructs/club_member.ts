@@ -157,11 +157,25 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const remove_member = new MSC_Lambda(this, `${id}-RemoveMember`, {
+            code: "admin/club_member/remove_member",
+            envVariables: {
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+            },
+            permissions: {
+                [props.club_member_table.tableArn]: [
+                    "dynamodb:DeleteItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const club_member_resource = props.api_gateway.root.addResource("clubMember");
 
         const get_all_club_members_resource = club_member_resource.addResource("getAllClubMembers");
         const register_member_resource = club_member_resource.addResource("registerMember");
         const submit_registration_resource = club_member_resource.addResource("submitRegistration");
+        const remove_member_resource = club_member_resource.addResource("removeMember");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -172,5 +186,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
         addCorsEnabledMethod(get_all_club_members_resource, get_all_club_members, methodOptions, undefined, "GET");
         addCorsEnabledMethod(register_member_resource, register_member, methodOptions);
         addCorsEnabledMethod(submit_registration_resource, submit_registration, { methodResponses: [] })
+        addCorsEnabledMethod(remove_member_resource, remove_member, methodOptions, undefined, "POST");
     }
 }
