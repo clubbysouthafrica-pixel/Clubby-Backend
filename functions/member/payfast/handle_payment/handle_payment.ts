@@ -86,42 +86,6 @@ async function updateTransactionsTable(
     );
 }
 
-async function updateClubReportingTable(
-    club_account_id: string,
-    year: number,
-    month: string,
-    payment_amount: number
-) {
-    await updateItem(
-        process.env.CLUB_REPORTING_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id,
-            year_month: `${year}/${month}`
-        },
-        `SET 
-            #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
-            #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount,
-            #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount,
-            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount,
-            #total_registered_members = if_not_exists(#total_registered_members, :zero) + :one,
-            #total_pending_members = if_not_exists(#total_pending_members, :zero) - :one
-        `,
-        {
-            "#total_registration_pending_revenue": "total_registration_pending_revenue",
-            "#total_registration_revenue": "total_registration_revenue",
-            "#total_revenue": "total_revenue",
-            "#total_pending_revenue": "total_pending_revenue",
-            "#total_registered_members": "total_registered_members",
-            "#total_pending_members": "total_pending_members",
-        },
-        {
-            ":zero": 0,
-            ":one": 1,
-            ":payment_amount": payment_amount,
-        }
-    )
-}
-
 async function updateRegistrationsTable(
     member_id: string,
     current_reg_id: string,
@@ -231,12 +195,6 @@ export const handler = async (event: any) => {
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
-        await updateClubReportingTable(
-            clubs[0].club_account_id,
-            year,
-            month,
-            amount_paid
-        );
 
         await updateRegistrationsTable(
             user_id,
@@ -251,8 +209,8 @@ export const handler = async (event: any) => {
 
         await updateClubsRegistrationBilling(
             clubs[0].club_account_id,
-            clubs[0].member_registration_fee_to_club
-        )
+            registration.total_fee * (clubs[0].member_registration_fee_to_club / 100)
+        );
 
         if (clubs[0]?.use_success_email_template) {
 
@@ -284,6 +242,6 @@ export const handler = async (event: any) => {
         return { statusCode: 200, body: "OK" };
     } else {
         console.error("❌ Payment verification failed");
-        return { statusCode: 400, body: "Invalid payment" };
+        return { statusCode: 400, body: "Payment failed" };
     }
 };

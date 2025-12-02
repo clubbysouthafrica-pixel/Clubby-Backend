@@ -3,8 +3,7 @@ import crypto from "crypto";
 import dns from "dns";
 import { IncomingHttpHeaders } from "http";
 
-const testingMode = true;
-const pfHost = testingMode ? "sandbox.payfast.co.za" : "www.payfast.co.za";
+const pfHost = process.env.ENVIRONMENT === "Dev" ? "sandbox.payfast.co.za" : "www.payfast.co.za";
 
 export interface PayFastData {
   [key: string]: string;
@@ -93,6 +92,8 @@ export function pfValidPaymentData(
   pfData: PayFastData
 ): boolean {
   const payfastAmount = parseFloat(pfData["amount_gross"]);
+  console.log('payfastAmount: ', payfastAmount);
+  console.log('cartTotal: ', cartTotal);
   return Math.abs(cartTotal - payfastAmount) <= 0.01;
 }
 
@@ -116,8 +117,14 @@ export async function validatePayFastPayment(
   cartTotal: number,
   passPhrase?: string
 ): Promise<boolean> {
+  console.log('cartTotal: ', cartTotal);
+  console.log('req.body: ', JSON.stringify(req.body));
+  console.log('passPhrase: ', passPhrase);
   const pfData = req.body as any;
   const pfParamString = buildParamString(pfData);
+
+  console.log('pfParamString: ', pfParamString);
+  console.log('pfData.signature: ', JSON.stringify(pfData.signature));
 
   const [sigOk, ipOk, amtOk, srvOk] = await Promise.all([
     pfValidSignature(pfData, pfParamString, passPhrase),
@@ -125,6 +132,11 @@ export async function validatePayFastPayment(
     pfValidPaymentData(cartTotal, pfData),
     pfValidServerConfirmation(pfHost, pfParamString),
   ]);
+
+  console.log('sigOk: ', sigOk);
+  console.log('ipOk: ', ipOk);
+  console.log('amtOk: ', amtOk);
+  console.log('srvOk: ', srvOk);
 
   return sigOk && ipOk && amtOk && srvOk;
 }

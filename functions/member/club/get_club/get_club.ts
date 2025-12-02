@@ -4,17 +4,6 @@ import { createResponse, deconstructEvent, getItem, queryItems } from "./functio
 
 const s3_client = new S3Client({ region: process.env.REGION });
 
-export async function getSignatureUrl(key: string): Promise<string> {
-    const command = new GetObjectCommand({
-        Bucket: process.env.SIGNATURES_BUCKET_NAME,
-        Key: key,
-    });
-
-    const signedUrl = await getSignedUrl(s3_client, command, { expiresIn: 3600 });
-
-    return signedUrl;
-}
-
 async function getClubImageUrls(club_account_id: string): Promise<Record<string, string | undefined>> {
     const result: Record<string, string | undefined> = {
         club_cover_url: undefined,
@@ -86,29 +75,6 @@ export const handler = async (event: any) => {
         const resubmission_required = club_member?.resubmission_required ?? false
         const registered = club_member ? (club_member?.registered ? true : false) : false;
 
-        const meta: Record<string, any> = {}
-        if (resubmission_required && club_member) {
-            const registration = await getItem(
-                process.env.REGISTRATIONS_TABLE_NAME as string,
-                {
-                    user_id: user_id as string,
-                    registration_id: club_member.current_reg_id
-                }
-            );
-            
-            if (registration) {
-                for (const key of Object.keys(registration)) {
-                    if (key.includes("reg_field_")) {
-                        if (registration[key]?.signature_type === "signature") {
-                            registration[key].value = await getSignatureUrl(registration[key].value);
-                        }
-
-                        meta[key.replace("reg_field_", "")] = registration[key]
-                    }
-                }
-            }
-        }
-
         const form = await queryItems(
             process.env.REGISTRATION_FORM_TABLE_NAME as string,
             "club_account_id = :clubId",
@@ -143,7 +109,6 @@ export const handler = async (event: any) => {
             club_member_exists,
             registered,
             resubmission_required,
-            meta,
             ...await getClubImageUrls(query_string_params.club_account_id)
         }, origin);
 

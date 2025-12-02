@@ -68,73 +68,6 @@ async function partialRegistrationUpdateTransactionsTable(
     );
 }
 
-async function partialRegistrationUpdateClubReportingTable(
-    club_account_id: string,
-    year: number,
-    month: string,
-    payment_amount: number
-) {
-    await updateItem(
-        process.env.CLUB_REPORTING_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id,
-            year_month: `${year}/${month}`
-        },
-        `SET 
-            #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
-            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount,
-            #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount,
-            #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount
-        `,
-        {
-            "#total_revenue": "total_revenue",
-            "#total_registration_revenue": "total_registration_revenue",
-            "#total_registration_pending_revenue": "total_registration_pending_revenue",
-            "#total_pending_revenue": "total_pending_revenue"
-        },
-        {
-            ":zero": 0,
-            ":payment_amount": payment_amount,
-        }
-    )
-}
-
-async function updateClubReportingTable(
-    club_account_id: string,
-    year: number,
-    month: string,
-    payment_amount: number
-) {
-    await updateItem(
-        process.env.CLUB_REPORTING_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id,
-            year_month: `${year}/${month}`
-        },
-        `SET 
-            #total_registered_members = if_not_exists(#total_registered_members, :zero) + :one,
-            #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
-            #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount,
-            #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount,
-            #total_pending_members = if_not_exists(#total_pending_members, :zero) - :one,
-            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount
-        `,
-        {
-            "#total_registered_members": "total_registered_members",
-            "#total_registration_pending_revenue": "total_registration_pending_revenue",
-            "#total_registration_revenue": "total_registration_revenue",
-            "#total_revenue": "total_revenue",
-            "#total_pending_members": "total_pending_members",
-            "#total_pending_revenue": "total_pending_revenue"
-        },
-        {
-            ":one": 1,
-            ":zero": 0,
-            ":payment_amount": payment_amount,
-        }
-    )
-}
-
 async function partialRegistrationUpdateRegistrationsTable(
     member_id: string,
     current_reg_id: string,
@@ -268,14 +201,14 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Club does not exist." }, origin);
         }
 
-        const registration_fee = await getItem(
+        const registration = await getItem(
             process.env.REGISTRATIONS_TABLE_NAME as string,
             {
                 user_id: club_member.user_id,
                 registration_id: club_member.current_reg_id
             }
         )
-        if (!registration_fee) {
+        if (!registration) {
             return createResponse(400, { message: "Registration fee does not exist." }, origin);
         }
 
@@ -283,10 +216,9 @@ export const handler = async (event: any) => {
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
 
-        if (registration_fee.total_outstanding_amount > body.payment_amount) {
+        if (registration.total_outstanding_amount > body.payment_amount) {
 
             await partialRegistrationUpdateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, body.payment_amount)
-            await partialRegistrationUpdateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
             await partialRegistrationUpdateRegistrationsTable(body.member_id, club_member.current_reg_id, body.payment_amount)
 
             return createResponse(200, { registered: false, message: "Member outstanding balance updated." }, origin);
@@ -294,9 +226,12 @@ export const handler = async (event: any) => {
 
         const registered_on = Date.now()
 
-        await updateClubsRegistrationBilling(body.club_account_id, club.member_registration_fee_to_club);
+        await updateClubsRegistrationBilling(
+            body.club_account_id,
+            registration.total_fee * (club.member_registration_fee_to_club / 100)
+        );
+
         if (body.payment_amount > 0) await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount)
-        await updateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
         await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on)
         await updateClubMember(body.club_account_id, body.member_id)
 

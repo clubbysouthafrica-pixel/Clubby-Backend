@@ -68,6 +68,7 @@ export const handler = async (event: any) => {
 
         return createResponse(200, {
             club_account_id: item["club_account_id"],
+            currency: item?.["currency"] ?? undefined,
             club_type: item["club_type"],
             season_cycle: item?.season_cycle ?? 1,
             club_name: item["club_name"],
@@ -76,11 +77,12 @@ export const handler = async (event: any) => {
             support_email: item["support_email"],
             country_of_operation: item["country_of_operation"],
             joined: item["joined"],
-            hide_from_public: item?.hide_from_public ?? false,
-            images: {
+            hide_from_public: item?.hide_from_public ?? false, 
+            deregistration_in_progress: item?.deregistration_in_progress ?? false,
+            images: query_string_params?.includeImages === "true" ? {
                 cover: { uploadUrl: cover_upload_url, fetchUrl: cover_fetch_url },
                 profile: { uploadUrl: profile_upload_url, fetchUrl: profile_fetch_url },
-            }
+            } : undefined
         }, origin);
 
     } catch (error) {

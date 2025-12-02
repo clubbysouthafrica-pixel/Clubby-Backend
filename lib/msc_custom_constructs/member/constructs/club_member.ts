@@ -8,7 +8,6 @@ interface MSC_ClubMemberConstructProps {
     club_member_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     registration_form_table: MSC_Table;
-    club_reporting_table: MSC_Table;
     transactions_table: MSC_Table;
     club_table: MSC_Table,
     users_table: MSC_Table;
@@ -36,7 +35,6 @@ export class MSC_ClubMemberConstruct extends Construct {
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
             },
@@ -64,9 +62,6 @@ export class MSC_ClubMemberConstruct extends Construct {
                     "dynamodb:Query",
                     "dynamodb:PutItem",
                     "dynamodb:DeleteItem"
-                ],
-                [props.club_reporting_table.tableArn]: [
-                    "dynamodb:UpdateItem"
                 ],
                 [props.mail_queue.queueArn]: [
                     "sqs:SendMessage"

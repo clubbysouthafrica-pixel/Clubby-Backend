@@ -12,7 +12,6 @@ interface MSC_ClubMemberClubConstructProps {
     club_table: MSC_Table;
     registration_form_table: MSC_Table;
     registrations_table: MSC_Table;
-    club_reporting_table: MSC_Table;
     signatures_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
     mail_queue: MSC_Queue;
@@ -61,7 +60,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl
             },
@@ -96,9 +94,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                     "dynamodb:PutItem",
                     "dynamodb:DeleteItem"
                 ],
-                [props.club_reporting_table.tableArn]: [
-                    "dynamodb:UpdateItem"
-                ],
                 [props.mail_queue.queueArn]: [
                     "sqs:SendMessage"
                 ],
@@ -119,7 +114,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
             },
             permissions: {
@@ -147,11 +141,21 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                     "dynamodb:GetItem",
                     "dynamodb:UpdateItem"
                 ],
-                [props.club_reporting_table.tableArn]: [
-                    "dynamodb:UpdateItem"
-                ],
                 [props.mail_queue.queueArn]: [
                     "sqs:SendMessage"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
+        const remove_member = new MSC_Lambda(this, `${id}-RemoveMember`, {
+            code: "admin/club_member/remove_member",
+            envVariables: {
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+            },
+            permissions: {
+                [props.club_member_table.tableArn]: [
+                    "dynamodb:DeleteItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
@@ -162,6 +166,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
         const get_all_club_members_resource = club_member_resource.addResource("getAllClubMembers");
         const register_member_resource = club_member_resource.addResource("registerMember");
         const submit_registration_resource = club_member_resource.addResource("submitRegistration");
+        const remove_member_resource = club_member_resource.addResource("removeMember");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -172,5 +177,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
         addCorsEnabledMethod(get_all_club_members_resource, get_all_club_members, methodOptions, undefined, "GET");
         addCorsEnabledMethod(register_member_resource, register_member, methodOptions);
         addCorsEnabledMethod(submit_registration_resource, submit_registration, { methodResponses: [] })
+        addCorsEnabledMethod(remove_member_resource, remove_member, methodOptions, undefined, "POST");
     }
 }

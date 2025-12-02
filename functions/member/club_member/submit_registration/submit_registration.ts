@@ -15,6 +15,7 @@ import {
     StandardField,
     BillingField,
     billingFieldMapping,
+    standardFieldMapping,
     getClubEmailSendingLimit
 } from "./function_helpers";
 
@@ -136,37 +137,6 @@ async function addToRegistrationsTable(
     )
 
     return `${club_account_id}-00${new_registration_index}`;
-}
-
-async function addToClubReportingTable(
-    club_account_id: string,
-    membership_amount: number,
-) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    await updateItem(
-        process.env.CLUB_REPORTING_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id,
-            year_month: `${year}/${month}`
-        },
-        `SET 
-                #total_pending_members = if_not_exists(#total_pending_members, :zero) + :one,
-                #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) + :member_registration_fee,
-                #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) + :member_registration_fee
-        `,
-        {
-            "#total_pending_members": "total_pending_members",
-            "#total_registration_pending_revenue": "total_registration_pending_revenue",
-            "#total_pending_revenue": "total_pending_revenue"
-        },
-        {
-            ":one": 1,
-            ":zero": 0,
-            ":member_registration_fee": membership_amount,
-        }
-    )
 }
 
 async function addToTransactionsTable(
@@ -382,37 +352,13 @@ export const handler = async (event: any) => {
 
         const billing_fields = billingFieldMapping(body.billing_fields, form);
 
-        const standard_fields: Record<string, Record<string, string>> = {};
-        for (const field of body.standard_fields) {
-            const f = form.find(f => f.field_id === field.field_id);
-
-            standard_fields[`reg_field_${field.field_id}`] = { value: field.value, field_name: f?.field_name, type: "STANDARD_TEXT" };
-            if (f?.input_type === "DROPDOWN") {
-                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"
-            } else if (f?.input_type === "CHECKBOX") {
-                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
-            } else if (f?.input_type === "NUMBER") {
-                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
-            } else if (f?.input_type === "SIGNATURE") {
-
-                standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_SIGNATURE"
-                if (field?.signature_type) {
-
-                    standard_fields[`reg_field_${field.field_id}`].signature_type = field.signature_type
-
-                    if (field.signature_type === "signature") {
-                        const signature_id = randomUUID()
-                        const key = await addSignature(
-                            body.club_account_id,
-                            club.season_cycle,
-                            signature_id,
-                            field.value
-                        )
-                        standard_fields[`reg_field_${field.field_id}`].value = key
-                    }
-                }
-            }
-        }
+        const standard_fields = await standardFieldMapping(
+            body.standard_fields,
+            form,
+            addSignature,
+            body.club_account_id,
+            club.season_cycle
+        );
 
         const registration_submitted_on = Date.now()
 
@@ -449,7 +395,6 @@ export const handler = async (event: any) => {
             item
         );
 
-        await addToClubReportingTable(body.club_account_id, membership_amount)
         await addToTransactionsTable(
             body.club_account_id,
             user.first_name,

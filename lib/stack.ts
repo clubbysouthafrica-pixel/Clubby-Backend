@@ -14,6 +14,7 @@ import { MSC_Cognito, MSC_Queue } from './msc_service_constructs';
 export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
     super(scope, stack_id, props);
+    this.terminationProtection = true;
 
     const mail_queue = new MSC_Queue(this, `SendMail`, {
       queue_name: 'SendMail',
@@ -47,7 +48,6 @@ export class MSC_Stack extends cdk.Stack {
       admin_user_pool: admin_user_pool,
       club_deregistration_queue: club_deregistration_queue,
       transactions_table: tables.transactions_table,
-      club_reporting_table: tables.club_reporting_table,
       users_table: tables.users_table,
       billing_table: tables.billing_table,
       club_table: tables.club_table,
@@ -81,7 +81,6 @@ export class MSC_Stack extends cdk.Stack {
       signatures_bucket: buckets.signatures_bucket,
       member_user_pool: member_user_pool,
       registrations_table: tables.registrations_table,
-      club_reporting_table: tables.club_reporting_table,
       transactions_table: tables.transactions_table,
       billing_table: tables.billing_table,
       users_table: tables.users_table,

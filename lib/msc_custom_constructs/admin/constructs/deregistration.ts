@@ -10,7 +10,6 @@ interface MSC_DeregistrationConstructProps {
     club_member_table: MSC_Table;
     billing_table: MSC_Table;
     transactions_table: MSC_Table;
-    club_reporting_table: MSC_Table;
     club_deregistration_queue: MSC_Queue;
     registrations_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
@@ -28,7 +27,9 @@ export class MSC_DeregistrationConstruct extends Construct {
             code: "admin/deregistration/process_deregister_season",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
-                DEREGISTRATION_QUEUE_URL: props.club_deregistration_queue.queueUrl
+                DEREGISTRATION_QUEUE_URL: props.club_deregistration_queue.queueUrl,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
+                CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
             },
             permissions: {
                 [props.club_table.tableArn]: [
@@ -37,6 +38,9 @@ export class MSC_DeregistrationConstruct extends Construct {
                 ],
                 [props.club_deregistration_queue.queueArn]: [
                     "sqs:SendMessage"
+                ],
+                [`${props.billing_table.tableArn}/index/ClubAccountIDIndex`]: [
+                    "dynamodb:Query"
                 ]
             },
             timeout: 10,
@@ -53,7 +57,6 @@ export class MSC_DeregistrationConstruct extends Construct {
                 CLUB_MEMBER_CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
                 REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
                 BILLING_TABLE_NAME: props.billing_table.tableName
             },
             permissions: {
@@ -66,10 +69,6 @@ export class MSC_DeregistrationConstruct extends Construct {
                 ],
                 [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
                     "dynamodb:Query"
-                ],
-                [props.club_reporting_table.tableArn]: [
-                    "dynamodb:Query",
-                    "dynamodb:DeleteItem"
                 ],
                 [props.billing_table.tableArn]: [
                     "dynamodb:Query",
@@ -100,7 +99,6 @@ export class MSC_DeregistrationConstruct extends Construct {
             code: "admin/deregistration/deregister_members",
             envVariables: {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
             },
             permissions: {
@@ -109,9 +107,6 @@ export class MSC_DeregistrationConstruct extends Construct {
                     "dynamodb:GetItem"
                 ],
                 [props.registrations_table.tableArn]: [
-                    "dynamodb:UpdateItem"
-                ],
-                [props.club_reporting_table.tableArn]: [
                     "dynamodb:UpdateItem"
                 ]
             },

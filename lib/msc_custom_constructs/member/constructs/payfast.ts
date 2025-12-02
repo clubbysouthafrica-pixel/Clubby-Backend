@@ -9,7 +9,6 @@ interface MSC_PayfastConstructProps {
     token_authorizer: TokenAuthorizer;
     registrations_table: MSC_Table;
     club_member_table: MSC_Table;
-    club_reporting_table: MSC_Table;
     transactions_table: MSC_Table;
     user_pool: MSC_Cognito;
     club_table: MSC_Table;
@@ -61,11 +60,11 @@ export class MSC_PayfastConstruct extends Construct {
             code: "member/payfast/handle_payment",
             envVariables: {
                 USER_POOL_ID: props.user_pool.userPoolId,
+                ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 CLUB_NAME_INDEX: "ClubNameIndex",
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
@@ -89,9 +88,6 @@ export class MSC_PayfastConstruct extends Construct {
                 ],
                 [props.club_member_table.tableArn]: [
                     "dynamodb:GetItem",
-                    "dynamodb:UpdateItem"
-                ],
-                [props.club_reporting_table.tableArn]: [
                     "dynamodb:UpdateItem"
                 ],
                 [props.transactions_table.tableArn]: [

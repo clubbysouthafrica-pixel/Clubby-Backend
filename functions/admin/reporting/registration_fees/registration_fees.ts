@@ -3,6 +3,9 @@ import {
     deconstructEvent,
     queryItems
 } from "./function_helpers";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+
+const s3_client = new S3Client({ region: process.env.REGION });
 
 function createBlankReport(report: any[], allFields: any) {
     allFields.forEach((field: Record<string, any>) => {
@@ -134,11 +137,57 @@ export const handler = async (event: any) => {
 
     try {
 
-        const fields = await queryItems(
-            process.env.REGISTRATION_FORM_TABLE_NAME as string,
-            "club_account_id = :clubId",
-            { ":clubId": query_string_params.club_account_id }
-        )
+        let fields: any = null;
+        let registrations: any = null;
+
+        if (query_string_params?.season_cycle) {
+            if (!query_string_params.club_account_id) {
+                return createResponse(400, { message: "club_account_id is required." }, origin);
+            }
+
+            const s3Key = `${query_string_params.club_account_id}/Season_${query_string_params.season_cycle}/Registrations.json`;
+
+            try {
+                const s3Object = await s3_client.send(
+                    new GetObjectCommand({
+                        Bucket: process.env.CLUB_HISTORY_BUCKET_NAME as string,
+                        Key: s3Key,
+                    })
+                );
+
+                const bodyContents = await s3Object.Body?.transformToString();
+                const s3Data = JSON.parse(bodyContents || '{}');
+                
+                registrations = Array.isArray(s3Data) ? s3Data : [];
+
+                fields = await queryItems(
+                    process.env.REGISTRATION_FORM_TABLE_NAME as string,
+                    "club_account_id = :clubId",
+                    { ":clubId": query_string_params.club_account_id }
+                )
+
+            } catch (err: any) {
+                const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
+                if (status === 404) {
+                    return createResponse(404, { message: "Registration fees data not found for the specified season." }, origin);
+                }
+                console.error(`Error fetching S3 object ${s3Key}:`, err);
+                throw err;
+            }
+        } else {
+            fields = await queryItems(
+                process.env.REGISTRATION_FORM_TABLE_NAME as string,
+                "club_account_id = :clubId",
+                { ":clubId": query_string_params.club_account_id }
+            )
+
+            registrations = await queryItems(
+                process.env.REGISTRATIONS_TABLE_NAME as string,
+                "club_account_id = :clubId",
+                { ":clubId": query_string_params.club_account_id },
+                process.env.REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX
+            )
+        }
 
         if (!fields) {
             return createResponse(200, { report: [] }, origin)
@@ -147,13 +196,6 @@ export const handler = async (event: any) => {
         const report: any[] = [];
 
         createBlankReport(report, fields)
-
-        const registrations = await queryItems(
-            process.env.REGISTRATIONS_TABLE_NAME as string,
-            "club_account_id = :clubId",
-            { ":clubId": query_string_params.club_account_id },
-            process.env.REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX
-        )
 
         if (!registrations) {
             return createResponse(200, { report }, origin);
@@ -171,7 +213,7 @@ export const handler = async (event: any) => {
         return createResponse(200, { report }, origin);
 
     } catch (error: any) {
-        console.error('Submit registration error:', error);
+        console.error('Registration fees reporting error:', error);
         const message = error?.message || "Internal Server Error";
         const statusCode = error?.$metadata?.httpStatusCode || 500;
         return createResponse(statusCode, { message }, origin);

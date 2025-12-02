@@ -1,20 +1,18 @@
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent, getItem, queryItems, formatAmount } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, queryItems, formatAmount, getSignatureUrl } from "./function_helpers";
 
 const s3_client = new S3Client({ region: process.env.AWS_REGION });
 
-async function getClubMemberRegistrationId(user_id: string, club_account_id: string): Promise<string> {
-    const club_member = await getItem(
+async function getClubMember(user_id: string, club_account_id: string): Promise<any | null> {
+    return await getItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
         {
             club_account_id: club_account_id,
             user_id: user_id as string
         }
     );
-
-    return club_member?.current_reg_id
 }
 
 async function getRegistration(user_id: string, registration_id: string): Promise<any> {
@@ -70,17 +68,6 @@ async function getRegistrationForm(club_account_id: string): Promise<Record<stri
     return pages
 }
 
-export async function getSignatureUrl(key: string): Promise<string> {
-    const command = new GetObjectCommand({
-        Bucket: process.env.SIGNATURES_BUCKET_NAME,
-        Key: key,
-    });
-
-    const signedUrl = await getSignedUrl(s3_client, command, { expiresIn: 3600 });
-
-    return signedUrl;
-}
-
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -93,8 +80,8 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_account_id must be STRING type." }, origin);
         }
 
-        const registration_id = await getClubMemberRegistrationId(query_string_params.user_id as string, query_string_params.club_account_id);
-        const member_registration = await getRegistration(query_string_params.user_id as string, registration_id);
+        const club_member = await getClubMember(query_string_params.user_id as string, query_string_params.club_account_id);
+        const member_registration = await getRegistration(query_string_params.user_id as string, club_member?.current_reg_id);
 
         const registration_form = await getRegistrationForm(query_string_params.club_account_id)
 
@@ -191,11 +178,20 @@ export const handler = async (event: any) => {
 
         pages.sort((a, b) => (a.page_index ?? 0) - (b.page_index ?? 0));
 
+        let transaction_id = undefined;
+        if (member_registration?.last_season_registration === undefined || member_registration.last_season_registration == false) {
+            transaction_id = club_member.current_reg_transaction_id;
+        }
+
         return createResponse(200, {
             pages,
             registered_on: member_registration?.registered_on,
             deregistered_on: member_registration?.deregistered_on,
-            registration_submitted_on: member_registration?.registration_submitted_on
+            registration_submitted_on: member_registration?.registration_submitted_on,
+            transaction_id: transaction_id,
+            admin_notes: member_registration?.admin_notes ?? undefined,
+            registration_id: club_member?.current_reg_id ?? undefined,
+            member_id: query_string_params.user_id
         }, origin);
 
     } catch (error) {

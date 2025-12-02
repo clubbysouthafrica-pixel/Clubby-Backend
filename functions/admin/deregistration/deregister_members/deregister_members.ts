@@ -8,22 +8,6 @@ import {
 
 const s3Client = new S3Client({});
 
-async function updateClubReportingTable(club_account_id: string) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    await updateItem(
-        process.env.CLUB_REPORTING_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id,
-            year_month: `${year}/${month}`
-        },
-        `SET #total_deregistered_members = if_not_exists(#total_deregistered_members, :zero) + :one`,
-        { "#total_deregistered_members": "total_deregistered_members" },
-        { ":zero": 0, ":one": 1 }
-    )
-}
-
 async function updateClubMemberTable(user_id: string, club_account_id: string) {
     await updateItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
@@ -103,7 +87,6 @@ export const handler = async (event: any) => {
             club_members.push(member);
 
             await updateClubMemberTable(member.user_id, body.club_account_id);
-            await updateClubReportingTable(body.club_account_id)
             await updateRegistrationsTable(member.user_id, member.current_reg_id, body?.deregistration_reason ?? "Deregistered by admin")
         }
 
