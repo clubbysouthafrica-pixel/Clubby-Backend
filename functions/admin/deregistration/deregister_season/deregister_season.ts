@@ -56,32 +56,6 @@ async function handleClubMemberTable(club_account_id: string) {
     }
 }
 
-async function handleClubReporting(club_account_id: string, cycle_name: string) {
-    const club_reports = await queryItems(
-        process.env.CLUB_REPORTING_TABLE_NAME as string,
-        "club_account_id = :clubId",
-        { ":clubId": club_account_id }
-    );
-
-    const historical_reports: any[] = []
-
-    if (club_reports) {
-        for (const club_report of club_reports) {
-            historical_reports.push(club_report);
-
-            await removeItem(
-                process.env.CLUB_REPORTING_TABLE_NAME as string,
-                {
-                    club_account_id: club_account_id,
-                    year_month: club_report.year_month
-                }
-            )
-
-        }
-    }
-    await addToHistoricalReportingBucket(club_account_id, cycle_name, "ClubReporting", historical_reports);
-}
-
 async function handleMonthlyBilling(club_account_id: string, cycle_name: string) {
     const billing_reports = await queryItems(
         process.env.BILLING_TABLE_NAME as string,
@@ -214,7 +188,6 @@ export const handler = async (event: any) => {
             const cycle_name = `Season_${season_cycle}`
 
             await handleClubMemberTable(club_account_id);
-            await handleClubReporting(club_account_id, cycle_name);
             await handleMonthlyBilling(club_account_id, cycle_name);
             await handleRegistrations(club_account_id, cycle_name);
             await handleTransactions(club_account_id, cycle_name);

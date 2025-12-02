@@ -9,7 +9,6 @@ interface MSC_ReportingConstructProps {
     registration_form_table: MSC_Table;
     registrations_table: MSC_Table;
     billing_table: MSC_Table;
-    club_reporting_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     club_history_bucket: MSC_Bucket;
     layers: {
@@ -24,19 +23,23 @@ export class MSC_ReportingConstruct extends Construct {
         const general_reporting = new MSC_Lambda(this, `${id}-GeneralReporting`, {
             code: "admin/reporting/general_reporting",
             envVariables: {
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
-                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName
+                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName,
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
             },
             permissions: {
-                [props.club_reporting_table.tableArn]: [
-                    "dynamodb:Query"
-                ],
-                [props.club_history_bucket.bucketArn]: [
-                    "s3:ListBucket"
-                ],
+                // [props.club_reporting_table.tableArn]: [
+                //     "dynamodb:Query"
+                // ],
+                // [props.club_history_bucket.bucketArn]: [
+                //     "s3:ListBucket"
+                // ],
                 [`${props.club_history_bucket.bucketArn}/*`]: [
                     "s3:GetObject"
-                ]
+                ],
+                [`${props.registrations_table.tableArn}/index/ClubAccountIDIndex`]: [
+                    "dynamodb:Query"
+                ],
             },
             memory: 2048,
             layers: [props.layers.jwt_layer]

@@ -139,37 +139,6 @@ async function addToRegistrationsTable(
     return `${club_account_id}-00${new_registration_index}`;
 }
 
-async function addToClubReportingTable(
-    club_account_id: string,
-    membership_amount: number,
-) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    await updateItem(
-        process.env.CLUB_REPORTING_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id,
-            year_month: `${year}/${month}`
-        },
-        `SET 
-                #total_pending_members = if_not_exists(#total_pending_members, :zero) + :one,
-                #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) + :member_registration_fee,
-                #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) + :member_registration_fee
-        `,
-        {
-            "#total_pending_members": "total_pending_members",
-            "#total_registration_pending_revenue": "total_registration_pending_revenue",
-            "#total_pending_revenue": "total_pending_revenue"
-        },
-        {
-            ":one": 1,
-            ":zero": 0,
-            ":member_registration_fee": membership_amount,
-        }
-    )
-}
-
 async function addToTransactionsTable(
     club_account_id: string,
     first_name: string,
@@ -426,7 +395,6 @@ export const handler = async (event: any) => {
             item
         );
 
-        await addToClubReportingTable(body.club_account_id, membership_amount)
         await addToTransactionsTable(
             body.club_account_id,
             user.first_name,

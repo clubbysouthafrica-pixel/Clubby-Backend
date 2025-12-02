@@ -12,7 +12,6 @@ interface MSC_ClubMemberClubConstructProps {
     club_table: MSC_Table;
     registration_form_table: MSC_Table;
     registrations_table: MSC_Table;
-    club_reporting_table: MSC_Table;
     signatures_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
     mail_queue: MSC_Queue;
@@ -61,7 +60,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl
             },
@@ -96,9 +94,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                     "dynamodb:PutItem",
                     "dynamodb:DeleteItem"
                 ],
-                [props.club_reporting_table.tableArn]: [
-                    "dynamodb:UpdateItem"
-                ],
                 [props.mail_queue.queueArn]: [
                     "sqs:SendMessage"
                 ],
@@ -119,7 +114,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                CLUB_REPORTING_TABLE_NAME: props.club_reporting_table.tableName,
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
             },
             permissions: {
@@ -145,9 +139,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 ],
                 [props.registrations_table.tableArn]: [
                     "dynamodb:GetItem",
-                    "dynamodb:UpdateItem"
-                ],
-                [props.club_reporting_table.tableArn]: [
                     "dynamodb:UpdateItem"
                 ],
                 [props.mail_queue.queueArn]: [

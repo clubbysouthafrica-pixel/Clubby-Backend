@@ -68,73 +68,6 @@ async function partialRegistrationUpdateTransactionsTable(
     );
 }
 
-async function partialRegistrationUpdateClubReportingTable(
-    club_account_id: string,
-    year: number,
-    month: string,
-    payment_amount: number
-) {
-    await updateItem(
-        process.env.CLUB_REPORTING_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id,
-            year_month: `${year}/${month}`
-        },
-        `SET 
-            #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
-            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount,
-            #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount,
-            #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount
-        `,
-        {
-            "#total_revenue": "total_revenue",
-            "#total_registration_revenue": "total_registration_revenue",
-            "#total_registration_pending_revenue": "total_registration_pending_revenue",
-            "#total_pending_revenue": "total_pending_revenue"
-        },
-        {
-            ":zero": 0,
-            ":payment_amount": payment_amount,
-        }
-    )
-}
-
-async function updateClubReportingTable(
-    club_account_id: string,
-    year: number,
-    month: string,
-    payment_amount: number
-) {
-    await updateItem(
-        process.env.CLUB_REPORTING_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id,
-            year_month: `${year}/${month}`
-        },
-        `SET 
-            #total_registered_members = if_not_exists(#total_registered_members, :zero) + :one,
-            #total_revenue = if_not_exists(#total_revenue, :zero) + :payment_amount,
-            #total_registration_revenue = if_not_exists(#total_registration_revenue, :zero) + :payment_amount,
-            #total_registration_pending_revenue = if_not_exists(#total_registration_pending_revenue, :zero) - :payment_amount,
-            #total_pending_members = if_not_exists(#total_pending_members, :zero) - :one,
-            #total_pending_revenue = if_not_exists(#total_pending_revenue, :zero) - :payment_amount
-        `,
-        {
-            "#total_registered_members": "total_registered_members",
-            "#total_registration_pending_revenue": "total_registration_pending_revenue",
-            "#total_registration_revenue": "total_registration_revenue",
-            "#total_revenue": "total_revenue",
-            "#total_pending_members": "total_pending_members",
-            "#total_pending_revenue": "total_pending_revenue"
-        },
-        {
-            ":one": 1,
-            ":zero": 0,
-            ":payment_amount": payment_amount,
-        }
-    )
-}
-
 async function partialRegistrationUpdateRegistrationsTable(
     member_id: string,
     current_reg_id: string,
@@ -286,7 +219,6 @@ export const handler = async (event: any) => {
         if (registration.total_outstanding_amount > body.payment_amount) {
 
             await partialRegistrationUpdateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, body.payment_amount)
-            await partialRegistrationUpdateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
             await partialRegistrationUpdateRegistrationsTable(body.member_id, club_member.current_reg_id, body.payment_amount)
 
             return createResponse(200, { registered: false, message: "Member outstanding balance updated." }, origin);
@@ -300,7 +232,6 @@ export const handler = async (event: any) => {
         );
 
         if (body.payment_amount > 0) await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount)
-        await updateClubReportingTable(body.club_account_id, year, month, body.payment_amount)
         await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on)
         await updateClubMember(body.club_account_id, body.member_id)
 

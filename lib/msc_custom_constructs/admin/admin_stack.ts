@@ -28,7 +28,6 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     admin_user_pool: MSC_Cognito;
     member_user_pool: MSC_Cognito;
     registration_form_table: MSC_Table;
-    club_reporting_table: MSC_Table;
     club_deregistration_queue: MSC_Queue;
     club_member_table: MSC_Table;
     image_bucket: MSC_Bucket;
@@ -84,7 +83,6 @@ export class MSC_AdminNestedStack extends Stack {
             club_table: props.club_table,
             billing_table: props.billing_table,
             layers: props.layers,
-            club_reporting_table: props.club_reporting_table,
             token_authorizer: jwt_construct.token_authorizer,
             registrations_table: props.registrations_table,
             registration_form_table: props.registration_form_table,
@@ -98,7 +96,6 @@ export class MSC_AdminNestedStack extends Stack {
             billing_table: props.billing_table,
             club_deregistration_queue: props.club_deregistration_queue,
             club_member_table: props.club_member_table,
-            club_reporting_table: props.club_reporting_table,
             club_history_bucket: props.club_history_bucket,
             layers: props.layers,
             registrations_table: props.registrations_table,
@@ -163,7 +160,6 @@ export class MSC_AdminNestedStack extends Stack {
             signatures_bucket: props.signatures_bucket,
             users_table: props.users_table,
             member_user_pool: props.member_user_pool,
-            club_reporting_table: props.club_reporting_table,
             transactions_table: props.transactions_table,
             club_table: props.club_table,
             club_member_table: props.club_member_table,
