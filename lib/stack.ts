@@ -14,6 +14,7 @@ import { MSC_Cognito, MSC_Queue } from './msc_service_constructs';
 export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
     super(scope, stack_id, props);
+    this.terminationProtection = true;
 
     const mail_queue = new MSC_Queue(this, `SendMail`, {
       queue_name: 'SendMail',
