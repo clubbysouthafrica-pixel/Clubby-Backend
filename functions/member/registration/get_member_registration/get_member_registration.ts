@@ -112,14 +112,23 @@ export const handler = async (event: any) => {
 
                     if (key.includes(field.field_id) && reg.type === "STANDARD_SIGNATURE") {
                         if (reg.signature_type === "signature") {
-                            const signatureUrl = await getSignatureUrl(reg.value);
-                            new_page.fields.push({
-                                type: "STANDARD_SIGNATURE",
-                                signature_type: "signature",
-                                label: field.field_name,
-                                value: signatureUrl,
-                                position: field.field_order_id
-                            });
+                            if (member_registration?.last_season_registration === true) {
+                                new_page.fields.push({
+                                    type: "STANDARD_SIGNATURE",
+                                    signature_type: "name",
+                                    label: field.field_name,
+                                    value: "Previous Season Registration - Signature Not Available",
+                                    position: field.field_order_id
+                                });
+                            } else {
+                                new_page.fields.push({
+                                    type: "STANDARD_SIGNATURE",
+                                    signature_type: "signature",
+                                    label: field.field_name,
+                                    value: await getSignatureUrl(reg.value),
+                                    position: field.field_order_id
+                                });
+                            }
                         } else {
                             new_page.fields.push({
                                 type: "STANDARD_SIGNATURE",

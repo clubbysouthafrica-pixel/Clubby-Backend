@@ -99,7 +99,8 @@ export class MSC_AdminNestedStack extends Stack {
             club_history_bucket: props.club_history_bucket,
             layers: props.layers,
             registrations_table: props.registrations_table,
-            token_authorizer: jwt_construct.token_authorizer
+            token_authorizer: jwt_construct.token_authorizer,
+            signatures_bucket: props.signatures_bucket,
         });
 
         new MSC_MailerConstruct(this, `${id}-Mail`, {

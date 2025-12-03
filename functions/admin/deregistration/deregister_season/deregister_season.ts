@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { PutObjectCommand, S3Client, ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import {
     getItem,
     queryItems,
@@ -161,6 +161,54 @@ async function handleTransactions(club_account_id: string, cycle_name: string) {
     await addToHistoricalReportingBucket(club_account_id, cycle_name, "Transaction", historical_reports);
 }
 
+async function deleteClubSignatures(club_account_id: string): Promise<void> {
+    const prefix = `${club_account_id}/`;
+    let continuationToken: string | undefined;
+
+    try {
+        while (true) {
+            const listCommand = new ListObjectsV2Command({
+                Bucket: process.env.SIGNATURES_BUCKET_NAME,
+                Prefix: prefix,
+                ContinuationToken: continuationToken,
+            });
+
+            console.log(`@@@ listObjects request (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}, Prefix: ${prefix})`);
+            const listResponse = await s3Client.send(listCommand);
+            console.log(`@@@ listObjects response (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}):`, JSON.stringify(listResponse));
+
+            if (!listResponse.Contents || listResponse.Contents.length === 0) {
+                console.log(`No signatures found for club ${club_account_id}`);
+                break;
+            }
+
+            const deleteCommand = new DeleteObjectsCommand({
+                Bucket: process.env.SIGNATURES_BUCKET_NAME,
+                Delete: {
+                    Objects: listResponse.Contents.map(obj => ({
+                        Key: obj.Key!,
+                    })),
+                },
+            });
+
+            console.log(`@@@ deleteObjects request (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}, Count: ${listResponse.Contents.length})`);
+            const deleteResponse = await s3Client.send(deleteCommand);
+            console.log(`@@@ deleteObjects response (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}):`, JSON.stringify(deleteResponse));
+
+            if (!listResponse.IsTruncated) {
+                break;
+            }
+
+            continuationToken = listResponse.NextContinuationToken;
+        }
+
+        console.log(`✅ Successfully deleted all signatures for club ${club_account_id}`);
+    } catch (error: any) {
+        console.error(`Error deleting signatures for club ${club_account_id}:`, error);
+        throw error;
+    }
+}
+
 export const handler = async (event: any) => {
 
     console.log("-------------------------------");
@@ -191,6 +239,7 @@ export const handler = async (event: any) => {
             await handleMonthlyBilling(club_account_id, cycle_name);
             await handleRegistrations(club_account_id, cycle_name);
             await handleTransactions(club_account_id, cycle_name);
+            await deleteClubSignatures(club_account_id);
 
             await updateItem(
                 process.env.CLUB_TABLE_NAME as string,
