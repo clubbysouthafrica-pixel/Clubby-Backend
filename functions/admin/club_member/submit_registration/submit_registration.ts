@@ -369,6 +369,90 @@ export async function createClubbyUser(email: string, first_name: string, surnam
     }
 }
 
+export async function sendEmailToAdmin(
+    toAddress: string,
+    firstName: string,
+    surname: string,
+    clubName: string,
+): Promise<void> {
+    const emailSubject = `New Member Registration for ${clubName}`;
+    const emailBody = `
+    <html>
+      <body style="margin:0;padding:0;background:#f7f7f9;font-family: Arial, Helvetica, sans-serif;color:#1f2937;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f7f9;padding:24px 0;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                <tr>
+                  <td style="padding:24px 24px 0 24px;">
+                    <h1 style="margin:0 0 12px 0;font-size:20px;line-height:28px;color:#111827;">New Member Registration</h1>
+                    <p style="margin:0 0 16px 0;line-height:1.6;">A new member, <strong>${firstName} ${surname}</strong>, has submitted a registration form for your club, <strong>${clubName}</strong>.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 0 24px;">
+                    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin-bottom:16px;">
+                      <p style="margin:0 0 8px 0;font-weight:bold;color:#111827;">Member Details</p>
+                      <p style="margin:0;line-height:1.6;"><strong>Name:</strong> ${firstName} ${surname}<br/>
+                      <strong>Club:</strong> ${clubName}</p>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 0 24px;">
+                    <p style="margin:0 0 16px 0;line-height:1.6;">To review and complete their registration, please visit the Members Pending section.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;">
+                    <a href="https://${process.env.DOMAIN as string}/manage/members" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;padding:10px 16px;font-weight:600;">View Members Pending</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;">
+                    <p style="margin:0;line-height:1.6;color:#374151;">Need help? Email us at <a href="mailto:admin@${process.env.DOMAIN as string}" style="color:#2563eb;text-decoration:none;">admin@${process.env.DOMAIN as string}</a>.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;border-top:1px solid #e5e7eb;">
+                    <p style="margin:12px 0 0 0;line-height:1.6;color:#6b7280;">Kind regards,<br/>The Clubby Team</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>`;
+
+    const command = new SendEmailCommand({
+        Destination: {
+            ToAddresses: [toAddress],
+        },
+        Message: {
+            Body: {
+                Html: {
+                    Charset: "UTF-8",
+                    Data: emailBody,
+                },
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: emailSubject,
+            },
+        },
+        Source: `registrations@${process.env.DOMAIN as string}`,
+    });
+
+    try {
+        await sesClient.send(command);
+        console.log(`✅ Email sent to ${toAddress}`);
+    } catch (err) {
+        console.error("❌ Error sending email:", err);
+        throw err;
+    }
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -481,6 +565,15 @@ export const handler = async (event: any) => {
             member_user_id as string,
             membership_amount,
         )
+
+        if (club.notify_on_member_registration !== false) {
+            await sendEmailToAdmin(
+                club.support_email,
+                body.first_name,
+                body.surname,
+                club.club_name
+            )
+        }
 
         if (club?.use_submission_email_template) {
 
