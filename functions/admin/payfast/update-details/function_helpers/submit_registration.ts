@@ -102,6 +102,8 @@ export function validateBillingField(billingFields: BillingField[], submittedFie
 
                     }
                 })
+            } else if (billing_field.input_type === "NUMBER" && billing_field.field_id === sub_field.field_id) {
+                total_amount += Number(sub_field.value) * percentage;
             }
         })
     })
@@ -179,6 +181,8 @@ export function billingFieldMapping(billing_fields: any, form: Record<string, an
             if (field?.applicable_billing_fields) {
                 acc[`reg_field_${field.field_id}`].applicable_billing_fields = field.applicable_billing_fields;
             }
+        } else if (f?.input_type === "NUMBER") {
+            acc[`reg_field_${field.field_id}`].type = "BILLING_NUMBER"
         } else {
             acc[`reg_field_${field.field_id}`].type = "BILLING_TEXT"
         }
