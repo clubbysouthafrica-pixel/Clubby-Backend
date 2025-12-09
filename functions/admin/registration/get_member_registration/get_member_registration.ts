@@ -1,9 +1,5 @@
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { createResponse, deconstructEvent, getItem, queryItems, formatAmount, getSignatureUrl } from "./function_helpers";
-
-const s3_client = new S3Client({ region: process.env.AWS_REGION });
 
 async function getClubMember(user_id: string, club_account_id: string): Promise<any | null> {
     return await getItem(
@@ -139,6 +135,7 @@ export const handler = async (event: any) => {
 
                     else if (key.includes(field.field_id) && reg.type.includes("STANDARD_")) {
                         new_page.fields.push({
+                            field_id: field.field_id,
                             type: "STANDARD_OTHER",
                             label: field.field_name,
                             value: reg.value,
