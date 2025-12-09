@@ -114,6 +114,17 @@ async function addToRegistrationsTable(
 
         } else {
             new_registration_index = member_registrations.length + 1
+
+            await updateItem(
+                process.env.REGISTRATIONS_TABLE_NAME as string,
+                {
+                    user_id: user_id,
+                    registration_id: member_registrations.find((reg: any) => reg.latest_registration)?.registration_id
+                },
+                "SET latest_registration = :false",
+                { "#latest_registration": "latest_registration" },
+                { ":false": false }
+            )
         }
     }
 
@@ -128,6 +139,7 @@ async function addToRegistrationsTable(
             deregistered: false,
             registration_submitted_on,
             transaction_id,
+            latest_registration: true,
             ...billing_fields,
             ...standard_fields,
         }

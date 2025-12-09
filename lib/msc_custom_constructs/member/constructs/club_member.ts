@@ -61,7 +61,8 @@ export class MSC_ClubMemberConstruct extends Construct {
                 [props.registrations_table.tableArn]: [
                     "dynamodb:Query",
                     "dynamodb:PutItem",
-                    "dynamodb:DeleteItem"
+                    "dynamodb:DeleteItem",
+                    "dynamodb:UpdateItem"
                 ],
                 [props.mail_queue.queueArn]: [
                     "sqs:SendMessage"

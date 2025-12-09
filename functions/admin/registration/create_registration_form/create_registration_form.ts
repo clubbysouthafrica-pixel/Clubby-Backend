@@ -58,7 +58,7 @@ function isBillingField(obj: any): obj is BillingField {
         (opt: any) => typeof opt.label === 'string' && typeof opt.percentage === 'number' && typeof opt.option_order_id === 'string'
     );
     const isText = obj.input_type === 'TEXT' && typeof obj.amount === 'number';
-    const isNumber = obj.input_type === 'NUMBER' && typeof obj.value === 'number';
+    const isNumber = obj.input_type === 'NUMBER';
 
     return obj.field_type === 'BILLING' &&
         (isDropdown || isText || isDiscount || isNumber) &&
