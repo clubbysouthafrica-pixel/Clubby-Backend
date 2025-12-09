@@ -94,7 +94,15 @@ async function handleRegistrations(club_account_id: string, cycle_name: string) 
         for (const registration of registrations) {
             historical_reports.push(registration);
 
-            if (registration?.deregistered) {
+            if (registration.latest_registration === false) {
+                await removeItem(
+                    process.env.REGISTRATIONS_TABLE_NAME as string,
+                    {
+                        user_id: registration.user_id,
+                        registration_id: registration.registration_id
+                    }
+                )
+            } else if (registration?.deregistered) {
                 await updateItem(
                     process.env.REGISTRATIONS_TABLE_NAME as string,
                     {
