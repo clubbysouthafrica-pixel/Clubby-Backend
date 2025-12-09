@@ -121,7 +121,7 @@ async function addToRegistrationsTable(
                     user_id: user_id,
                     registration_id: member_registrations.find((reg: any) => reg.latest_registration)?.registration_id
                 },
-                "SET latest_registration = :false",
+                "SET #latest_registration = :false",
                 { "#latest_registration": "latest_registration" },
                 { ":false": false }
             )
