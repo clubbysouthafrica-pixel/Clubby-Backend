@@ -144,6 +144,7 @@ export const handler = async (event: any) => {
 
                     else if (key.includes(field.field_id) && reg.type.includes("STANDARD_")) {
                         new_page.fields.push({
+                            field_id: field.field_id,
                             type: "STANDARD_OTHER",
                             label: field.field_name,
                             value: reg.value,
@@ -192,7 +193,7 @@ export const handler = async (event: any) => {
         }
 
         pages.sort((a, b) => (a.page_index ?? 0) - (b.page_index ?? 0));
-        return createResponse(200, { pages, deregistration_reason: member_registration?.deregistration_reason }, origin);
+        return createResponse(200, { pages, deregistration_reason: member_registration?.deregistration_reason, registration_id: registration_id }, origin);
 
     } catch (error) {
         console.error("Error:", error);
