@@ -143,11 +143,14 @@ export const handler = async (event: any) => {
                     }
 
                     else if (key.includes(field.field_id) && reg.type.includes("STANDARD_")) {
+
+                        let value = reg.value
+                        if (reg.type === "STANDARD_CHECKBOX" && reg?.value !== "true") value = "false";
                         new_page.fields.push({
                             field_id: field.field_id,
                             type: "STANDARD_OTHER",
                             label: field.field_name,
-                            value: reg.value,
+                            value: value,
                             position: field.field_order_id
                         });
                         found = true;
