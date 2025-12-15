@@ -151,8 +151,7 @@ export const handler = async (event: any) => {
                             type: "STANDARD_OTHER",
                             label: field.field_name,
                             value: value,
-                            position: field.field_order_id,
-                            editable: field?.editable_by_member ?? false,
+                            position: field.field_order_id
                         });
                         found = true;
                         break;
