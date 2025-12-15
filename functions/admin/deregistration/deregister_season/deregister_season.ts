@@ -249,17 +249,31 @@ export const handler = async (event: any) => {
             await handleTransactions(club_account_id, cycle_name);
             await deleteClubSignatures(club_account_id);
 
+            const currentEpoch = Date.now();
+            const updatedSeasons = club.seasons ? [...club.seasons] : [];
+            
+            if (updatedSeasons.length > 0) {
+                updatedSeasons[updatedSeasons.length - 1].end_date = currentEpoch;
+            }
+            
+            updatedSeasons.push({
+                start_date: currentEpoch,
+                end_date: null
+            });
+
             await updateItem(
                 process.env.CLUB_TABLE_NAME as string,
                 { "club_account_id": body.club_account_id },
-                "SET #deregistration_in_progress = :true, #season_cycle = :season_cycle",
+                "SET #deregistration_in_progress = :true, #season_cycle = :season_cycle, #seasons = :seasons",
                 { 
                     "#deregistration_in_progress": "deregistration_in_progress",
-                    "#season_cycle": "season_cycle"
+                    "#season_cycle": "season_cycle",
+                    "#seasons": "seasons"
                 },
                 { 
                     ":true": false,
-                    ":season_cycle": season_cycle + 1
+                    ":season_cycle": season_cycle + 1,
+                    ":seasons": updatedSeasons
                 }
             );
         }
