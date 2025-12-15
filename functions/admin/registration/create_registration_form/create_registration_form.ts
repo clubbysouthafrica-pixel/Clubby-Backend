@@ -12,6 +12,7 @@ export interface StandardField {
     required: true | false;
     placeholder: string;
     options?: string[];
+    editable_by_member?: boolean;
 }
 
 export interface TextField {
@@ -178,6 +179,10 @@ export const handler = async (event: any) => {
                 item.placeholder = field.placeholder;
                 if (field.input_type === 'DROPDOWN') {
                     item.options = field.options;
+                }
+
+                if (['CHECKBOX', 'TEXT', 'NUMBER', 'DROPDOWN'].includes(field.input_type)) {
+                    item.editable_by_member = field.editable_by_member ?? false;
                 }
             } else if (isBillingField(field)) {
                 item.input_type = field.input_type;
