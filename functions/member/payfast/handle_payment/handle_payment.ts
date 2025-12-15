@@ -80,7 +80,7 @@ async function updateTransactionsTable(
                 type: "CONFIRMATION",
                 description: "Payment confirmation",
                 amount: payment_amount,
-                payment_type: "Online/Card"
+                payment_type: "PayFast"
             }
         }
     );
