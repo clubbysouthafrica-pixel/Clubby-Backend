@@ -195,8 +195,15 @@ export const handler = async (event: any) => {
             pages.push(new_page);
         }
 
+        const admin_notes = (member_registration?.admin_notes || []).filter((note: any) => note.visibleToMember);
+
         pages.sort((a, b) => (a.page_index ?? 0) - (b.page_index ?? 0));
-        return createResponse(200, { pages, deregistration_reason: member_registration?.deregistration_reason, registration_id: registration_id }, origin);
+        return createResponse(200, { 
+            pages, 
+            deregistration_reason: member_registration?.deregistration_reason, 
+            registration_id: registration_id,
+            admin_notes: admin_notes ?? [],
+        }, origin);
 
     } catch (error) {
         console.error("Error:", error);
