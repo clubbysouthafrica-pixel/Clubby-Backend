@@ -31,6 +31,14 @@ function createBlankReport(report: any[], allFields: any) {
                     data: []
                 }))
             });
+        } else if (field.input_type === "NUMBER") {
+            report.push({
+                table_name: field.field_name,
+                field_id: field.field_id,
+                fee_amount: null,
+                total: { paid_to_club: 0, due_to_club: 0, total: 0, pending: 0 },
+                data: []
+            });
         }
     });
 }

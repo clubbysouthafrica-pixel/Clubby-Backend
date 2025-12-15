@@ -12,6 +12,7 @@ export interface StandardField {
     required: true | false;
     placeholder: string;
     options?: string[];
+    editable_by_member?: boolean;
 }
 
 export interface TextField {
@@ -58,9 +59,10 @@ function isBillingField(obj: any): obj is BillingField {
         (opt: any) => typeof opt.label === 'string' && typeof opt.percentage === 'number' && typeof opt.option_order_id === 'string'
     );
     const isText = obj.input_type === 'TEXT' && typeof obj.amount === 'number';
+    const isNumber = obj.input_type === 'NUMBER';
 
     return obj.field_type === 'BILLING' &&
-        (isDropdown || isText || isDiscount) &&
+        (isDropdown || isText || isDiscount || isNumber) &&
         typeof obj === 'object' &&
         typeof obj.placeholder === 'string' &&
         typeof obj.field_name === 'string' &&
@@ -177,6 +179,10 @@ export const handler = async (event: any) => {
                 item.placeholder = field.placeholder;
                 if (field.input_type === 'DROPDOWN') {
                     item.options = field.options;
+                }
+
+                if (['CHECKBOX', 'TEXT', 'NUMBER', 'DROPDOWN'].includes(field.input_type)) {
+                    item.editable_by_member = field.editable_by_member ?? false;
                 }
             } else if (isBillingField(field)) {
                 item.input_type = field.input_type;

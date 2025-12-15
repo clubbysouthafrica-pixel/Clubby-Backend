@@ -1,9 +1,5 @@
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { createResponse, deconstructEvent, getItem, queryItems, formatAmount, getSignatureUrl } from "./function_helpers";
-
-const s3_client = new S3Client({ region: process.env.AWS_REGION });
 
 async function getClubMember(user_id: string, club_account_id: string): Promise<any | null> {
     return await getItem(
@@ -106,14 +102,24 @@ export const handler = async (event: any) => {
 
                     if (key.includes(field.field_id) && reg.type === "STANDARD_SIGNATURE") {
                         if (reg.signature_type === "signature") {
-                            const signatureUrl = await getSignatureUrl(reg.value);
-                            new_page.fields.push({
-                                type: "STANDARD_SIGNATURE",
-                                signature_type: "signature",
-                                label: field.field_name,
-                                value: signatureUrl,
-                                position: field.field_order_id
-                            });
+                            if (member_registration?.last_season_registration === true) {
+                                new_page.fields.push({
+                                    type: "STANDARD_SIGNATURE",
+                                    signature_type: "name",
+                                    label: field.field_name,
+                                    value: "Previous Season Registration - Signature Not Available",
+                                    position: field.field_order_id
+                                });
+                            } else {
+                                new_page.fields.push({
+                                    type: "STANDARD_SIGNATURE",
+                                    signature_type: "signature",
+                                    label: field.field_name,
+                                    value: await getSignatureUrl(reg.value),
+                                    position: field.field_order_id
+                                });
+                            }
+
                         } else {
                             new_page.fields.push({
                                 type: "STANDARD_SIGNATURE",
@@ -128,12 +134,16 @@ export const handler = async (event: any) => {
                     }
 
                     else if (key.includes(field.field_id) && reg.type.includes("STANDARD_")) {
+                        let value = reg.value
+                        if (reg.type === "STANDARD_CHECKBOX" && reg?.value !== "true") value = "false";
                         new_page.fields.push({
+                            field_id: field.field_id,
                             type: "STANDARD_OTHER",
                             label: field.field_name,
-                            value: reg.value,
+                            value: value,
                             position: field.field_order_id
                         });
+
                         found = true;
                         break;
                     }

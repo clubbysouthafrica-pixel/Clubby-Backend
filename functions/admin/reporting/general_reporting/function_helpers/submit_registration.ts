@@ -1,5 +1,8 @@
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { formatAmount } from "./format_amount";
 import { randomUUID } from "crypto";
+
+const s3_client = new S3Client({ region: process.env.REGION });
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO' | 'CHECKBOX' | 'SIGNATURE' | 'DISCOUNT';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP';
@@ -99,6 +102,8 @@ export function validateBillingField(billingFields: BillingField[], submittedFie
 
                     }
                 })
+            } else if (billing_field.input_type === "NUMBER" && billing_field.field_id === sub_field.field_id) {
+                total_amount += Number(sub_field.value) * percentage;
             }
         })
     })
@@ -176,6 +181,8 @@ export function billingFieldMapping(billing_fields: any, form: Record<string, an
             if (field?.applicable_billing_fields) {
                 acc[`reg_field_${field.field_id}`].applicable_billing_fields = field.applicable_billing_fields;
             }
+        } else if (f?.input_type === "NUMBER") {
+            acc[`reg_field_${field.field_id}`].type = "BILLING_NUMBER"
         } else {
             acc[`reg_field_${field.field_id}`].type = "BILLING_TEXT"
         }
@@ -184,12 +191,35 @@ export function billingFieldMapping(billing_fields: any, form: Record<string, an
     }, {})
 }
 
+async function addSignature(
+    club_account_id: string,
+    signature_id: string,
+    dataUrl: string,
+): Promise<string> {
+    const base64Data = dataUrl.split(",")[1];
+    const buffer = Buffer.from(base64Data, "base64");
+    const mimeMatch = dataUrl.match(/^data:(.+);base64,/);
+    const contentType = mimeMatch ? mimeMatch[1] : "application/octet-stream";
+
+    const key = `${club_account_id}/${signature_id}.png`;
+    const command = new PutObjectCommand({
+        Bucket: process.env.SIGNATURES_BUCKET_NAME,
+        Body: buffer,
+        Key: key,
+        ContentEncoding: "base64",
+        ContentType: contentType,
+    });
+    console.log(`@@@ putObject request (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(command));
+    const response = await s3_client.send(command);
+    console.log(`@@@ putObject response (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(response));
+
+    return key
+}
+
 export async function standardFieldMapping(
     submittedFields: any[],
     form: Record<string, any>[],
-    addSignatureCallback: (clubAccountId: string, seasonCycle: number, signatureId: string, dataUrl: string) => Promise<string>,
     clubAccountId: string,
-    seasonCycle: number
 ): Promise<Record<string, Record<string, any>>> {
     const standard_fields: Record<string, Record<string, any>> = {};
     
@@ -216,9 +246,8 @@ export async function standardFieldMapping(
 
                 if (field.signature_type === "signature") {
                     const signature_id = randomUUID()
-                    const key = await addSignatureCallback(
+                    const key = await addSignature(
                         clubAccountId,
-                        seasonCycle,
                         signature_id,
                         field.value
                     )

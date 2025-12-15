@@ -87,6 +87,7 @@ export const handler = async (event: any) => {
         EMAIL_TEMPLATE.registration_success_email_template_body
             .replace(/{{club_name}}/g, body.club_name)
             .replace(/{{club_email}}/g, body.support_email)
+        const joinedEpoch = new Date().getTime();
         await addItem(
             process.env.CLUB_TABLE_NAME as string,
             {
@@ -100,7 +101,13 @@ export const handler = async (event: any) => {
                 "maximum_monthly_emails": body.maximum_monthly_emails,
                 "fee_per_email_to_club": body.fee_per_email_to_club,
                 "free_email_limit": body.free_email_limit,
-                "joined": new Date().getTime(),
+                "joined": joinedEpoch,
+                "seasons": [
+                    {
+                        "start_date": joinedEpoch,
+                        "end_date": null
+                    }
+                ],
                 use_submission_email_template: false,
                 use_success_email_template: false,
                 deregistration_in_progress: false,

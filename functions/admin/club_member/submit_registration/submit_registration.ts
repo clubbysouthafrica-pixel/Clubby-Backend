@@ -1,5 +1,4 @@
 import { AdminCreateUserCommand, AdminGetUserCommand, AdminSetUserPasswordCommand, CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { randomUUID, createHash } from "crypto";
 import {
@@ -25,7 +24,6 @@ export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 const sesClient = new SESClient({ region: process.env.REGION });
-const s3_client = new S3Client({ region: process.env.REGION });
 
 function generateShortReference(
     userId: string
@@ -121,32 +119,6 @@ async function alreadyAssociated(club_account_id: string, user_id: string): Prom
     return true;
 }
 
-async function addSignature(
-    club_account_id: string,
-    club_season_cycle: number,
-    signature_id: string,
-    dataUrl: string,
-): Promise<string> {
-    const base64Data = dataUrl.split(",")[1];
-    const buffer = Buffer.from(base64Data, "base64");
-    const mimeMatch = dataUrl.match(/^data:(.+);base64,/);
-    const contentType = mimeMatch ? mimeMatch[1] : "application/octet-stream";
-
-    const key = `${club_account_id}/${club_season_cycle}/${signature_id}.png`;
-    const command = new PutObjectCommand({
-        Bucket: process.env.SIGNATURES_BUCKET_NAME,
-        Body: buffer,
-        Key: key,
-        ContentEncoding: "base64",
-        ContentType: contentType,
-    });
-    console.log(`@@@ putObject request (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(command));
-    const response = await s3_client.send(command);
-    console.log(`@@@ putObject response (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(response));
-
-    return key
-}
-
 async function addToRegistrationsTable(
     club_account_id: string,
     user_id: string,
@@ -154,7 +126,7 @@ async function addToRegistrationsTable(
     standard_fields: any,
     membership_amount: number,
     registration_submitted_on: number,
-    transaction_id: string
+    transaction_id: string,
 ): Promise<string> {
     const member_registrations = await queryItems(
         process.env.REGISTRATIONS_TABLE_NAME as string,
@@ -178,6 +150,17 @@ async function addToRegistrationsTable(
 
         } else {
             new_registration_index = member_registrations.length + 1
+
+            await updateItem(
+                process.env.REGISTRATIONS_TABLE_NAME as string,
+                {
+                    user_id: user_id,
+                    registration_id: member_registrations.find((reg: any) => reg.latest_registration)?.registration_id
+                },
+                "SET #latest_registration = :false",
+                { "#latest_registration": "latest_registration" },
+                { ":false": false }
+            )
         }
     }
 
@@ -192,6 +175,7 @@ async function addToRegistrationsTable(
             deregistered: false,
             registration_submitted_on,
             transaction_id,
+            latest_registration: true,
             ...billing_fields,
             ...standard_fields,
         }
@@ -397,6 +381,90 @@ export async function createClubbyUser(email: string, first_name: string, surnam
     }
 }
 
+export async function sendEmailToAdmin(
+    toAddress: string,
+    firstName: string,
+    surname: string,
+    clubName: string,
+): Promise<void> {
+    const emailSubject = `New Member Registration for ${clubName}`;
+    const emailBody = `
+    <html>
+      <body style="margin:0;padding:0;background:#f7f7f9;font-family: Arial, Helvetica, sans-serif;color:#1f2937;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f7f9;padding:24px 0;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                <tr>
+                  <td style="padding:24px 24px 0 24px;">
+                    <h1 style="margin:0 0 12px 0;font-size:20px;line-height:28px;color:#111827;">New Member Registration</h1>
+                    <p style="margin:0 0 16px 0;line-height:1.6;">A new member, <strong>${firstName} ${surname}</strong>, has submitted a registration form for your club, <strong>${clubName}</strong>.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 0 24px;">
+                    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin-bottom:16px;">
+                      <p style="margin:0 0 8px 0;font-weight:bold;color:#111827;">Member Details</p>
+                      <p style="margin:0;line-height:1.6;"><strong>Name:</strong> ${firstName} ${surname}<br/>
+                      <strong>Club:</strong> ${clubName}</p>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 0 24px;">
+                    <p style="margin:0 0 16px 0;line-height:1.6;">To review and complete their registration, please visit the Members Pending section.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;">
+                    <a href="https://${process.env.DOMAIN as string}/manage/members" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;padding:10px 16px;font-weight:600;">View Members Pending</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;">
+                    <p style="margin:0;line-height:1.6;color:#374151;">Need help? Email us at <a href="mailto:admin@${process.env.DOMAIN as string}" style="color:#2563eb;text-decoration:none;">admin@${process.env.DOMAIN as string}</a>.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;border-top:1px solid #e5e7eb;">
+                    <p style="margin:12px 0 0 0;line-height:1.6;color:#6b7280;">Kind regards,<br/>The Clubby Team</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>`;
+
+    const command = new SendEmailCommand({
+        Destination: {
+            ToAddresses: [toAddress],
+        },
+        Message: {
+            Body: {
+                Html: {
+                    Charset: "UTF-8",
+                    Data: emailBody,
+                },
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: emailSubject,
+            },
+        },
+        Source: `registrations@${process.env.DOMAIN as string}`,
+    });
+
+    try {
+        await sesClient.send(command);
+        console.log(`✅ Email sent to ${toAddress}`);
+    } catch (err) {
+        console.error("❌ Error sending email:", err);
+        throw err;
+    }
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -463,9 +531,7 @@ export const handler = async (event: any) => {
         const standard_fields = await standardFieldMapping(
             body.standard_fields,
             form,
-            addSignature,
-            body.club_account_id,
-            club.season_cycle
+            body.club_account_id
         );
 
         const registration_submitted_on = Date.now()
@@ -511,6 +577,15 @@ export const handler = async (event: any) => {
             member_user_id as string,
             membership_amount,
         )
+
+        if (club.notify_on_member_registration !== false) {
+            await sendEmailToAdmin(
+                club.support_email,
+                body.first_name,
+                body.surname,
+                club.club_name
+            )
+        }
 
         if (club?.use_submission_email_template) {
 

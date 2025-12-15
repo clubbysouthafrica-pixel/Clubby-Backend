@@ -1,4 +1,3 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { randomUUID, createHash } from "crypto";
 import {
@@ -23,8 +22,6 @@ const sesClient = new SESClient({ region: process.env.REGION });
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
-
-const s3_client = new S3Client({ region: process.env.REGION });
 
 function generateShortReference(
     userId: string
@@ -117,6 +114,17 @@ async function addToRegistrationsTable(
 
         } else {
             new_registration_index = member_registrations.length + 1
+
+            await updateItem(
+                process.env.REGISTRATIONS_TABLE_NAME as string,
+                {
+                    user_id: user_id,
+                    registration_id: member_registrations.find((reg: any) => reg.latest_registration)?.registration_id
+                },
+                "SET #latest_registration = :false",
+                { "#latest_registration": "latest_registration" },
+                { ":false": false }
+            )
         }
     }
 
@@ -131,6 +139,7 @@ async function addToRegistrationsTable(
             deregistered: false,
             registration_submitted_on,
             transaction_id,
+            latest_registration: true,
             ...billing_fields,
             ...standard_fields,
         }
@@ -169,32 +178,6 @@ async function addToTransactionsTable(
             status: "PENDING"
         }
     )
-}
-
-async function addSignature(
-    club_account_id: string,
-    club_season_cycle: number,
-    signature_id: string,
-    dataUrl: string,
-): Promise<string> {
-    const base64Data = dataUrl.split(",")[1];
-    const buffer = Buffer.from(base64Data, "base64");
-    const mimeMatch = dataUrl.match(/^data:(.+);base64,/);
-    const contentType = mimeMatch ? mimeMatch[1] : "application/octet-stream";
-
-    const key = `${club_account_id}/${club_season_cycle}/${signature_id}.png`;
-    const command = new PutObjectCommand({
-        Bucket: process.env.SIGNATURES_BUCKET_NAME,
-        Body: buffer,
-        Key: key,
-        ContentEncoding: "base64",
-        ContentType: contentType,
-    });
-    console.log(`@@@ putObject request (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(command));
-    const response = await s3_client.send(command);
-    console.log(`@@@ putObject response (Bucket_Name: ${process.env.SIGNATURES_BUCKET_NAME}): `, JSON.stringify(response));
-
-    return key
 }
 
 export async function sendEmailToAdmin(
@@ -355,9 +338,7 @@ export const handler = async (event: any) => {
         const standard_fields = await standardFieldMapping(
             body.standard_fields,
             form,
-            addSignature,
-            body.club_account_id,
-            club.season_cycle
+            body.club_account_id
         );
 
         const registration_submitted_on = Date.now()

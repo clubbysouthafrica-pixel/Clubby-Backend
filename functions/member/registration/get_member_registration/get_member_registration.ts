@@ -112,14 +112,23 @@ export const handler = async (event: any) => {
 
                     if (key.includes(field.field_id) && reg.type === "STANDARD_SIGNATURE") {
                         if (reg.signature_type === "signature") {
-                            const signatureUrl = await getSignatureUrl(reg.value);
-                            new_page.fields.push({
-                                type: "STANDARD_SIGNATURE",
-                                signature_type: "signature",
-                                label: field.field_name,
-                                value: signatureUrl,
-                                position: field.field_order_id
-                            });
+                            if (member_registration?.last_season_registration === true) {
+                                new_page.fields.push({
+                                    type: "STANDARD_SIGNATURE",
+                                    signature_type: "name",
+                                    label: field.field_name,
+                                    value: "Previous Season Registration - Signature Not Available",
+                                    position: field.field_order_id
+                                });
+                            } else {
+                                new_page.fields.push({
+                                    type: "STANDARD_SIGNATURE",
+                                    signature_type: "signature",
+                                    label: field.field_name,
+                                    value: await getSignatureUrl(reg.value),
+                                    position: field.field_order_id
+                                });
+                            }
                         } else {
                             new_page.fields.push({
                                 type: "STANDARD_SIGNATURE",
@@ -134,10 +143,14 @@ export const handler = async (event: any) => {
                     }
 
                     else if (key.includes(field.field_id) && reg.type.includes("STANDARD_")) {
+
+                        let value = reg.value
+                        if (reg.type === "STANDARD_CHECKBOX" && reg?.value !== "true") value = "false";
                         new_page.fields.push({
+                            field_id: field.field_id,
                             type: "STANDARD_OTHER",
                             label: field.field_name,
-                            value: reg.value,
+                            value: value,
                             position: field.field_order_id
                         });
                         found = true;
@@ -182,8 +195,15 @@ export const handler = async (event: any) => {
             pages.push(new_page);
         }
 
+        const admin_notes = (member_registration?.admin_notes || []).filter((note: any) => note.visibleToMember);
+
         pages.sort((a, b) => (a.page_index ?? 0) - (b.page_index ?? 0));
-        return createResponse(200, { pages, deregistration_reason: member_registration?.deregistration_reason }, origin);
+        return createResponse(200, { 
+            pages, 
+            deregistration_reason: member_registration?.deregistration_reason, 
+            registration_id: registration_id,
+            admin_notes: admin_notes ?? [],
+        }, origin);
 
     } catch (error) {
         console.error("Error:", error);

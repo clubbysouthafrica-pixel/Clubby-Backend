@@ -73,18 +73,27 @@ async function partialRegistrationUpdateRegistrationsTable(
     current_reg_id: string,
     payment_amount: number
 ) {
+    const paymentHistoryEntry = {
+        date: Date.now(),
+        amount: payment_amount,
+        is_revenue: true
+    };
+
     await updateItem(
         process.env.REGISTRATIONS_TABLE_NAME as string,
         {
             user_id: member_id,
             registration_id: current_reg_id
         },
-        "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount",
+        "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)",
         {
-            "#total_outstanding_amount": "total_outstanding_amount"
+            "#total_outstanding_amount": "total_outstanding_amount",
+            "#payment_history": "payment_history"
         },
         {
-            ":payment_amount": payment_amount
+            ":payment_amount": payment_amount,
+            ":payment_entry": [paymentHistoryEntry],
+            ":empty_list": []
         }
     );
 }
@@ -92,22 +101,32 @@ async function partialRegistrationUpdateRegistrationsTable(
 async function updateRegistrationsTable(
     member_id: string,
     current_reg_id: string,
-    registered_on: number
+    registered_on: number,
+    payment_amount?: number
 ) {
+    const paymentHistoryEntry = {
+        date: Date.now(),
+        amount: payment_amount || 0,
+        is_revenue: true
+    };
+
     await updateItem(
         process.env.REGISTRATIONS_TABLE_NAME as string,
         {
             user_id: member_id,
             registration_id: current_reg_id
         },
-        "SET #total_outstanding_amount = :zero, #registered_on = :registered_on",
+        "SET #total_outstanding_amount = :zero, #registered_on = :registered_on, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)",
         {
             "#total_outstanding_amount": "total_outstanding_amount",
-            "#registered_on": "registered_on"
+            "#registered_on": "registered_on",
+            "#payment_history": "payment_history"
         },
         {
             ":zero": 0,
-            ":registered_on": registered_on
+            ":registered_on": registered_on,
+            ":payment_entry": [paymentHistoryEntry],
+            ":empty_list": []
         }
     )
 }
@@ -232,7 +251,7 @@ export const handler = async (event: any) => {
         );
 
         if (body.payment_amount > 0) await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount)
-        await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on)
+        await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on, body.payment_amount)
         await updateClubMember(body.club_account_id, body.member_id)
 
         if (club?.use_success_email_template) {

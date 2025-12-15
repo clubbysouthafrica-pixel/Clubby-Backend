@@ -80,7 +80,7 @@ async function updateTransactionsTable(
                 type: "CONFIRMATION",
                 description: "Payment confirmation",
                 amount: payment_amount,
-                payment_type: "Online/Card"
+                payment_type: "PayFast"
             }
         }
     );
@@ -91,20 +91,29 @@ async function updateRegistrationsTable(
     current_reg_id: string,
     payment_amount: number
 ) {
+    const paymentHistoryEntry = {
+        date: Date.now(),
+        amount: payment_amount,
+        is_revenue: true
+    };
+
     await updateItem(
         process.env.REGISTRATIONS_TABLE_NAME as string,
         {
             user_id: member_id,
             registration_id: current_reg_id
         },
-        "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #registered_on = :registered_on",
+        "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #registered_on = :registered_on, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)",
         {
             "#total_outstanding_amount": "total_outstanding_amount",
-            "#registered_on": "registered_on"
+            "#registered_on": "registered_on",
+            "#payment_history": "payment_history"
         },
         {
             ":payment_amount": payment_amount,
-            ":registered_on": Date.now()
+            ":registered_on": Date.now(),
+            ":payment_entry": [paymentHistoryEntry],
+            ":empty_list": []
         }
     );
 }

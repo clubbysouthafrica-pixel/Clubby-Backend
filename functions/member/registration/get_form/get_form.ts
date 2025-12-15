@@ -104,7 +104,11 @@ export const handler = async (event: any) => {
         for (const key of Object.keys(registration)) {
             if (key.includes("reg_field_")) {
                 if (registration[key]?.signature_type === "signature") {
-                    registration[key].value = await getSignatureUrl(registration[key].value);
+                    if (registration?.last_season_registration === true) {
+                        registration[key].value = undefined
+                    } else {
+                        registration[key].value = await getSignatureUrl(registration[key].value);
+                    }
                 }
                 meta[key.replace("reg_field_", "")] = registration[key]
             }
