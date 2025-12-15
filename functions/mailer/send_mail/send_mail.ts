@@ -15,6 +15,21 @@ function delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function processEmailBody(body: string): string {
+    let processed = body;
+
+    processed = processed.replace(/<p([^>]*)>/gi, '<p style="margin:2px 0;padding:0;line-height:1.4;"$1>');
+
+    processed = processed.replace(/<h([1-6])([^>]*)>/gi, '<h$1 style="margin:6px 0 2px 0;padding:0;"$2>');
+
+    processed = processed.replace(/<ol([^>]*)>/gi, '<ol style="margin:4px 0;padding-left:20px;"$1>');
+    processed = processed.replace(/<ul([^>]*)>/gi, '<ul style="margin:4px 0;padding-left:20px;"$1>');
+
+    processed = processed.replace(/<li([^>]*)>/gi, '<li style="margin:2px 0;"$1>');
+
+    return processed;
+}
+
 async function updateClubsEmailBilling(club_account_id: string, total_emails: number, email_amount: number) {
     const now = new Date();
     const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -48,6 +63,7 @@ async function updateClubsEmailBilling(club_account_id: string, total_emails: nu
 async function sendChunkedEmails(source: string, supportEmail: string, subject: string, body: string, allEmails: string[][]) {
     const rateLimit = 14;
     const delayMs = 1000;
+    const processedBody = processEmailBody(body);
 
     for (let i = 0; i < allEmails.length; i += rateLimit) {
         const batch = allEmails.slice(i, i + rateLimit);
@@ -62,7 +78,7 @@ async function sendChunkedEmails(source: string, supportEmail: string, subject: 
                       <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
                         <tr>
                           <td style="padding:24px;">
-                            ${body}
+                            ${processedBody}
                           </td>
                         </tr>
                         <tr>
@@ -76,7 +92,7 @@ async function sendChunkedEmails(source: string, supportEmail: string, subject: 
                 </table>
               </body>
             </html>`;
-            
+
             const params = {
                 Destination: {
                     ToAddresses: chunk,
