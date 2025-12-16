@@ -183,11 +183,20 @@ export const handler = async (event: any) => {
                 }
 
                 if (!found) {
-                    new_page.fields.push({
-                        type: "DNE",
-                        label: field.field_name,
-                        position: field.field_order_id
-                    });
+                    if (field.field_type === "STANDARD" && field.input_type !== "SIGNATURE") {
+                        new_page.fields.push({
+                            field_id: field.field_id,
+                            type: "STANDARD_OTHER",
+                            label: field.field_name,
+                            position: field.field_order_id
+                        });
+                    } else {
+                        new_page.fields.push({
+                            type: "DNE",
+                            label: field.field_name,
+                            position: field.field_order_id
+                        });
+                    }
                 }
             }
 
@@ -198,9 +207,9 @@ export const handler = async (event: any) => {
         const admin_notes = (member_registration?.admin_notes || []).filter((note: any) => note.visibleToMember);
 
         pages.sort((a, b) => (a.page_index ?? 0) - (b.page_index ?? 0));
-        return createResponse(200, { 
-            pages, 
-            deregistration_reason: member_registration?.deregistration_reason, 
+        return createResponse(200, {
+            pages,
+            deregistration_reason: member_registration?.deregistration_reason,
             registration_id: registration_id,
             admin_notes: admin_notes ?? [],
         }, origin);

@@ -174,11 +174,20 @@ export const handler = async (event: any) => {
                 }
 
                 if (!found) {
-                    new_page.fields.push({
-                        type: "DNE",
-                        label: field.field_name,
-                        position: field.field_order_id
-                    });
+                    if (field.field_type === "STANDARD" && field.input_type !== "SIGNATURE") {
+                        new_page.fields.push({
+                            field_id: field.field_id,
+                            type: "STANDARD_OTHER",
+                            label: field.field_name,
+                            position: field.field_order_id
+                        });
+                    } else {
+                        new_page.fields.push({
+                            type: "DNE",
+                            label: field.field_name,
+                            position: field.field_order_id
+                        });
+                    }
                 }
             }
 

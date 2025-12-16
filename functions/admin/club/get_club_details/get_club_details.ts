@@ -36,6 +36,7 @@ export const handler = async (event: any) => {
             use_submission_email_template: item?.use_submission_email_template ?? false,
             use_success_email_template: item?.use_success_email_template ?? false,
             payfast_enabled: item?.payfast_enabled ?? false,
+            custom_payment_methods: item?.custom_payment_methods ?? [],
             club_url: item?.club_url ?? undefined,
             hide_from_public: item?.hide_from_public ?? false
         }, origin);

@@ -110,7 +110,7 @@ export const handler = async (event: any) => {
             expressionAttributeValues[":use_success_email_template"] = body.use_success_email_template;
         }
 
-        if (body?.club_url && typeof body.club_url === "string") {
+        if (body?.club_url !== undefined && typeof body.club_url === "string") {
             updateParts.push("#club_url = :club_url");
             expressionAttributeNames["#club_url"] = "club_url";
             expressionAttributeValues[":club_url"] = body.club_url;
