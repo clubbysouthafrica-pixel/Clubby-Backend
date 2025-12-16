@@ -8,6 +8,7 @@ interface MSC_MemberRegistrationFormConstructProps {
     registration_form_table: MSC_Table;
     club_member_table: MSC_Table;
     registrations_table: MSC_Table;
+    club_table: MSC_Table;
     signatures_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
     layers: {
@@ -26,6 +27,7 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
+                CLUB_TABLE_NAME: props.club_table.tableName,
             },
             permissions: {
                 [props.registration_form_table.tableArn]: [
@@ -35,6 +37,9 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
                     "dynamodb:GetItem"
                 ],
                 [props.registrations_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
                 ]
             },
