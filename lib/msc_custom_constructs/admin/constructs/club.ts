@@ -59,11 +59,25 @@ export class MSC_AdminClubConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const update_custom_payment_methods = new MSC_Lambda(this, `${id}-UpdateCustomPaymentMethods`, {
+            code: "admin/club/update_custom_payment_methods",
+            envVariables: {
+                CLUB_TABLE_NAME: props.club_table.tableName
+            },
+            permissions: {
+                [props.club_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const club_resource = props.api_gateway.root.addResource("club");
 
         const get_club_resource = club_resource.addResource("getClub");
         const update_club_details_resource = club_resource.addResource("updateClubDetails");
         const get_club_details_resource = club_resource.addResource("getClubDetails");
+        const update_custom_payment_methods_resource = club_resource.addResource("updateCustomPaymentMethods");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -74,5 +88,6 @@ export class MSC_AdminClubConstruct extends Construct {
         addCorsEnabledMethod(get_club_resource, get_club, methodOptions, undefined, "GET");
         addCorsEnabledMethod(update_club_details_resource, update_club_details, methodOptions, undefined, "POST");
         addCorsEnabledMethod(get_club_details_resource, get_club_details, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(update_custom_payment_methods_resource, update_custom_payment_methods, methodOptions, undefined, "POST");
     }
 }
