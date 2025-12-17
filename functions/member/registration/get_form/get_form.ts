@@ -71,7 +71,7 @@ export const handler = async (event: any) => {
         });
 
         if (user_id == null || user_id === undefined) {
-            return createResponse(200, { pages }, origin);
+            return createResponse(200, { pages, club_name: club.club_name, currency: club.currency }, origin);
         }
 
         const club_member = await getItem(
@@ -83,7 +83,7 @@ export const handler = async (event: any) => {
         );
 
         if (club_member == null || club_member === undefined) {
-            return createResponse(200, { pages }, origin);
+            return createResponse(200, { pages, club_name: club.club_name, currency: club.currency }, origin);
         }
 
         const registration = await getItem(
@@ -105,7 +105,7 @@ export const handler = async (event: any) => {
             }));
 
         if (!registration) {
-            return createResponse(200, { pages }, origin);
+            return createResponse(200, { pages, club_name: club.club_name, currency: club.currency }, origin);
         }
 
         const meta: Record<string, any> = {}
