@@ -92,7 +92,22 @@ async function handleRegistrations(club_account_id: string, cycle_name: string) 
     const historical_reports: any[] = []
     if (registrations) {
         for (const registration of registrations) {
-            historical_reports.push(registration);
+   
+            const filteredRegistration: any = {};
+            for (const [key, value] of Object.entries(registration)) {
+                if (key.startsWith("reg_field_")) {
+                    if (typeof value === "object" && value !== null && "type" in value) {
+                        const fieldType = (value as any).type;
+ 
+                        if (fieldType && String(fieldType).startsWith("BILLING_")) {
+                            filteredRegistration[key] = value;
+                        }
+                    }
+                } else {
+                    filteredRegistration[key] = value;
+                }
+            }
+            historical_reports.push(filteredRegistration);
 
             if (registration.latest_registration === false) {
                 await removeItem(
@@ -155,7 +170,8 @@ async function handleTransactions(club_account_id: string, cycle_name: string) {
     const historical_reports: any[] = []
     if (transactions) {
         for (const transaction of transactions) {
-            historical_reports.push(transaction);
+            const { name, user_id, ...filteredTransactions } = transaction;
+            historical_reports.push(filteredTransactions);
 
             await removeItem(
                 process.env.TRANSACTIONS_TABLE_NAME as string,
