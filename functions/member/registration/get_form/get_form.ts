@@ -18,6 +18,14 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'club_account_id required.' }, origin);
         }
 
+        const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
+            club_account_id: query_string_params.club_account_id
+        });
+
+        if (!club) {
+            return createResponse(400, { message: `Club not found for club_account_id: ${query_string_params.club_account_id}.` }, origin);
+        }
+
         const form = await queryItems(
             process.env.REGISTRATION_FORM_TABLE_NAME as string,
             "club_account_id = :clubId",
@@ -176,7 +184,7 @@ export const handler = async (event: any) => {
             }))
         );
 
-        return createResponse(200, { pages: updatedPages, club_name: club_member?.club_name, currency: club_member?.currency }, origin);
+        return createResponse(200, { pages: updatedPages, club_name: club.club_name, currency: club.currency }, origin);
 
 
     } catch (error: any) {
