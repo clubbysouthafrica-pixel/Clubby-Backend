@@ -14,6 +14,7 @@ export interface StandardField {
     options?: string[];
     editable_by_member?: boolean;
     phone_number_input?: boolean;
+    sensitive_information?: boolean;
 }
 
 export interface TextField {
@@ -178,6 +179,8 @@ export const handler = async (event: any) => {
                 item.required = field.required;
                 item.field_name = field.field_name;
                 item.placeholder = field.placeholder;
+                item.sensitive_information = field?.sensitive_information ?? false;
+
                 if (field.input_type === 'DROPDOWN') {
                     item.options = field.options;
                 }

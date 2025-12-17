@@ -22,10 +22,10 @@ function processEmailBody(body: string): string {
 
     processed = processed.replace(/<h([1-6])([^>]*)>/gi, '<h$1 style="margin:6px 0 2px 0;padding:0;"$2>');
 
-    processed = processed.replace(/<ol([^>]*)>/gi, '<ol style="margin:4px 0;padding-left:20px;"$1>');
-    processed = processed.replace(/<ul([^>]*)>/gi, '<ul style="margin:4px 0;padding-left:20px;"$1>');
+    processed = processed.replace(/<ol([^>]*)>/gi, '<ol style="margin:3px 0 3px 20px;padding-left:20px;"$1>');
+    processed = processed.replace(/<ul([^>]*)>/gi, '<ul style="margin:3px 0 3px 20px;padding-left:20px;"$1>');
 
-    processed = processed.replace(/<li([^>]*)>/gi, '<li style="margin:2px 0;"$1>');
+    processed = processed.replace(/<li([^>]*)>/gi, '<li style="margin:2px 0;padding-left:4px;line-height:1.5;"$1>');
 
     return processed;
 }

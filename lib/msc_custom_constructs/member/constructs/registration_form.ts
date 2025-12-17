@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_LambdaLayer } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_LambdaLayer, MSC_Kms } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 
@@ -14,6 +14,7 @@ interface MSC_MemberRegistrationFormConstructProps {
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
+    kms_key: MSC_Kms;
 }
 
 export class MSC_MemberRegistrationFormConstruct extends Construct {
@@ -28,6 +29,7 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
+                KMS_KEY_ID: props.kms_key.keyId
             },
             permissions: {
                 [props.registration_form_table.tableArn]: [
@@ -41,6 +43,9 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
                 ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [props.kms_key.keyArn]: [
+                    "kms:Decrypt"
                 ]
             },
             layers: [props.layers.jwt_layer]
@@ -54,6 +59,7 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
+                KMS_KEY_ID: props.kms_key.keyId
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
@@ -64,6 +70,9 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
                 ],
                 [props.registration_form_table.tableArn]: [
                     "dynamodb:Query"
+                ],
+                [props.kms_key.keyArn]: [
+                    "kms:Decrypt"
                 ]
             },
             layers: [props.layers.jwt_layer]
@@ -87,10 +96,15 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
             code: "member/registration/update_registration_field",
             envVariables: {
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                KMS_KEY_ID: props.kms_key.keyId
             },
             permissions: {
                 [props.registrations_table.tableArn]: [
                     "dynamodb:UpdateItem"
+                ],
+                [props.kms_key.keyArn]: [
+                    "kms:Encrypt",
+                    "kms:GenerateDataKey"
                 ]
             },
             layers: [props.layers.jwt_layer]

@@ -1,6 +1,6 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_Queue, MSC_LambdaLayer } from '../../msc_service_constructs';
+import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_Queue, MSC_LambdaLayer, MSC_Kms } from '../../msc_service_constructs';
 import {
     MSC_AdminLoginConstruct,
     MSC_AdminUserConstruct,
@@ -39,6 +39,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
         jwks_rsa_layer: MSC_LambdaLayer;
         axios_layer: MSC_LambdaLayer;
     };
+    kms_key: MSC_Kms;
 }
 
 export class MSC_AdminNestedStack extends Stack {
@@ -153,7 +154,8 @@ export class MSC_AdminNestedStack extends Stack {
             registrations_table: props.registrations_table,
             club_admin_table: props.club_admin_table,
             token_authorizer: jwt_construct.token_authorizer,
-            layers: props.layers
+            layers: props.layers,
+            kms_key: props.kms_key
         });
 
         new MSC_ClubMemberClubConstruct(this, `${id}-ClubMember`, {
@@ -169,7 +171,8 @@ export class MSC_AdminNestedStack extends Stack {
             billing_table: props.billing_table,
             registrations_table: props.registrations_table,
             layers: props.layers,
-            mail_queue: props.mail_queue
+            mail_queue: props.mail_queue,
+            kms_key: props.kms_key
         });
     }
 }

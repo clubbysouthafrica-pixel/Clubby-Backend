@@ -1,6 +1,7 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { formatAmount } from "./format_amount";
 import { randomUUID } from "crypto";
+import { encryptData } from "./kms_encryption";
 
 const s3_client = new S3Client({ region: process.env.REGION });
 
@@ -231,6 +232,11 @@ export async function standardFieldMapping(
             field_name: f?.field_name, 
             type: "STANDARD_TEXT" 
         };
+
+        if (f?.sensitive_information) {
+            standard_fields[`reg_field_${field.field_id}`].sensitive_information = f.sensitive_information;
+            standard_fields[`reg_field_${field.field_id}`].value = await encryptData(field.value, process.env.KMS_KEY_ID as string);
+        }
 
         if (f?.input_type === "DROPDOWN") {
             standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_DROPDOWN"

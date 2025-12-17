@@ -1,5 +1,5 @@
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent, getItem, getSignatureUrl, queryItems } from "./function_helpers";
+import { createResponse, deconstructEvent, decryptData, getItem, getSignatureUrl, queryItems } from "./function_helpers";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -119,6 +119,10 @@ export const handler = async (event: any) => {
                     }
                 }
                 meta[key.replace("reg_field_", "")] = registration[key]
+
+                if (registration[key]?.sensitive_information === true) {
+                    registration[key].value = await decryptData(registration[key].value);
+                }
             }
         }
 
