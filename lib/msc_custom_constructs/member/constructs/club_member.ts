@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_Queue, MSC_LambdaLayer } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_Queue, MSC_LambdaLayer, MSC_Kms } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 
@@ -18,6 +18,7 @@ interface MSC_ClubMemberConstructProps {
     };
     mail_queue: MSC_Queue;
     billing_table: MSC_Table;
+    kms_key: MSC_Kms;
 }
 
 export class MSC_ClubMemberConstruct extends Construct {
@@ -37,6 +38,7 @@ export class MSC_ClubMemberConstruct extends Construct {
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
+                KMS_KEY_ID: props.kms_key.keyId
             },
             permissions: {
                 [props.registration_form_table.tableArn]: [
@@ -69,6 +71,10 @@ export class MSC_ClubMemberConstruct extends Construct {
                 ],
                 [props.billing_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [props.kms_key.keyArn]: [
+                    "kms:Encrypt",
+                    "kms:GenerateDataKey"
                 ]
             },
             layers: [props.layers.jwt_layer]

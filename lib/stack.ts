@@ -9,12 +9,17 @@ import {
   MSC_MailingStack
 } from "./msc_custom_constructs";
 import { MSC_BucketsConstruct } from './msc_custom_constructs/buckets/buckets';
-import { MSC_Cognito, MSC_Queue } from './msc_service_constructs';
+import { MSC_Cognito, MSC_Queue, MSC_Kms } from './msc_service_constructs';
 
 export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
     super(scope, stack_id, props);
     this.terminationProtection = true;
+
+    const kmsKey = new MSC_Kms(this, 'DataEncryption', {
+      enableKeyRotation: true,
+      description: 'KMS key for encrypting MyClubSoftware data',
+    });
 
     const mail_queue = new MSC_Queue(this, `SendMail`, {
       queue_name: 'SendMail',
@@ -62,7 +67,8 @@ export class MSC_Stack extends cdk.Stack {
         jwt_layer: all_layers.jwt_layer,
         jwks_rsa_layer: all_layers.jwks_rsa_layer,
         axios_layer: all_layers.axios_layer
-      }
+      },
+      kms_key: kmsKey
     });
 
     new MSC_InternalInfraStack(this, `InternalInfra`, {
@@ -93,7 +99,8 @@ export class MSC_Stack extends cdk.Stack {
         jwt_layer: all_layers.jwt_layer,
         jwks_rsa_layer: all_layers.jwks_rsa_layer,
         axios_layer: all_layers.axios_layer
-      }
+      },
+      kms_key: kmsKey
     });
   }
 }

@@ -1,6 +1,6 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_LambdaLayer, MSC_Queue } from '../../msc_service_constructs';
+import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_Kms, MSC_LambdaLayer, MSC_Queue } from '../../msc_service_constructs';
 import { MSC_JWTConstruct } from '../authorization';
 import {
     MSC_MemberLoginConstruct,
@@ -31,6 +31,7 @@ export interface MSC_MemberNestedStackProps extends StackProps {
         jwks_rsa_layer: MSC_LambdaLayer;
         axios_layer: MSC_LambdaLayer;
     };
+    kms_key: MSC_Kms;
 }
 
 export class MSC_MemberNestedStack extends Stack {
@@ -96,6 +97,7 @@ export class MSC_MemberNestedStack extends Stack {
             layers: props.layers,
             mail_queue: props.mail_queue,
             billing_table: props.billing_table,
+            kms_key: props.kms_key
         });
 
         new MSC_MemberRegistrationFormConstruct(this, `${id}-RegistrationForm`, {
@@ -106,7 +108,8 @@ export class MSC_MemberNestedStack extends Stack {
             club_table: props.club_table,
             club_member_table: props.club_member_table,
             registrations_table: props.registrations_table,
-            signatures_bucket: props.signatures_bucket
+            signatures_bucket: props.signatures_bucket,
+            kms_key: props.kms_key
         });
 
         new MSC_MemberClubConstruct(this, `${id}-Club`, {

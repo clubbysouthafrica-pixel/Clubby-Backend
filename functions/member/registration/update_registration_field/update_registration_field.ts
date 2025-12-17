@@ -1,6 +1,7 @@
 import {
     createResponse,
     deconstructEvent,
+    encryptData,
     updateItem
 } from "./function_helpers";
 
@@ -40,7 +41,7 @@ export const handler = async (event: any) => {
         const fieldData = {
             field_name: String(body.field_name),
             type: String(body.type),
-            value: String(body.value)
+            value: body?.sensitive_information ? await encryptData(body.value, process.env.KMS_KEY_ID as string) : String(body.value)
         };
 
         await updateItem(

@@ -1,5 +1,5 @@
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent, getItem, queryItems, formatAmount, getSignatureUrl } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, queryItems, formatAmount, getSignatureUrl, decryptData } from "./function_helpers";
 
 async function getClubMember(user_id: string, club_account_id: string): Promise<any | null> {
     return await getItem(
@@ -140,7 +140,7 @@ export const handler = async (event: any) => {
                             field_id: field.field_id,
                             type: "STANDARD_OTHER",
                             label: field.field_name,
-                            value: value,
+                            value: field?.sensitive_information === true ? await decryptData(value) : value,
                             position: field.field_order_id
                         });
 

@@ -5,3 +5,4 @@ export { MSC_Table } from "./msc_dynamo_db";
 export { MSC_LambdaLayer } from "./msc_lambda_layer";
 export { MSC_Bucket } from "./msc_s3";
 export { MSC_Queue } from "./msc_sqs_queue";
+export { MSC_Kms } from "./msc_kms";
