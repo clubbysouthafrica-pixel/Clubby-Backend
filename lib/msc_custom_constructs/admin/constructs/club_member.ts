@@ -32,7 +32,8 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
-                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                CLUB_TABLE_NAME: props.club_table.tableName
             },
             permissions: {
                 [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
@@ -43,6 +44,9 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 ],
                 [props.registration_form_table.tableArn]: [
                     "dynamodb:Query"
+                ],
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
