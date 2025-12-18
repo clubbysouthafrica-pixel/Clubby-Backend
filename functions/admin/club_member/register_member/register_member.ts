@@ -135,7 +135,8 @@ async function updateTransactionsTable(
     club_account_id: string,
     current_reg_transaction_id: string,
     registered_on: number,
-    payment_amount: number
+    payment_amount: number,
+    payment_method: string
 ) {
     await updateItem(
         process.env.TRANSACTIONS_TABLE_NAME as string,
@@ -157,7 +158,7 @@ async function updateTransactionsTable(
                 type: "CONFIRMATION",
                 description: "Payment confirmation",
                 amount: payment_amount,
-                payment_type: "EFT/Cash"
+                payment_type: payment_method
             }
         }
     );
@@ -189,11 +190,11 @@ export const handler = async (event: any) => {
 
     try {
 
-        if (body?.club_account_id == null || body?.member_id == null || body?.payment_amount == null) {
-            return createResponse(400, { message: "Invalid request. club_account_id, member_id, payment_amount requried in body." }, origin);
+        if (body?.club_account_id == null || body?.member_id == null || body?.payment_amount == null || body?.payment_method == null) {
+            return createResponse(400, { message: "Invalid request. club_account_id, member_id, payment_amount, payment_method required in body." }, origin);
         }
-        if (typeof body.club_account_id !== 'string' || typeof body.member_id !== 'string' || typeof body.payment_amount !== 'number') {
-            return createResponse(400, { message: "club_account_id, member_id must be STRING type. payment_amount must be NUMBER type." }, origin);
+        if (typeof body.club_account_id !== 'string' || typeof body.member_id !== 'string' || typeof body.payment_amount !== 'number' || typeof body.payment_method !== 'string') {
+            return createResponse(400, { message: "club_account_id, member_id, payment_method must be STRING type. payment_amount must be NUMBER type." }, origin);
         }
 
         const club_member = await getItem(
@@ -250,7 +251,7 @@ export const handler = async (event: any) => {
             registration.total_fee * (club.member_registration_fee_to_club / 100)
         );
 
-        if (body.payment_amount > 0) await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount)
+        if (body.payment_amount > 0) await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount, body.payment_method)
         await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on, body.payment_amount)
         await updateClubMember(body.club_account_id, body.member_id)
 

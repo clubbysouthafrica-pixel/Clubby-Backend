@@ -13,6 +13,10 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_account_id must be STRING type." }, origin);
         }
 
+        const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
+            club_account_id: query_string_params.club_account_id
+        });
+
         const club_members = await queryItems(
             process.env.CLUB_MEMBER_TABLE_NAME as string,
             "club_account_id = :clubId",
@@ -139,7 +143,16 @@ export const handler = async (event: any) => {
             }
         }
 
-        return createResponse(200, { registered, unregistered, filters }, origin);
+        const payment_methods = [
+            "EFT/Cash",
+            ...club?.custom_payment_methods.map((pm: {name: string, url: string}) => pm.name)
+        ]
+
+        return createResponse(200, { 
+            registered, unregistered, 
+            filters,
+            payment_methods,
+        }, origin);
 
     } catch (error) {
         console.error("Error:", error);
