@@ -7,6 +7,13 @@ import {
     getClubEmailSendingLimit
 } from "./function_helpers";
 
+function convertTitleToVariableName(title: string): string {
+    return title
+        .toLowerCase()
+        .split(' ')
+        .join('_');
+}
+
 async function updateClubsRegistrationBilling(club_account_id: string, fee: number) {
     const now = new Date();
     const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -197,6 +204,21 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_account_id, member_id, payment_method must be STRING type. payment_amount must be NUMBER type." }, origin);
         }
 
+        // Validate template_variables if provided
+        if (body?.template_variables) {
+            if (!Array.isArray(body.template_variables)) {
+                return createResponse(400, { message: "template_variables must be an array." }, origin);
+            }
+            for (const variable of body.template_variables) {
+                if (typeof variable !== 'object' || !variable.name || !variable.value) {
+                    return createResponse(400, { message: "Each template_variable must have 'name' and 'value' properties." }, origin);
+                }
+                if (typeof variable.name !== 'string' || typeof variable.value !== 'string') {
+                    return createResponse(400, { message: "template_variable 'name' and 'value' must be strings." }, origin);
+                }
+            }
+        }
+
         const club_member = await getItem(
             process.env.CLUB_MEMBER_TABLE_NAME as string,
             {
@@ -262,11 +284,16 @@ export const handler = async (event: any) => {
                 return createResponse(200, { message: club_sending_limit }, origin);
             }
 
-
             let finalBody = club.registration_success_email_template_body
-                .replace(/{{member_name}}/g, `${club_member.member_first_name} ${club_member.member_surname}`)
-                .replace(/{{club_name}}/g, club.club_name)
-                .replace(/{{club_email}}/g, club.support_email);
+            if (body?.template_variables && Array.isArray(body.template_variables)) {
+                for (const variable of body.template_variables) {
+                    if (variable?.name && variable?.value) {
+                        const variableName = convertTitleToVariableName(variable.name);
+                        const regex = new RegExp(`{{${variableName}}}`, 'g');
+                        finalBody = finalBody.replace(regex, String(variable.value));
+                    }
+                }
+            }
 
             await sendSqsMessage(
                 process.env.SEND_EMAIL_QUEUE_URL as string,

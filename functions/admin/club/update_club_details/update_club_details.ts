@@ -1,5 +1,26 @@
 import { createResponse, deconstructEvent, updateItem } from "./function_helpers";
 
+function validateTemplateVariables(template: string): string | null {
+    const regex = /\{\{(\w+)\}\}/g;
+    let match;
+
+    while ((match = regex.exec(template)) !== null) {
+        const variable = match[1];
+        
+        // Check if variable contains uppercase letters
+        if (variable !== variable.toLowerCase()) {
+            return `Template variable '{{${variable}}}' contains uppercase letters. Variables must be lowercase. Valid example: {{custom_variable}}.`;
+        }
+        
+        // Check if variable only contains lowercase letters and underscores
+        if (!/^[a-z_]+$/.test(variable)) {
+            return `Template variable '{{${variable}}}' contains invalid characters. Variables can only contain lowercase letters and underscores. Valid example: {{custom_variable}}.`;
+        }
+    }
+
+    return null;
+}
+
 function validateBody(body: Record<string, string>): string | null {
     if (body?.club_account_id == null) {
         return "Invalid body. Required attributes: club_account_id."
@@ -25,6 +46,20 @@ function validateBody(body: Record<string, string>): string | null {
 
         if (bank_details.bank.trim() === "" || bank_details.account_number.trim() === "" || bank_details.branch_code.trim() === "" || bank_details.account_type.trim() === "") {
             return "Please fill in bank details first. All bank details must be provided."
+        }
+    }
+
+    if (body?.registration_success_email_template_body && typeof body.registration_success_email_template_body === "string") {
+        const templateValidationError = validateTemplateVariables(body.registration_success_email_template_body);
+        if (templateValidationError) {
+            return templateValidationError;
+        }
+    }
+
+    if (body?.registration_submission_email_template_body && typeof body.registration_submission_email_template_body === "string") {
+        const templateValidationError = validateTemplateVariables(body.registration_submission_email_template_body);
+        if (templateValidationError) {
+            return templateValidationError;
         }
     }
 

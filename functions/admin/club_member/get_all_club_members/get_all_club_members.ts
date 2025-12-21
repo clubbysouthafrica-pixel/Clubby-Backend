@@ -1,5 +1,31 @@
 import { createResponse, deconstructEvent, getItem, queryItems } from "./function_helpers";
 
+function extractTemplateVariables(template: string): Array<{ name: string; title: string }> {
+    const regex = /\{\{(\w+)\}\}/g;
+    const variables: Array<{ name: string; title: string }> = [];
+    const seen = new Set<string>();
+    let match;
+
+    while ((match = regex.exec(template)) !== null) {
+        const variable = match[1];
+        
+        if (!seen.has(variable)) {
+            seen.add(variable);
+            const formatted = variable
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+            
+            variables.push({
+                name: variable,
+                title: formatted
+            });
+        }
+    }
+
+    return variables;
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -148,10 +174,22 @@ export const handler = async (event: any) => {
             ...club?.custom_payment_methods.map((pm: {name: string, url: string}) => pm.name)
         ]
 
+        const template_variables = club?.registration_success_email_template_body 
+            ? extractTemplateVariables(club.registration_success_email_template_body)
+            : [];
+
+        if (club?.registration_success_email_template_body?.includes("{{member_name}}") && !template_variables.some(v => v.name === "member_name")) {
+            template_variables.unshift({
+                name: "member_name",
+                title: "Member Name"
+            });
+        }
+
         return createResponse(200, { 
             registered, unregistered, 
             filters,
             payment_methods,
+            template_variables,
         }, origin);
 
     } catch (error) {
