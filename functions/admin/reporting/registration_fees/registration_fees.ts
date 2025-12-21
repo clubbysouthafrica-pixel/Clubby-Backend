@@ -49,6 +49,7 @@ function updateReportWithNewRegistration(report: any[], registration: Record<str
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year_month = `${year}/${month}`;
 
+    console.log('Processing new registration:', registration.registration_id);
     report.forEach(field => {
         Object.keys(registration).forEach(key => {
             if (key.includes(field.field_id)) {
@@ -87,7 +88,8 @@ function updateReportWithNewRegistration(report: any[], registration: Record<str
 
         })
     })
-    console.log('REGISTRATION REPORT: ', JSON.stringify(report))
+    console.log('Updated report for registration:', registration.registration_id);
+    console.log('Current report state:', JSON.stringify(report));
 }
 
 function updateReportWithPaidRegistration(report: any[], registration: Record<string, any>) {
@@ -96,6 +98,7 @@ function updateReportWithPaidRegistration(report: any[], registration: Record<st
     const registered_on_month = String(registered_on_date.getMonth() + 1).padStart(2, '0');
     const registered_on_year_month = `${registered_on_year}/${registered_on_month}`;
 
+    console.log('Processing paid registration:', registration.registration_id);
     for (const field of report) {
 
         for (const key of Object.keys(registration)) {
@@ -137,7 +140,8 @@ function updateReportWithPaidRegistration(report: any[], registration: Record<st
 
         }
     }
-    console.log('REGISTRATION REPORT: ', JSON.stringify(report))
+    console.log('Updated report for registration:', registration.registration_id);
+    console.log('Current report state:', JSON.stringify(report));
 }
 
 export const handler = async (event: any) => {
@@ -217,6 +221,7 @@ export const handler = async (event: any) => {
                 updateReportWithNewRegistration(report, registration)
             }
         }
+        console.log('REGISTRATION REPORT: ', JSON.stringify(report))
 
         return createResponse(200, { report }, origin);
 
