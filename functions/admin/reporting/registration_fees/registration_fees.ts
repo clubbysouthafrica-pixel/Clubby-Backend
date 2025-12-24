@@ -187,33 +187,36 @@ export const handler = async (event: any) => {
                 return createResponse(400, { message: "club_account_id is required." }, origin);
             }
 
-            const s3Key = `${query_string_params.club_account_id}/Season_${query_string_params.season_cycle}/Registrations.json`;
+            const s3KeyRegistrations = `${query_string_params.club_account_id}/Season_${query_string_params.season_cycle}/Registrations.json`;
+            const s3KeyFields = `${query_string_params.club_account_id}/Season_${query_string_params.season_cycle}/RegistrationForm.json`;
 
             try {
-                const s3Object = await s3_client.send(
+                const s3ObjectRegistrations = await s3_client.send(
                     new GetObjectCommand({
                         Bucket: process.env.CLUB_HISTORY_BUCKET_NAME as string,
-                        Key: s3Key,
+                        Key: s3KeyRegistrations,
                     })
                 );
+                const bodyContentsRegistrations = await s3ObjectRegistrations.Body?.transformToString();
+                const s3DataRegistrations = JSON.parse(bodyContentsRegistrations || '{}');
+                registrations = Array.isArray(s3DataRegistrations) ? s3DataRegistrations : [];
 
-                const bodyContents = await s3Object.Body?.transformToString();
-                const s3Data = JSON.parse(bodyContents || '{}');
-                
-                registrations = Array.isArray(s3Data) ? s3Data : [];
-
-                fields = await queryItems(
-                    process.env.REGISTRATION_FORM_TABLE_NAME as string,
-                    "club_account_id = :clubId",
-                    { ":clubId": query_string_params.club_account_id }
-                )
+                const s3ObjectFields = await s3_client.send(
+                    new GetObjectCommand({
+                        Bucket: process.env.CLUB_HISTORY_BUCKET_NAME as string,
+                        Key: s3KeyFields,
+                    })
+                );
+                const bodyContentsFields = await s3ObjectFields.Body?.transformToString();
+                const s3DataFields = JSON.parse(bodyContentsFields || '{}');
+                fields = Array.isArray(s3DataFields) ? s3DataFields : [];
 
             } catch (err: any) {
                 const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
                 if (status === 404) {
                     return createResponse(404, { message: "Registration fees data not found for the specified season." }, origin);
                 }
-                console.error(`Error fetching S3 object ${s3Key}:`, err);
+                console.error(`Error fetching S3 object:`, err);
                 throw err;
             }
         } else {

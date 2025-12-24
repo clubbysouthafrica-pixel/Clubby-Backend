@@ -99,6 +99,7 @@ export class MSC_AdminNestedStack extends Stack {
             club_member_table: props.club_member_table,
             club_history_bucket: props.club_history_bucket,
             layers: props.layers,
+            registration_form_table: props.registration_form_table,
             registrations_table: props.registrations_table,
             token_authorizer: jwt_construct.token_authorizer,
             signatures_bucket: props.signatures_bucket,
