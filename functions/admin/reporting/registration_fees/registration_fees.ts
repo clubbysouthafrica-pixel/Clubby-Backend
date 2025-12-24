@@ -9,7 +9,7 @@ const s3_client = new S3Client({ region: process.env.REGION });
 
 function createBlankReport(report: any[], allFields: any) {
     allFields.forEach((field: Record<string, any>) => {
-        if (field.field_type !== "BILLING" || !field.visible) return;
+        if (field.field_type !== "BILLING") return;
 
         if (field.input_type === "TEXT") {
             report.push({
