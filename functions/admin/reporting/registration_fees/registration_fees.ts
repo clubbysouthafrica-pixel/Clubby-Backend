@@ -13,6 +13,7 @@ function createBlankReport(report: any[], allFields: any) {
 
         if (field.input_type === "TEXT") {
             report.push({
+                old_field: !field.visible,
                 table_name: field.field_name,
                 field_id: field.field_id,
                 fee_amount: field.amount,
@@ -21,6 +22,7 @@ function createBlankReport(report: any[], allFields: any) {
             });
         } else if (field.input_type === "DROPDOWN") {
             report.push({
+                old_field: !field.visible,
                 table_name: field.field_name,
                 field_id: field.field_id,
                 rows: field.billingOptions.map((option: any) => ({
@@ -33,6 +35,7 @@ function createBlankReport(report: any[], allFields: any) {
             });
         } else if (field.input_type === "NUMBER") {
             report.push({
+                old_field: !field.visible,
                 table_name: field.field_name,
                 field_id: field.field_id,
                 fee_amount: null,
@@ -51,10 +54,12 @@ function updateReportWithNewRegistration(report: any[], registration: Record<str
 
     console.log('Processing new registration:', registration.registration_id);
     report.forEach(field => {
+
         Object.keys(registration).forEach(key => {
             if (key.includes(field.field_id)) {
                 if (field.rows) {
 
+                    let row_found  = false;
                     field.rows.forEach((row: Record<string, any>) => {
                         if (registration[key].option_order_id === row.option_order_id) {
 
@@ -67,8 +72,20 @@ function updateReportWithNewRegistration(report: any[], registration: Record<str
                                 row.data[index].due_to_club += registration[key].value
                                 row.data[index].pending += registration[key].multiplier_value ?? 1
                             }
+                            row_found  = true;
                         }
                     })
+
+                    if (!row_found) {
+                        field.rows.push({
+                            old_option: true,
+                            option_order_id: registration[key].option_order_id,
+                            row_name: registration[key].label_value,
+                            fee_amount: registration[key].value,
+                            total: { paid_to_club: 0, due_to_club: registration[key].value, total: 0, pending: registration[key].multiplier_value ?? 1 },
+                            data: [{ date: year_month, paid_to_club: 0, due_to_club: registration[key].value, total: 0, pending: registration[key].multiplier_value ?? 1 }]
+                        })
+                    }
 
                 } else {
 
@@ -81,13 +98,13 @@ function updateReportWithNewRegistration(report: any[], registration: Record<str
                         field.data[index].due_to_club += registration[key].value
                         field.data[index].pending += registration[key].multiplier_value ?? 1
                     }
-
                 }
 
             }
 
         })
-    })
+    });
+
     console.log('Updated report for registration:', registration.registration_id);
     console.log('Current report state:', JSON.stringify(report));
 }
@@ -107,6 +124,7 @@ function updateReportWithPaidRegistration(report: any[], registration: Record<st
 
                 if (field.rows) {
 
+                    let row_found  = false;
                     field.rows.forEach((row: Record<string, any>) => {
                         if (registration[key].option_order_id === row.option_order_id) {
 
@@ -119,8 +137,20 @@ function updateReportWithPaidRegistration(report: any[], registration: Record<st
                                 row.data[index].paid_to_club += registration[key].value
                                 row.data[index].total += registration[key].multiplier_value ?? 1
                             }
+                            row_found  = true;
                         }
                     })
+
+                    if (!row_found) {
+                        field.rows.push({
+                            old_field: true,
+                            option_order_id: registration[key].option_order_id,
+                            row_name: registration[key].label_value,
+                            fee_amount: registration[key].value,
+                            total: { paid_to_club: 0, due_to_club: registration[key].value, total: 0, pending: registration[key].multiplier_value ?? 1 },
+                            data: [{ date: registered_on_year_month, paid_to_club: 0, due_to_club: registration[key].value, total: 0, pending: registration[key].multiplier_value ?? 1 }]
+                        })
+                    }
 
                 } else {
                     field.total.total += registration[key].multiplier_value ?? 1
