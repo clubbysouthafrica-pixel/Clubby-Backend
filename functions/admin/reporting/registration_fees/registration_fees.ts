@@ -147,8 +147,8 @@ function updateReportWithPaidRegistration(report: any[], registration: Record<st
                             option_order_id: registration[key].option_order_id,
                             row_name: registration[key].label_value,
                             fee_amount: registration[key].value,
-                            total: { paid_to_club: 0, due_to_club: registration[key].value, total: 0, pending: registration[key].multiplier_value ?? 1 },
-                            data: [{ date: registered_on_year_month, paid_to_club: 0, due_to_club: registration[key].value, total: 0, pending: registration[key].multiplier_value ?? 1 }]
+                            total: { paid_to_club: registration[key].value, due_to_club: 0, total: registration[key].multiplier_value ?? 1, pending: 0 },
+                            data: [{ date: registered_on_year_month, paid_to_club: registration[key].value, due_to_club: 0, total: registration[key].multiplier_value ?? 1, pending: 0 }]
                         })
                     }
 
