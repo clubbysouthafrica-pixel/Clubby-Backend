@@ -53,6 +53,7 @@ function updateReportWithNewRegistration(report: any[], registration: Record<str
     const year_month = `${year}/${month}`;
 
     console.log('Processing new registration:', registration.registration_id);
+    console.log('User ID:', registration.user_id);
     report.forEach(field => {
 
         Object.keys(registration).forEach(key => {
@@ -116,6 +117,7 @@ function updateReportWithPaidRegistration(report: any[], registration: Record<st
     const registered_on_year_month = `${registered_on_year}/${registered_on_month}`;
 
     console.log('Processing paid registration:', registration.registration_id);
+    console.log('User ID:', registration.user_id);
     for (const field of report) {
 
         for (const key of Object.keys(registration)) {
