@@ -28,12 +28,6 @@ export class MSC_ReportingConstruct extends Construct {
                 REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
             },
             permissions: {
-                // [props.club_reporting_table.tableArn]: [
-                //     "dynamodb:Query"
-                // ],
-                // [props.club_history_bucket.bucketArn]: [
-                //     "s3:ListBucket"
-                // ],
                 [`${props.club_history_bucket.bucketArn}/*`]: [
                     "s3:GetObject"
                 ],

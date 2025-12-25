@@ -185,6 +185,32 @@ async function handleTransactions(club_account_id: string, cycle_name: string) {
     await addToHistoricalReportingBucket(club_account_id, cycle_name, "Transaction", historical_reports);
 }
 
+async function handleRegistrationForm(club_account_id: string, cycle_name: string) {
+    const registration_forms = await queryItems(
+        process.env.REGISTRATION_FORM_TABLE_NAME as string,
+        "club_account_id = :clubId",
+        { ":clubId": club_account_id }
+    );
+
+    const historical_reports: any[] = []
+    if (registration_forms) {
+        for (const form of registration_forms) {
+            historical_reports.push(form);
+
+            if (form.visible === false) {
+                await removeItem(
+                    process.env.REGISTRATION_FORM_TABLE_NAME as string,
+                    {
+                        club_account_id: club_account_id,
+                        field_id: form.field_id
+                    }
+                )
+            }
+        }
+    }
+    await addToHistoricalReportingBucket(club_account_id, cycle_name, "RegistrationForm", historical_reports);
+}
+
 async function deleteClubSignatures(club_account_id: string): Promise<void> {
     const prefix = `${club_account_id}/`;
     let continuationToken: string | undefined;
@@ -263,6 +289,7 @@ export const handler = async (event: any) => {
             await handleMonthlyBilling(club_account_id, cycle_name);
             await handleRegistrations(club_account_id, cycle_name);
             await handleTransactions(club_account_id, cycle_name);
+            await handleRegistrationForm(club_account_id, cycle_name);
             await deleteClubSignatures(club_account_id);
 
             const currentEpoch = Date.now();
