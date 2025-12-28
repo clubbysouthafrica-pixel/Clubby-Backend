@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_LambdaLayer } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_LambdaLayer, MSC_Kms } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 
@@ -10,6 +10,7 @@ interface MSC_MemberUserProps {
     };
     users_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
+    kms_key: MSC_Kms;
 }
 
 export class MSC_MemberUserConstruct extends Construct {
@@ -25,6 +26,9 @@ export class MSC_MemberUserConstruct extends Construct {
             permissions: {
                 [props.users_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [props.kms_key.keyArn]: [
+                    "kms:Decrypt"
                 ]
             },
             layers: [props.layers.jwt_layer]

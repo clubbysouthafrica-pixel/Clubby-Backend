@@ -129,7 +129,8 @@ export class MSC_MemberNestedStack extends Stack {
             club_member_table: props.club_member_table,
             users_table: props.users_table,
             token_authorizer: jwt_construct.token_authorizer,
-            layers: props.layers
+            layers: props.layers,
+            kms_key: props.kms_key
         });
     }
 }
