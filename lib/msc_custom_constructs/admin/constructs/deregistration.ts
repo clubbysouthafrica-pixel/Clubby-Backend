@@ -113,7 +113,8 @@ export class MSC_DeregistrationConstruct extends Construct {
             code: "admin/deregistration/deregister_members",
             envVariables: {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
@@ -121,6 +122,10 @@ export class MSC_DeregistrationConstruct extends Construct {
                     "dynamodb:GetItem"
                 ],
                 [props.registrations_table.tableArn]: [
+                    "dynamodb:UpdateItem",
+                    "dynamodb:GetItem"
+                ],
+                [props.transactions_table.tableArn]: [
                     "dynamodb:UpdateItem"
                 ]
             },

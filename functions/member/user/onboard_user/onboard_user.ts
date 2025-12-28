@@ -1,4 +1,4 @@
-import { createResponse, deconstructEvent, updateItem, getItem } from "./function_helpers";
+import { createResponse, deconstructEvent, updateItem, getItem, encryptData } from "./function_helpers";
 
 const isValidDateOfBirth = (dob: string): boolean => {
   const regex = /^\d{4}\/\d{2}\/\d{2}$/;
@@ -91,8 +91,10 @@ export const handler = async (event: any) => {
       "address_line_2",
       "suburb",
       "city",
-      "postal_code",
+      "postal_code"
     ];
+
+    const encryptedFields = ["address_line_1", "address_line_2", "phone_number", "date_of_birth"];
 
     const update_expressions: string[] = [];
     const expression_attribute_names: Record<string, string> = {};
@@ -104,7 +106,12 @@ export const handler = async (event: any) => {
         const valueKey = `:${field}`;
         update_expressions.push(`${placeholder} = ${valueKey}`);
         expression_attribute_names[placeholder] = field;
-        expression_attribute_values[valueKey] = body[field];
+        
+        if (encryptedFields.includes(field)) {
+          expression_attribute_values[valueKey] = await encryptData(body[field], process.env.KMS_KEY_ID as string);
+        } else {
+          expression_attribute_values[valueKey] = body[field];
+        }
       }
     }
 

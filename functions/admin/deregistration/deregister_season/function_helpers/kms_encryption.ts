@@ -37,6 +37,6 @@ export async function decryptData(ciphertext: string): Promise<string> {
         throw new Error('Failed to decrypt data: No plaintext returned');
     } catch (error: any) {
         console.error('Error decrypting data:', error);
-        throw new Error(`Decryption failed: ${error.message}`);
+        return ciphertext;
     }
 }

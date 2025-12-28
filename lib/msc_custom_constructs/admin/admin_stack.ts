@@ -119,7 +119,8 @@ export class MSC_AdminNestedStack extends Stack {
             api_gateway: api_gateway,
             users_table: props.users_table,
             token_authorizer: jwt_construct.token_authorizer,
-            layers: props.layers
+            layers: props.layers,
+            kms_key: props.kms_key
         });
 
         new MSC_AdminClubConstruct(this, `${id}-Club`, {
@@ -143,7 +144,8 @@ export class MSC_AdminNestedStack extends Stack {
             api_gateway: api_gateway,
             layers: props.layers,
             token_authorizer: jwt_construct.token_authorizer,
-            users_table: props.users_table
+            users_table: props.users_table,
+            kms_key: props.kms_key
         });
 
         new MSC_AdminRegistrationFormConstruct(this, `${id}-RegistrationForm`, {

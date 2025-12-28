@@ -55,6 +55,31 @@ async function updateRegistrationsTable(user_id: string, registration_id: string
     );
 }
 
+async function updateTransactionsTable(club_account_id: string, transaction_id: string) {
+    await updateItem(
+        process.env.TRANSACTIONS_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            transaction_id: transaction_id
+        },
+        `SET #status = :status, #lifecycle.#ts = :lifecycleValue`,
+        {
+            "#status": "status",
+            "#lifecycle": "lifecycle",
+            "#ts": `${Date.now()}`
+        },
+        {
+            ":status": "CANCELLED",
+            ":lifecycleValue": {
+                type: "CANCELLATION",
+                description: "Transaction cancelled due to member deregistration",
+                amount: "N/A",
+                payment_type: "N/A"
+            }
+        }
+    );
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -62,7 +87,7 @@ export const handler = async (event: any) => {
     try {
 
         if (body?.club_account_id == null || body?.user_ids == null) {
-            return createResponse(400, { message: "Invalid request. club_account_id, user_id requried in body." }, origin);
+            return createResponse(400, { message: "Invalid request. club_account_id, user_id required in body." }, origin);
         }
         if (typeof body.club_account_id !== 'string') {
             return createResponse(400, { message: "club_account_id must be STRING type." }, origin);
@@ -71,7 +96,6 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "user_id must be ARRAY type." }, origin);
         }
 
-        const club_members = [];
         for (const user_id of body.user_ids) {
             const member = await getItem(
                 process.env.CLUB_MEMBER_TABLE_NAME as string,
@@ -84,7 +108,22 @@ export const handler = async (event: any) => {
                 console.log(`User, ${user_id}, does not exist as a club member for club, ${body.club_account_id}.`)
                 continue
             }
-            club_members.push(member);
+
+            const registration = await getItem(
+                process.env.REGISTRATIONS_TABLE_NAME as string,
+                {
+                    "registration_id": member.current_reg_id,
+                    "user_id": member.user_id
+                },
+            );
+            if (!registration) {
+                console.log(`User, ${user_id}, does not have a valid registration, ${member.current_reg_id}.`)
+                continue
+            }
+
+            if (registration.total_outstanding_amount > 0) {
+                await updateTransactionsTable(body.club_account_id, member.current_reg_transaction_id);
+            }
 
             await updateClubMemberTable(member.user_id, body.club_account_id);
             await updateRegistrationsTable(member.user_id, member.current_reg_id, body?.deregistration_reason ?? "Deregistered by admin")
