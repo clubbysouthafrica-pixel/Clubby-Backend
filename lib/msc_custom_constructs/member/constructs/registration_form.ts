@@ -11,6 +11,7 @@ interface MSC_MemberRegistrationFormConstructProps {
     club_table: MSC_Table;
     signatures_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
+    image_bucket: MSC_Bucket;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -29,6 +30,7 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
+                IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
                 KMS_KEY_ID: props.kms_key.keyId
             },
             permissions: {
@@ -50,6 +52,8 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
             },
             layers: [props.layers.jwt_layer]
         });
+        props.signatures_bucket.grantRead(get_form);
+              props.image_bucket.grantRead(get_form);
         props.signatures_bucket.grantRead(get_form);
 
         const get_member_registration = new MSC_Lambda(this, `${id}-GetMemberRegistration`, {

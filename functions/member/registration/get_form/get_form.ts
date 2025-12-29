@@ -1,12 +1,30 @@
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { createResponse, deconstructEvent, decryptData, getItem, getSignatureUrl, queryItems } from "./function_helpers";
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 const s3_client = new S3Client({ region: process.env.REGION });
+
+async function getClubProfileUrl(club_account_id: string): Promise<string | undefined> {
+    const profile_key = `club_profile/${club_account_id}_profile`;
+    try {
+        await s3_client.send(new HeadObjectCommand({ Bucket: process.env.IMAGE_BUCKET_NAME, Key: profile_key }));
+        const getProfileCommand = new GetObjectCommand({
+            Bucket: process.env.IMAGE_BUCKET_NAME,
+            Key: profile_key,
+        });
+        return await getSignedUrl(s3_client, getProfileCommand, { expiresIn: 60 * 5 });
+    } catch (err: any) {
+        const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
+        if (status && status !== 404) {
+            console.error(`Error checking profile image ${profile_key}:`, err);
+        }
+        return undefined;
+    }
+}
 
 export const handler = async (event: any) => {
 
@@ -188,7 +206,12 @@ export const handler = async (event: any) => {
             }))
         );
 
-        return createResponse(200, { pages: updatedPages, club_name: club.club_name, currency: club.currency }, origin);
+        return createResponse(200, { 
+            pages: updatedPages, 
+            club_name: club.club_name, 
+            currency: club.currency,
+            club_profile_url: await getClubProfileUrl(query_string_params?.club_account_id)
+        }, origin);
 
 
     } catch (error: any) {
