@@ -1,9 +1,5 @@
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { createResponse, deconstructEvent, getItem, queryItems, formatAmount, getSignatureUrl, decryptData } from "./function_helpers";
-
-const s3_client = new S3Client({ region: process.env.AWS_REGION });
 
 async function getClubMemberRegistrationId(user_id: string, club_account_id: string): Promise<string> {
     const club_member = await getItem(
@@ -211,7 +207,7 @@ export const handler = async (event: any) => {
             pages,
             deregistration_reason: member_registration?.deregistration_reason,
             registration_id: registration_id,
-            admin_notes: admin_notes ?? [],
+            admin_notes: admin_notes ?? []
         }, origin);
 
     } catch (error) {
