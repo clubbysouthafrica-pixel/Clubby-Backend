@@ -603,7 +603,7 @@ export const handler = async (event: any) => {
                 process.env.SEND_EMAIL_QUEUE_URL as string,
                 {
                     emails: [body.member_email],
-                    subject: `Registration Submission for ${club.club_name}`,
+                    subject: club.registration_submission_email_subject,
                     email_body: finalBody,
                     club_account_id: body.club_account_id,
                     ...club_sending_limit

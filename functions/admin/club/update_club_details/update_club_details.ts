@@ -133,10 +133,22 @@ export const handler = async (event: any) => {
             expressionAttributeValues[":registration_submission_email_template_body"] = body.registration_submission_email_template_body;
         }
 
+        if (body?.registration_submission_email_subject && typeof body.registration_submission_email_subject === "string") {
+            updateParts.push("#registration_submission_email_subject = :registration_submission_email_subject");
+            expressionAttributeNames["#registration_submission_email_subject"] = "registration_submission_email_subject";
+            expressionAttributeValues[":registration_submission_email_subject"] = body.registration_submission_email_subject;
+        }
+
         if (body?.registration_success_email_template_body && typeof body.registration_success_email_template_body === "string") {
             updateParts.push("#registration_success_email_template_body = :registration_success_email_template_body");
             expressionAttributeNames["#registration_success_email_template_body"] = "registration_success_email_template_body";
             expressionAttributeValues[":registration_success_email_template_body"] = body.registration_success_email_template_body;
+        }
+
+        if (body?.registration_success_email_subject && typeof body.registration_success_email_subject === "string") {
+            updateParts.push("#registration_success_email_subject = :registration_success_email_subject");
+            expressionAttributeNames["#registration_success_email_subject"] = "registration_success_email_subject";
+            expressionAttributeValues[":registration_success_email_subject"] = body.registration_success_email_subject;
         }
 
         if (typeof body?.use_success_email_template === "boolean") {
