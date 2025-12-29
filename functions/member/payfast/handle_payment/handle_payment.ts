@@ -239,7 +239,7 @@ export const handler = async (event: any) => {
                 process.env.SEND_EMAIL_QUEUE_URL as string,
                 {
                     emails: [club_member.member_email],
-                    subject: `Registration Submission for ${clubs[0].club_name}`,
+                    subject: clubs[0].registration_success_email_subject,
                     email_body: finalBody,
                     club_account_id: clubs[0].club_account_id,
                     ...club_sending_limit
