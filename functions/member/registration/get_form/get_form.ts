@@ -101,7 +101,12 @@ export const handler = async (event: any) => {
         );
 
         if (club_member == null || club_member === undefined) {
-            return createResponse(200, { pages, club_name: club.club_name, currency: club.currency }, origin);
+            return createResponse(200, { 
+                pages, 
+                club_name: club.club_name, 
+                currency: club.currency,
+                club_profile_url: await getClubProfileUrl(query_string_params?.club_account_id)
+            }, origin);
         }
 
         const registration = await getItem(
@@ -205,14 +210,12 @@ export const handler = async (event: any) => {
                 ),
             }))
         );
-
         return createResponse(200, { 
             pages: updatedPages, 
             club_name: club.club_name, 
             currency: club.currency,
             club_profile_url: await getClubProfileUrl(query_string_params?.club_account_id)
         }, origin);
-
 
     } catch (error: any) {
         console.error('Signup error:', error);
