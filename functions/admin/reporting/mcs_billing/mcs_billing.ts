@@ -22,7 +22,7 @@ const processBillingData = (monthly_billing: Record<string, any>[], club: Record
             month_data: [],
             "Total email charge": 0,
             "Total emails sent": 0,
-            "Monthly free emails": club.free_email_limit,
+            // "Monthly free emails": club.free_email_limit,
             "Charge per email": formatAmount(club.fee_per_email_to_club, club.currency),
             "Monthly email limit": club.maximum_monthly_emails
         },
