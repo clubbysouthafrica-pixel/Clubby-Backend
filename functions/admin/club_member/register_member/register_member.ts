@@ -109,7 +109,8 @@ async function updateRegistrationsTable(
     member_id: string,
     current_reg_id: string,
     registered_on: number,
-    payment_amount?: number
+    payment_amount?: number,
+    template_variables?: Array<{ name: string; value: string }>
 ) {
     const paymentHistoryEntry = {
         date: Date.now(),
@@ -117,24 +118,40 @@ async function updateRegistrationsTable(
         is_revenue: true
     };
 
+    const updateExpression = template_variables && template_variables.length > 0
+        ? "SET #total_outstanding_amount = :zero, #registered_on = :registered_on, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry), #template_variables = :template_variables"
+        : "SET #total_outstanding_amount = :zero, #registered_on = :registered_on, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)";
+
+    const attributeNames: Record<string, string> = {
+        "#total_outstanding_amount": "total_outstanding_amount",
+        "#registered_on": "registered_on",
+        "#payment_history": "payment_history"
+    };
+
+    if (template_variables && template_variables.length > 0) {
+        attributeNames["#template_variables"] = "template_variables";
+    }
+
+    const attributeValues: Record<string, any> = {
+        ":zero": 0,
+        ":registered_on": registered_on,
+        ":payment_entry": [paymentHistoryEntry],
+        ":empty_list": []
+    };
+
+    if (template_variables && template_variables.length > 0) {
+        attributeValues[":template_variables"] = template_variables;
+    }
+
     await updateItem(
         process.env.REGISTRATIONS_TABLE_NAME as string,
         {
             user_id: member_id,
             registration_id: current_reg_id
         },
-        "SET #total_outstanding_amount = :zero, #registered_on = :registered_on, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)",
-        {
-            "#total_outstanding_amount": "total_outstanding_amount",
-            "#registered_on": "registered_on",
-            "#payment_history": "payment_history"
-        },
-        {
-            ":zero": 0,
-            ":registered_on": registered_on,
-            ":payment_entry": [paymentHistoryEntry],
-            ":empty_list": []
-        }
+        updateExpression,
+        attributeNames,
+        attributeValues
     )
 }
 
@@ -274,7 +291,7 @@ export const handler = async (event: any) => {
         );
 
         if (body.payment_amount > 0) await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount, body.payment_method)
-        await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on, body.payment_amount)
+        await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on, body.payment_amount, body?.template_variables)
         await updateClubMember(body.club_account_id, body.member_id)
 
         if (club?.use_success_email_template) {

@@ -8,14 +8,14 @@ function extractTemplateVariables(template: string): Array<{ name: string; title
 
     while ((match = regex.exec(template)) !== null) {
         const variable = match[1];
-        
+
         if (!seen.has(variable)) {
             seen.add(variable);
             const formatted = variable
                 .split('_')
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');
-            
+
             variables.push({
                 name: variable,
                 title: formatted
@@ -126,6 +126,7 @@ export const handler = async (event: any) => {
                 filters.push(
                     {
                         key: `billing:${field.field_name}`,
+                        field_id: field.field_id,
                         field_name: field.field_name,
                         options: field.billingOptions.map((bo: any) => bo.label),
                         type: "billing"
@@ -135,6 +136,7 @@ export const handler = async (event: any) => {
                 filters.push(
                     {
                         key: `billing:${field.field_name}`,
+                        field_id: field.field_id,
                         field_name: field.field_name,
                         options: field.discountOptions.map((discount_option: any) => discount_option.label),
                         type: "billing"
@@ -144,6 +146,7 @@ export const handler = async (event: any) => {
                 filters.push(
                     {
                         key: `standard:${field.field_name}`,
+                        field_id: field.field_id,
                         field_name: field.field_name,
                         options: field.options,
                         type: "standard"
@@ -153,6 +156,7 @@ export const handler = async (event: any) => {
                 filters.push(
                     {
                         key: `standard:${field.field_name}`,
+                        field_id: field.field_id,
                         field_name: field.field_name,
                         options: ["true", "false"],
                         type: "standard"
@@ -162,8 +166,18 @@ export const handler = async (event: any) => {
                 filters.push(
                     {
                         key: `standard:${field.field_name}`,
+                        field_id: field.field_id,
                         field_name: field.field_name,
                         type: "standard"
+                    }
+                )
+            } else if (field.field_type === "BILLING" && field.input_type === "NUMBER") {
+                filters.push(
+                    {
+                        key: `billing:${field.field_name}`,
+                        field_id: field.field_id,
+                        field_name: field.field_name,
+                        type: "billing:number"
                     }
                 )
             }
@@ -171,10 +185,10 @@ export const handler = async (event: any) => {
 
         const payment_methods = [
             "EFT/Cash",
-            ...club?.custom_payment_methods.map((pm: {name: string, url: string}) => pm.name)
+            ...club?.custom_payment_methods.map((pm: { name: string, url: string }) => pm.name)
         ]
 
-        const template_variables = club?.registration_success_email_template_body 
+        const template_variables = club?.registration_success_email_template_body
             ? extractTemplateVariables(club.registration_success_email_template_body)
             : [];
 
@@ -185,8 +199,8 @@ export const handler = async (event: any) => {
             });
         }
 
-        return createResponse(200, { 
-            registered, unregistered, 
+        return createResponse(200, {
+            registered, unregistered,
             filters,
             payment_methods,
             template_variables,
