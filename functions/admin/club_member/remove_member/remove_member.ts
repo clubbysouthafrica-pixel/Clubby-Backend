@@ -10,19 +10,23 @@ export const handler = async (event: any) => {
         if (query_string_params?.club_account_id == null) {
             return createResponse(400, { message: 'club_account_id required.' }, origin);
         }
-        if (body.member_id == null || typeof body.member_id !== 'string') {
-            return createResponse(400, { message: 'member_id (string) required in body.' }, origin);
+        if (!Array.isArray(body.member_ids) || body.member_ids.length === 0) {
+            return createResponse(400, { message: 'member_ids (array) required in body.' }, origin);
         }
 
-        await removeItem(
-            process.env.CLUB_MEMBER_TABLE_NAME as string,
-            {
-                club_account_id: query_string_params.club_account_id,
-                user_id: body.member_id
-            }
+        await Promise.all(
+            body.member_ids.map((member_id: string) =>
+                removeItem(
+                    process.env.CLUB_MEMBER_TABLE_NAME as string,
+                    {
+                        club_account_id: query_string_params.club_account_id,
+                        user_id: member_id
+                    }
+                )
+            )
         );
 
-        return createResponse(200, { message: "Member successfully removed." }, origin);
+        return createResponse(200, { message: `${body.member_ids.length} member(s) successfully removed.` }, origin);
 
     } catch (error: any) {
         console.error('Submit registration error:', error);

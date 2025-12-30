@@ -53,8 +53,7 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
         props.signatures_bucket.grantRead(get_form);
-              props.image_bucket.grantRead(get_form);
-        props.signatures_bucket.grantRead(get_form);
+        props.image_bucket.grantRead(get_form);
 
         const get_member_registration = new MSC_Lambda(this, `${id}-GetMemberRegistration`, {
             code: "member/registration/get_member_registration",
