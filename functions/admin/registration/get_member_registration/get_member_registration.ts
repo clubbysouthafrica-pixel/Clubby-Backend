@@ -1,5 +1,5 @@
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent, getItem, queryItems, formatAmount, getSignatureUrl, decryptData } from "./function_helpers";
+import { extractTemplateVariables, createResponse, deconstructEvent, getItem, queryItems, formatAmount, getSignatureUrl, decryptData } from "./function_helpers";
 
 async function getClubMember(user_id: string, club_account_id: string): Promise<any | null> {
     return await getItem(
@@ -78,6 +78,15 @@ export const handler = async (event: any) => {
 
         const club_member = await getClubMember(query_string_params.user_id as string, query_string_params.club_account_id);
         const member_registration = await getRegistration(query_string_params.user_id as string, club_member?.current_reg_id);
+        const club = await getItem(
+            process.env.CLUB_TABLE_NAME as string,
+            {
+                club_account_id: query_string_params.club_account_id
+            }
+        );
+        if (!club_member || !club) {
+            return createResponse(404, { message: "Club Member or Club not found." }, origin);
+        }
 
         const registration_form = await getRegistrationForm(query_string_params.club_account_id)
 
@@ -202,6 +211,25 @@ export const handler = async (event: any) => {
             transaction_id = club_member.current_reg_transaction_id;
         }
 
+        const template_variables = club?.registration_success_email_template_body
+            ? extractTemplateVariables(club.registration_success_email_template_body)
+            : [];
+
+        let variables = [] as Array<{ name: string; title: string; value?: string }>;
+        if (template_variables) {
+            variables = template_variables;
+
+            const registration_variables = member_registration?.template_variables ?? [];
+            for (const variable of variables) {
+                for (const reg_variable of registration_variables) {
+                    if (variable.name === reg_variable.name) {
+                        variable["value"] = reg_variable.value;
+                        break;
+                    }
+                }
+            }
+        }
+
         return createResponse(200, {
             pages,
             registered_on: member_registration?.registered_on,
@@ -210,7 +238,8 @@ export const handler = async (event: any) => {
             transaction_id: transaction_id,
             admin_notes: member_registration?.admin_notes ?? undefined,
             registration_id: club_member?.current_reg_id ?? undefined,
-            member_id: query_string_params.user_id
+            member_id: query_string_params.user_id,
+            variables
         }, origin);
 
     } catch (error) {

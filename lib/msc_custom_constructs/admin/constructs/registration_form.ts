@@ -48,6 +48,7 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
             code: "admin/registration/get_member_registration",
             envVariables: {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                CLUB_TABLE_NAME: props.club_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
@@ -65,6 +66,9 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
                 ],
                 [props.kms_key.keyArn]: [
                     "kms:Decrypt"
+                ],
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
