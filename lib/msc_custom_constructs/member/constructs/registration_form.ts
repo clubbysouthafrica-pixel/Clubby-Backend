@@ -62,7 +62,8 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
-                KMS_KEY_ID: props.kms_key.keyId
+                KMS_KEY_ID: props.kms_key.keyId,
+                CLUB_TABLE_NAME: props.club_table.tableName,
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
@@ -76,6 +77,9 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
                 ],
                 [props.kms_key.keyArn]: [
                     "kms:Decrypt"
+                ],
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]

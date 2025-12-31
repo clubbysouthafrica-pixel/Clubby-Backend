@@ -1,5 +1,5 @@
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { createResponse, deconstructEvent, getItem, queryItems, formatAmount, getSignatureUrl, decryptData } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, queryItems, formatAmount, getSignatureUrl, decryptData, extractTemplateVariables } from "./function_helpers";
 
 async function getClubMemberRegistrationId(user_id: string, club_account_id: string): Promise<string> {
     const club_member = await getItem(
@@ -19,6 +19,15 @@ async function getRegistration(user_id: string, registration_id: string): Promis
         {
             user_id: user_id,
             registration_id: registration_id,
+        }
+    )
+}
+
+async function getClub(club_account_id: string): Promise<any> {
+    return await getItem(
+        process.env.CLUB_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id
         }
     )
 }
@@ -202,12 +211,33 @@ export const handler = async (event: any) => {
 
         const admin_notes = (member_registration?.admin_notes || []).filter((note: any) => note.visibleToMember);
 
+        const club = await getClub(query_string_params.club_account_id);
+        const template_variables = club?.registration_success_email_template_body
+            ? extractTemplateVariables(club.registration_success_email_template_body)
+            : [];
+
+        let variables = [] as Array<{ name: string; title: string; value?: string }>;
+        if (template_variables) {
+            variables = template_variables;
+
+            const registration_variables = member_registration?.template_variables ?? [];
+            for (const variable of variables) {
+                for (const reg_variable of registration_variables) {
+                    if (variable.name === reg_variable.name) {
+                        variable["value"] = reg_variable.value;
+                        break;
+                    }
+                }
+            }
+        }
+
         pages.sort((a, b) => (a.page_index ?? 0) - (b.page_index ?? 0));
         return createResponse(200, {
             pages,
             deregistration_reason: member_registration?.deregistration_reason,
             registration_id: registration_id,
-            admin_notes: admin_notes ?? []
+            admin_notes: admin_notes ?? [],
+            variables: variables
         }, origin);
 
     } catch (error) {
