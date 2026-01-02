@@ -31,6 +31,16 @@ export const handler = async (event: any) => {
         const registered: any[] = []
         const unregistered: any[] = []
 
+        // Parse activeKeys query parameter
+        const activeKeys = query_string_params?.activeKeys ? query_string_params.activeKeys.split(',') : [];
+        const parsedActiveKeys = activeKeys.map((key: any) => {
+            const [type, fieldName] = key.split(':');
+            return { type, fieldName };
+        });
+
+        // Get memberType filter
+        const memberType = query_string_params?.memberType;
+
         for (const item of club_members) {
             delete item.club_account_id
 
@@ -44,46 +54,66 @@ export const handler = async (event: any) => {
 
             const meta_billing: any = [];
             const meta_standard: any = [];
-            if (registration) {
+            if (registration && activeKeys.length > 0) {
                 for (const key of Object.keys(registration)) {
                     const field = registration[key];
 
                     if (key.includes("reg_field_") && field.type.includes("BILLING_")) {
-                        meta_billing.push(field);
+                        const matchingKey = parsedActiveKeys.find((ak: any) => ak.type === "billing" && ak.fieldName === field.field_name);
+                        if (matchingKey) {
+                            meta_billing.push(field);
+                        }
                     } else if (key.includes("reg_field_") && field.type.includes("STANDARD_")) {
                         if (!field?.signature_type) {
-                            meta_standard.push(field);
+                            const matchingKey = parsedActiveKeys.find((ak: any) => ak.type === "standard" && ak.fieldName === field.field_name);
+                            if (matchingKey) {
+                                meta_standard.push(field);
+                            }
                         }
                     }
                 }
             }
 
             if (item.registered) {
-                registered.push({
-                    outstanding_amount: registration?.total_outstanding_amount,
-                    registration_submitted_on: registration?.registration_submitted_on,
-                    registered_on: registration?.registered_on,
-                    user_id: item.user_id,
-                    member_first_name: item.member_first_name,
-                    member_surname: item.member_surname,
-                    member_email: item.member_email,
-                    meta_standard: meta_standard,
-                    meta_billing: meta_billing
-                });
+                if (!memberType || memberType === "registered") {
+                    registered.push({
+                        outstanding_amount: registration?.total_outstanding_amount,
+                        registration_submitted_on: registration?.registration_submitted_on,
+                        registered_on: registration?.registered_on,
+                        user_id: item.user_id,
+                        member_first_name: item.member_first_name,
+                        member_surname: item.member_surname,
+                        member_email: item.member_email,
+                        meta_standard: meta_standard,
+                        meta_billing: meta_billing
+                    });
+                }
             } else {
-                unregistered.push({
-                    outstanding_amount: registration?.total_outstanding_amount,
-                    registration_submitted_on: registration?.registration_submitted_on,
-                    deregistered_on: registration?.deregistered_on,
-                    registration_payment_reference: item.registration_payment_reference,
-                    member_first_name: item.member_first_name,
-                    member_surname: item.member_surname,
-                    member_email: item.member_email,
-                    user_id: item.user_id,
-                    resubmission_required: item.resubmission_required,
-                    meta_standard: meta_standard,
-                    meta_billing: meta_billing,
-                });
+                let shouldInclude = false;
+                
+                if (!memberType) {
+                    shouldInclude = true;
+                } else if (memberType === "previous" && item.resubmission_required === true) {
+                    shouldInclude = true;
+                } else if (memberType === "pending" && item.resubmission_required !== true) {
+                    shouldInclude = true;
+                }
+
+                if (shouldInclude) {
+                    unregistered.push({
+                        outstanding_amount: registration?.total_outstanding_amount,
+                        registration_submitted_on: registration?.registration_submitted_on,
+                        deregistered_on: registration?.deregistered_on,
+                        registration_payment_reference: item.registration_payment_reference,
+                        member_first_name: item.member_first_name,
+                        member_surname: item.member_surname,
+                        member_email: item.member_email,
+                        user_id: item.user_id,
+                        resubmission_required: item.resubmission_required,
+                        meta_standard: meta_standard,
+                        meta_billing: meta_billing,
+                    });
+                }
             }
         }
 
