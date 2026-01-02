@@ -219,6 +219,7 @@ export const handler = async (event: any) => {
         let variables = [] as Array<{ name: string; title: string; value?: string }>;
         if (template_variables) {
             variables = template_variables;
+            variables = template_variables.filter(v => v.name !== "member_name");
 
             const registration_variables = member_registration?.template_variables ?? [];
             for (const variable of variables) {
