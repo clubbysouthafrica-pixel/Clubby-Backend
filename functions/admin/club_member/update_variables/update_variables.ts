@@ -62,7 +62,10 @@ export const handler = async (event: any) => {
         if (variableIndex >= 0) {
             template_variables[variableIndex].value = body.variable_value;
         } else {
-            return createResponse(404, { message: "Additional information key not found." }, origin);
+            template_variables.push({
+                name: body.variable_name,
+                value: body.variable_value
+            });
         }
 
         await updateItem(
