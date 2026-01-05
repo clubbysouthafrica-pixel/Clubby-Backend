@@ -139,6 +139,15 @@ export const handler = async (event: any) => {
             report = processRegistrations(report, registrations ?? []);
 
         }
+        
+        // May need to remove
+        if (report.data && Array.isArray(report.data)) {
+            report.data.sort((a: Record<string, any>, b: Record<string, any>) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return dateA.getTime() - dateB.getTime();
+            });
+        }
 
         return createResponse(200, report ?? {}, origin);
 
