@@ -258,6 +258,28 @@ export const handler = async (event: any) => {
         }
         console.log('REGISTRATION REPORT: ', JSON.stringify(report))
 
+        // Sort data by date in ascending order (oldest to newest) for each field
+        report.forEach(field => {
+            if (field.data && Array.isArray(field.data)) {
+                field.data.sort((a: Record<string, any>, b: Record<string, any>) => {
+                    const dateA = new Date(a.date);
+                    const dateB = new Date(b.date);
+                    return dateA.getTime() - dateB.getTime();
+                });
+            }
+            if (field.rows && Array.isArray(field.rows)) {
+                field.rows.forEach((row: Record<string, any>) => {
+                    if (row.data && Array.isArray(row.data)) {
+                        row.data.sort((a: Record<string, any>, b: Record<string, any>) => {
+                            const dateA = new Date(a.date);
+                            const dateB = new Date(b.date);
+                            return dateA.getTime() - dateB.getTime();
+                        });
+                    }
+                });
+            }
+        });
+
         return createResponse(200, { report }, origin);
 
     } catch (error: any) {
