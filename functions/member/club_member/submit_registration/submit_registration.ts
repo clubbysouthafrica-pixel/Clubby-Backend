@@ -365,7 +365,7 @@ export const handler = async (event: any) => {
             member_first_name: user.first_name,
             member_surname: user.surname,
             registered: false,
-            registration_payment_reference: generateShortReference(user_id as string),
+            registration_payment_reference: `${user.first_name} ${user.surname}`,
             currency: club.currency,
             club_name: club.club_name,
             season_cycle: club.season_cycle

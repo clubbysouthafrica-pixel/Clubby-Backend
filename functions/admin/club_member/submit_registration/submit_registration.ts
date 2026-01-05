@@ -25,18 +25,6 @@ export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 const sesClient = new SESClient({ region: process.env.REGION });
 
-function generateShortReference(
-    userId: string
-): string {
-    const now = new Date();
-    const mmdd = now.toISOString().slice(5, 10).replace('-', '');
-
-    const hash = createHash('sha1').update(userId).digest('hex').toUpperCase();
-    const shortHash = hash.substring(0, 6);
-
-    return `REF-${mmdd}-${shortHash}`;
-}
-
 function generateCognitoPassword(minLength: number = 8): string {
     const lowerChars = 'abcdefghijklmnopqrstuvwxyz';
     const upperChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -558,7 +546,7 @@ export const handler = async (event: any) => {
             member_first_name: body.first_name,
             member_surname: body.surname,
             registered: false,
-            registration_payment_reference: generateShortReference(member_user_id as string),
+            registration_payment_reference: `${body.first_name} ${body.surname}`,
             currency: club.currency,
             club_name: club.club_name,
             season_cycle: club.season_cycle
