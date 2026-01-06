@@ -191,7 +191,7 @@ export const handler = async (event: any) => {
 
         const payment_methods = [
             "EFT/Cash",
-            ...club?.custom_payment_methods.map((pm: { name: string, url: string }) => pm.name)
+            ...(club?.custom_payment_methods?.map((pm: { name: string, url: string }) => pm.name) || [])
         ]
 
         const template_variables = club?.registration_success_email_template_body
