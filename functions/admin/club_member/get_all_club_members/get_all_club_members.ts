@@ -204,6 +204,18 @@ export const handler = async (event: any) => {
                 title: "Member Name"
             });
         }
+        if (club?.registration_success_email_template_body?.includes("{{club_name}}") && !template_variables.some(v => v.name === "club_name")) {
+            template_variables.unshift({
+                name: "club_name",
+                title: "Club Name"
+            });
+        }
+        if (club?.registration_success_email_template_body?.includes("{{club_email}}") && !template_variables.some(v => v.name === "club_email")) {
+            template_variables.unshift({
+                name: "club_email",
+                title: "Club Email"
+            });
+        }
 
         return createResponse(200, {
             registered, unregistered,
