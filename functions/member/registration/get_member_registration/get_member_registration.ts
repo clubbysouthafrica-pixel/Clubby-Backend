@@ -156,7 +156,8 @@ export const handler = async (event: any) => {
                             type: "STANDARD_OTHER",
                             label: field.field_name,
                             value: field?.sensitive_information === true ? await decryptData(value) : value,
-                            position: field.field_order_id
+                            position: field.field_order_id,
+                            editable_by_member: field?.editable_by_member ?? false
                         });
                         found = true;
                         break;
