@@ -9,6 +9,7 @@ import {
 } from "aws-cdk-lib/aws-iam";
 import { Duration } from "aws-cdk-lib";
 import { MSC_LambdaLayer } from "./msc_lambda_layer";
+import { RetentionDays } from "aws-cdk-lib/aws-logs";
 
 interface MSC_LambdaProps {
     code: string;
@@ -56,6 +57,7 @@ export class MSC_Lambda extends Function {
             },
             role: lambdaRole,
             layers: props.layers ?? undefined,
+            logRetention: RetentionDays.ONE_MONTH,
             reservedConcurrentExecutions: props.reservedConcurrentExecutions ?? undefined
         });
     }
