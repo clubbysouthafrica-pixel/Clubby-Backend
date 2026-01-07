@@ -200,7 +200,8 @@ export const handler = async (event: any) => {
                         new_page.fields.push({
                             type: "DNE",
                             label: field.field_name,
-                            position: field.field_order_id
+                            position: field.field_order_id,
+                            editable_by_member: field?.editable_by_member ?? false
                         });
                     }
                 }
