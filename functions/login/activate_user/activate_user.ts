@@ -1,10 +1,10 @@
 import {
     CognitoIdentityProviderClient,
     InitiateAuthCommand,
-    RespondToAuthChallengeCommand
+    RespondToAuthChallengeCommand,
+    AdminUpdateUserAttributesCommand
 } from "@aws-sdk/client-cognito-identity-provider";
-import jwt from 'jsonwebtoken';
-import { createResponse, deconstructEvent, getItem } from "./function_helpers";
+import { createResponse, deconstructEvent } from "./function_helpers";
 
 const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
 
@@ -28,6 +28,19 @@ export const handler = async (event: any) => {
             }
         });
         await cognitoClient.send(command);
+        
+        const verifyEmailCommand = new AdminUpdateUserAttributesCommand({
+            UserPoolId: process.env.USER_POOL_ID,
+            Username: body.email,
+            UserAttributes: [
+                {
+                    Name: 'email_verified',
+                    Value: 'true'
+                }
+            ]
+        });
+        await cognitoClient.send(verifyEmailCommand);
+        
         return createResponse(200, { message: "Your Clubby user has been activated. Please trying logging in again." }, origin );
 
     } catch (error: any) {

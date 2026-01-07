@@ -79,10 +79,12 @@ export class MSC_AdminLoginConstruct extends Construct {
             code: "login/activate_user",
             envVariables: {
                 USER_POOL_CLIENT_ID: props.admin_user_pool.userPoolClient.userPoolClientId,
+                USER_POOL_ID: props.admin_user_pool.userPoolId,
             },
             permissions: {
                 [props.admin_user_pool.userPoolArn]: [
-                    "cognito-idp:AdminRespondToAuthChallenge"
+                    "cognito-idp:AdminRespondToAuthChallenge",
+                    "cognito-idp:AdminUpdateUserAttributes"
                 ]
             },
             layers: [props.layers.jwt_layer]
