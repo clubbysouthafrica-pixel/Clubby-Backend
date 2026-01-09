@@ -1,4 +1,13 @@
-import { createResponse, deconstructEvent, getItem, queryItems, extractTemplateVariables } from "./function_helpers";
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
+import {
+    createResponse,
+    deconstructEvent,
+    getItem,
+    queryItemsWithPagination,
+    extractTemplateVariables,
+    queryItems
+} from "./function_helpers";
+import { RegistrationFieldFilter, applyFiltersToRegistration } from "./registration_field_filters";
 
 export const handler = async (event: any) => {
 
@@ -17,104 +26,164 @@ export const handler = async (event: any) => {
             club_account_id: query_string_params.club_account_id
         });
 
-        const club_members = await queryItems(
-            process.env.CLUB_MEMBER_TABLE_NAME as string,
-            "club_account_id = :clubId",
-            { ":clubId": query_string_params.club_account_id },
-            process.env.CLUB_ACCOUNT_ID_INDEX as string
-        )
+        const limit = query_string_params?.limit ? parseInt(query_string_params.limit) : undefined;
+        const previousToken = query_string_params?.pageToken ? JSON.parse(query_string_params.pageToken) : undefined;
+        const memberType = query_string_params?.memberType;
 
-        if (club_members == null) {
-            return createResponse(200, { registered: [], unregistered: [] }, origin);
+        let filterExpression: string | undefined;
+        let expressionAttributeNames: Record<string, string> | undefined;
+        const expressionAttributeValues: Record<string, any> = { ":clubId": query_string_params.club_account_id };
+
+        let queryLimit = limit;
+
+        if (memberType === "registered") {
+            filterExpression = "#registered = :true";
+            expressionAttributeValues[":true"] = true;
+            expressionAttributeNames = { "#registered": "registered" };
+        } else if (memberType === "pending") {
+            filterExpression = "#registered = :false AND #resubmission = :false";
+            expressionAttributeValues[":false"] = false;
+            expressionAttributeNames = { "#registered": "registered", "#resubmission": "resubmission_required" };
+        } else if (memberType === "previous") {
+            filterExpression = "#registered = :false AND #resubmission = :true";
+            expressionAttributeValues[":false"] = false;
+            expressionAttributeValues[":true"] = true;
+            expressionAttributeNames = { "#registered": "registered", "#resubmission": "resubmission_required" };
         }
 
-        const registered: any[] = []
-        const unregistered: any[] = []
+        const members: any[] = []
 
-        // Parse activeKeys query parameter
         const activeKeys = query_string_params?.activeKeys ? query_string_params.activeKeys.split(',') : [];
         const parsedActiveKeys = activeKeys.map((key: any) => {
             const [type, fieldName] = key.split(':');
             return { type, fieldName };
         });
 
-        // Get memberType filter
-        const memberType = query_string_params?.memberType;
+        let currentToken = previousToken;
+        let lastEvaluatedKey: any = undefined;
 
-        for (const item of club_members) {
-            delete item.club_account_id
-
-            const registration = await getItem(
-                process.env.REGISTRATIONS_TABLE_NAME as string,
-                {
-                    user_id: item.user_id,
-                    registration_id: item.current_reg_id
-                }
+        while (true) {
+            const queryResult = await queryItemsWithPagination(
+                process.env.CLUB_MEMBER_TABLE_NAME as string,
+                "club_account_id = :clubId",
+                expressionAttributeValues,
+                process.env.CLUB_ACCOUNT_ID_INDEX as string,
+                true,
+                (queryLimit ?? 0) - members.length,
+                currentToken,
+                filterExpression,
+                expressionAttributeNames
             )
 
-            const meta_billing: any = [];
-            const meta_standard: any = [];
-            if (registration && activeKeys.length > 0) {
-                for (const key of Object.keys(registration)) {
-                    const field = registration[key];
+            const club_members = queryResult.items;
+            const queryLastEvaluatedKey = queryResult.lastEvaluatedKey;
 
-                    if (key.includes("reg_field_") && field.type.includes("BILLING_")) {
-                        const matchingKey = parsedActiveKeys.find((ak: any) => ak.type === "billing" && ak.fieldName === field.field_name);
-                        if (matchingKey) {
-                            meta_billing.push(field);
+            let filteredItems = club_members ?? [];
+            if (body?.member_filters) {
+                filteredItems = filteredItems.filter((item: any) => {
+                    let matches = true;
+
+                    if (body.member_filters.member_name) {
+                        const fullName = `${item.member_first_name} ${item.member_surname}`.toLowerCase();
+                        if (!fullName.includes(body.member_filters.member_name.toLowerCase())) {
+                            matches = false;
                         }
-                    } else if (key.includes("reg_field_") && field.type.includes("STANDARD_")) {
-                        if (!field?.signature_type) {
-                            const matchingKey = parsedActiveKeys.find((ak: any) => ak.type === "standard" && ak.fieldName === field.field_name);
+                    }
+
+                    if (body.member_filters.member_id && matches) {
+                        if (item.user_id !== body.member_filters.member_id) {
+                            matches = false;
+                        }
+                    }
+
+                    return matches;
+                });
+            }
+
+            for (const item of filteredItems) {
+                const registration = await getItem(
+                    process.env.REGISTRATIONS_TABLE_NAME as string,
+                    {
+                        user_id: item.user_id,
+                        registration_id: item.current_reg_id
+                    }
+                )
+
+                if (body?.custom_filters && !registration) {
+                    continue;
+                }
+
+                let registrationMatchesFilters = true;
+                if (body?.custom_filters && registration) {
+                    const filters: RegistrationFieldFilter[] = body.custom_filters;
+                    const filterResult = applyFiltersToRegistration(registration, filters);
+                    registrationMatchesFilters = filterResult.matches;
+                }
+
+                if (!registrationMatchesFilters) {
+                    continue;
+                }
+
+                const meta_billing: any = [];
+                const meta_standard: any = [];
+                if (registration && activeKeys.length > 0) {
+                    for (const key of Object.keys(registration)) {
+                        const field = registration[key];
+
+                        if (key.includes("reg_field_") && field.type.includes("BILLING_")) {
+                            const matchingKey = parsedActiveKeys.find((ak: any) => ak.type === "billing" && ak.fieldName === field.field_name);
                             if (matchingKey) {
-                                meta_standard.push(field);
+                                meta_billing.push(field);
+                            }
+                        } else if (key.includes("reg_field_") && field.type.includes("STANDARD_")) {
+                            if (!field?.signature_type) {
+                                const matchingKey = parsedActiveKeys.find((ak: any) => ak.type === "standard" && ak.fieldName === field.field_name);
+                                if (matchingKey) {
+                                    meta_standard.push(field);
+                                }
                             }
                         }
                     }
                 }
+
+
+                members.push({
+                    outstanding_amount: registration?.total_outstanding_amount,
+                    registration_submitted_on: registration?.registration_submitted_on,
+                    registered_on: registration?.registered_on,
+                    user_id: item.user_id,
+                    member_first_name: item.member_first_name,
+                    member_surname: item.member_surname,
+                    member_email: item.member_email,
+                    meta_standard: meta_standard,
+                    meta_billing: meta_billing
+                });
+
             }
 
-            if (item.registered) {
-                if (!memberType || memberType === "registered") {
-                    registered.push({
-                        outstanding_amount: registration?.total_outstanding_amount,
-                        registration_submitted_on: registration?.registration_submitted_on,
-                        registered_on: registration?.registered_on,
-                        user_id: item.user_id,
-                        member_first_name: item.member_first_name,
-                        member_surname: item.member_surname,
-                        member_email: item.member_email,
-                        meta_standard: meta_standard,
-                        meta_billing: meta_billing
-                    });
-                }
-            } else {
-                let shouldInclude = false;
-                
-                if (!memberType) {
-                    shouldInclude = true;
-                } else if (memberType === "previous" && item.resubmission_required === true) {
-                    shouldInclude = true;
-                } else if (memberType === "pending" && item.resubmission_required !== true) {
-                    shouldInclude = true;
-                }
+            if (limit && members.length >= limit) {
+                const totalItems = members.length;
+                if (totalItems > limit) {
 
-                if (shouldInclude) {
-                    unregistered.push({
-                        outstanding_amount: registration?.total_outstanding_amount,
-                        registration_submitted_on: registration?.registration_submitted_on,
-                        deregistered_on: registration?.deregistered_on,
-                        registration_payment_reference: item.registration_payment_reference,
-                        member_first_name: item.member_first_name,
-                        member_surname: item.member_surname,
-                        member_email: item.member_email,
-                        user_id: item.user_id,
-                        resubmission_required: item.resubmission_required,
-                        meta_standard: meta_standard,
-                        meta_billing: meta_billing,
-                    });
+                    const excess = totalItems - limit;
+                    if (excess > 0) {
+                        members.splice(members.length - excess, excess);
+                    }
                 }
+                const lastItem = filteredItems[filteredItems.length - 1];
+                lastEvaluatedKey = {
+                    user_id: { "S": lastItem.user_id },
+                    club_account_id: { "S": lastItem.club_account_id }
+                };
+                break;
             }
+
+            if (!queryLastEvaluatedKey) {
+                lastEvaluatedKey = undefined;
+                break;
+            }
+
+            currentToken = queryLastEvaluatedKey;
         }
 
         const form = await queryItems(
@@ -127,7 +196,7 @@ export const handler = async (event: any) => {
         for (const field of form || []) {
             if (field?.visible !== true) continue
             if (field?.sensitive_information === true) continue
-            
+
             if (field.field_type === "BILLING" && field.input_type === "DROPDOWN") {
                 filters.push(
                     {
@@ -218,10 +287,11 @@ export const handler = async (event: any) => {
         }
 
         return createResponse(200, {
-            registered, unregistered,
+            members,
             filters,
             payment_methods,
             template_variables,
+            pageToken: lastEvaluatedKey ? JSON.stringify(lastEvaluatedKey) : undefined
         }, origin);
 
     } catch (error) {
