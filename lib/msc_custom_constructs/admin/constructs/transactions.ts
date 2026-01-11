@@ -58,6 +58,6 @@ export class MSC_TransactionsConstruct extends Construct {
         }
 
         addCorsEnabledMethod(get_member_transactions_resource, get_member_transactions, methodOptions, undefined, "GET");
-        addCorsEnabledMethod(get_club_transaction_resource, get_club_transactions, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(get_club_transaction_resource, get_club_transactions, methodOptions, undefined, "POST");
     }
 }
