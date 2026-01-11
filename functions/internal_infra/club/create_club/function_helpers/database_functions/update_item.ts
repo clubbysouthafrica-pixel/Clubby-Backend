@@ -18,7 +18,16 @@ export const updateItem = async (
     }
 
     try {
-        const command = new UpdateItemCommand({
+        console.log(`@@@ updateItems request (Table_Name: ${table_name}): `, JSON.stringify({
+            TableName: table_name,
+            Key: marshall(key),
+            UpdateExpression: update_expression,
+            ExpressionAttributeNames: expression_attribute_names,
+            ExpressionAttributeValues: marshall(expression_attribute_values),
+            ConditionExpression: condition_expression,
+            ReturnValues: return_values ? "ALL_NEW" : undefined
+        }));
+           const command = new UpdateItemCommand({
             TableName: table_name,
             Key: marshall(key),
             UpdateExpression: update_expression,
@@ -27,7 +36,6 @@ export const updateItem = async (
             ConditionExpression: condition_expression,
             ReturnValues: return_values ? "ALL_NEW" : undefined
         });
-        console.log(`@@@ updateItems request (Table_Name: ${table_name}): `, JSON.stringify(command));
         const response = await dynamodbClient.send(command);
         console.log(`@@@ updateItems response (Table_Name: ${table_name}): `, JSON.stringify(response));
 
