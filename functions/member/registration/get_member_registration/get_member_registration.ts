@@ -45,10 +45,7 @@ async function getRegistrationForm(club_account_id: string): Promise<Record<stri
     form?.forEach((item) => {
         const set = unmarshall(item);
 
-        if (!set.visible) return
-
         delete set.club_account_id;
-        delete set.visible;
 
         if (item.field_type.S === "STANDARD" && item.input_type.S === "DROPDOWN") {
             set["options"] = item.options.L.map((opt: { S: string }) => opt.S);
@@ -105,7 +102,7 @@ export const handler = async (event: any) => {
             } as { page_index: number, page_header: string, fields: Record<string, any>[] };
 
             for (const field of page.fields) {
-                if (field.field_type === "TEXT") {
+                if (field.field_type === "TEXT" && field.visible) {
                     new_page.fields.push({ label: field.field_text, position: field.field_order_id, type: "TEXT", });
                     continue;
                 }
@@ -123,7 +120,8 @@ export const handler = async (event: any) => {
                                     signature_type: "name",
                                     label: field.field_name,
                                     value: "Previous Season Registration - Signature Not Available",
-                                    position: field.field_order_id
+                                    position: field.field_order_id,
+                                    visible: field?.visible ?? true
                                 });
                             } else {
                                 new_page.fields.push({
@@ -131,7 +129,8 @@ export const handler = async (event: any) => {
                                     signature_type: "signature",
                                     label: field.field_name,
                                     value: await getSignatureUrl(reg.value),
-                                    position: field.field_order_id
+                                    position: field.field_order_id,
+                                    visible: field?.visible ?? true
                                 });
                             }
                         } else {
@@ -140,7 +139,8 @@ export const handler = async (event: any) => {
                                 signature_type: "name",
                                 label: field.field_name,
                                 value: reg.value,
-                                position: field.field_order_id
+                                position: field.field_order_id,
+                                visible: field?.visible ?? true
                             });
                         }
                         found = true;
@@ -157,7 +157,8 @@ export const handler = async (event: any) => {
                             label: field.field_name,
                             value: field?.sensitive_information === true ? await decryptData(value) : value,
                             position: field.field_order_id,
-                            editable_by_member: field?.editable_by_member ?? false
+                            editable_by_member: field?.editable_by_member ?? false,
+                            visible: field?.visible ?? true
                         });
                         found = true;
                         break;
@@ -168,7 +169,8 @@ export const handler = async (event: any) => {
                             type: "BILLING",
                             label: field.field_name,
                             value: `${reg.label_value} - ${reg.value}% off`,
-                            position: field.field_order_id
+                            position: field.field_order_id,
+                            visible: field?.visible ?? true
                         });
                         found = true;
                         break;
@@ -182,6 +184,7 @@ export const handler = async (event: any) => {
                             quantity: reg.multiplier_value > 1 ? reg.multiplier_value : undefined,
                             position: field.field_order_id,
                             discount: reg?.discount ?? undefined,
+                            visible: field?.visible ?? true
                         });
                         found = true;
                         break;
@@ -194,14 +197,16 @@ export const handler = async (event: any) => {
                             field_id: field.field_id,
                             type: "STANDARD_OTHER",
                             label: field.field_name,
-                            position: field.field_order_id
+                            position: field.field_order_id,
+                            visible: field?.visible ?? true
                         });
                     } else {
                         new_page.fields.push({
                             type: "DNE",
                             label: field.field_name,
                             position: field.field_order_id,
-                            editable_by_member: field?.editable_by_member ?? false
+                            editable_by_member: field?.editable_by_member ?? false,
+                            visible: field?.visible ?? true
                         });
                     }
                 }

@@ -195,7 +195,7 @@ export const handler = async (event: any) => {
 
         const filters: any[] = []
         for (const field of form || []) {
-            if (field?.visible !== true) continue
+            // if (field?.visible !== true) continue
             if (field?.sensitive_information === true) continue
 
             if (field.field_type === "BILLING" && field.input_type === "DROPDOWN") {
