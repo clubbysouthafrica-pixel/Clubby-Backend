@@ -116,14 +116,15 @@ async function addToRegistrationsTable(
     registration_submitted_on: number,
     transaction_id: string,
 ): Promise<string> {
-    const member_registrations = await queryItems(
+    const all_registrations = await queryItems(
         process.env.REGISTRATIONS_TABLE_NAME as string,
         "user_id = :userId",
         { ":userId": user_id }
     )
+    const member_registrations = all_registrations?.filter((reg: any) => reg.club_account_id === club_account_id) || null;
 
     let new_registration_index = 1
-    if (member_registrations !== null) {
+    if (member_registrations !== null && member_registrations.length > 0) {
 
         if (member_registrations.length == 1 && member_registrations[0]?.last_season_registration) {
             new_registration_index = 1

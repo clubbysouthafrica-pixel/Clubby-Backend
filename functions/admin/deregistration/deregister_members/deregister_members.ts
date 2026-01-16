@@ -93,7 +93,7 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_account_id must be STRING type." }, origin);
         }
         if (!Array.isArray(body.user_ids)) {
-            return createResponse(400, { message: "user_id must be ARRAY type." }, origin);
+            return createResponse(400, { message: "user_ids must be ARRAY type." }, origin);
         }
 
         for (const user_id of body.user_ids) {
