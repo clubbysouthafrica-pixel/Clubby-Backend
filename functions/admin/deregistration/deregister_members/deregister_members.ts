@@ -99,17 +99,19 @@ async function processRefund(user_id: string, club_account_id: string, registrat
             club_account_id: club_account_id,
             transaction_id: member.current_reg_transaction_id
         },
-        `SET #refund_completed = :refund_completed, #amount_paid = :amount_paid, #status = :status, #lifecycle.#ts = :lifecycleValue`,
+        `SET #refund_amount = :refund_amount, #refund_completed = :refund_completed, #amount_paid = :amount_paid, #status = :status, #lifecycle.#ts = :lifecycleValue`,
         {
             "#status": "status",
             "#lifecycle": "lifecycle",
             "#refund_completed": "refund_completed",
             "#amount_paid": "amount_paid",
+            "#refund_amount": "refund_amount",
             "#ts": `${Date.now()}`
         },
         {
             ":status": "REFUND",
             ":refund_completed": false,
+            ":refund_amount": registration.total_fee - registration.total_outstanding_amount,
             ":amount_paid": 0,
             ":lifecycleValue": {
                 type: "REFUND",
