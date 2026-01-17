@@ -116,7 +116,7 @@ async function processRefund(user_id: string, club_account_id: string, registrat
             ":lifecycleValue": {
                 type: "REFUND",
                 description: "Refund issued due to member deregistration",
-                amount: registration.total_outstanding_amount - registration.total_fee,
+                amount: registration.total_fee - registration.total_outstanding_amount,
                 payment_type: "REFUND"
             }
         }
