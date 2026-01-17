@@ -156,7 +156,8 @@ async function addToTransactionsTable(
     surname: string,
     transaction_id: string,
     user_id: string,
-    membership_amount: number
+    membership_amount: number,
+    registration_id: string
 ) {
     await addItem(
         process.env.TRANSACTIONS_TABLE_NAME as string,
@@ -164,6 +165,7 @@ async function addToTransactionsTable(
             club_account_id: club_account_id,
             name: `${first_name} ${surname}`,
             transaction_id: transaction_id,
+            registration_id: registration_id,
             user_id: user_id as string,
             amount_paid: 0,
             club_income: true,
@@ -385,6 +387,7 @@ export const handler = async (event: any) => {
             current_reg_transaction_id,
             user_id as string,
             membership_amount,
+            current_reg_id
         )
 
         if (club.notify_on_member_registration !== false) {
