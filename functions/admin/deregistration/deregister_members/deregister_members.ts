@@ -1,12 +1,9 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import {
     createResponse,
     deconstructEvent,
     getItem,
     updateItem
 } from "./function_helpers";
-
-const s3Client = new S3Client({});
 
 async function updateClubMemberTable(user_id: string, club_account_id: string) {
     await updateItem(
@@ -80,6 +77,48 @@ async function updateTransactionsTable(club_account_id: string, transaction_id: 
     );
 }
 
+async function processRefund(user_id: string, club_account_id: string, registration: any, member: any) {
+    await updateItem(
+        process.env.REGISTRATIONS_TABLE_NAME as string,
+        {
+            "registration_id": member.current_reg_id,
+            "user_id": user_id
+        },
+        `SET #outstanding = :outstanding`,
+        {
+            "#outstanding": "total_outstanding_amount"
+        },
+        {
+            ":outstanding": registration.total_fee
+        }
+    );
+
+    await updateItem(
+        process.env.TRANSACTIONS_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            transaction_id: member.current_reg_transaction_id
+        },
+        `SET #amount_paid = :amount_paid, #status = :status, #lifecycle.#ts = :lifecycleValue`,
+        {
+            "#status": "status",
+            "#lifecycle": "lifecycle",
+            "#amount_paid": "amount_paid",
+            "#ts": `${Date.now()}`
+        },
+        {
+            ":status": "REFUND",
+            ":amount_paid": 0,
+            ":lifecycleValue": {
+                type: "REFUND",
+                description: "Refund issued due to member deregistration",
+                amount: registration.total_outstanding_amount - registration.total_fee,
+                payment_type: "REFUND"
+            }
+        }
+    );
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -95,6 +134,8 @@ export const handler = async (event: any) => {
         if (!Array.isArray(body.user_ids)) {
             return createResponse(400, { message: "user_ids must be ARRAY type." }, origin);
         }
+
+        const refunds = body?.refunds ?? [];
 
         for (const user_id of body.user_ids) {
             const member = await getItem(
@@ -121,7 +162,9 @@ export const handler = async (event: any) => {
                 continue
             }
 
-            if (registration.total_outstanding_amount > 0) {
+            if (refunds.includes(user_id) && registration.total_outstanding_amount < registration.total_fee) {
+                await processRefund(user_id, body.club_account_id, registration, member);
+            } else if (registration.total_outstanding_amount > 0) {
                 await updateTransactionsTable(body.club_account_id, member.current_reg_transaction_id);
             }
 
