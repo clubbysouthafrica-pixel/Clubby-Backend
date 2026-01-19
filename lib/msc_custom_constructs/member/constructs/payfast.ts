@@ -10,9 +10,9 @@ interface MSC_PayfastConstructProps {
     registrations_table: MSC_Table;
     club_member_table: MSC_Table;
     transactions_table: MSC_Table;
-    user_pool: MSC_Cognito;
     club_table: MSC_Table;
     users_table: MSC_Table;
+    orders_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
         axios_layer: MSC_LambdaLayer;
@@ -33,14 +33,19 @@ export class MSC_PayfastConstruct extends Construct {
             code: "member/payfast/get_checkout_url",
             envVariables: {
                 DOMAIN: process.env.ENVIRONMENT === "Dev" ? "http://localhost:5173" : `https://${process.env.DOMAIN}` as string,
-                NOTIFY_URL: `https://member.${process.env.DOMAIN}/payfast/handlePayment`,
+                NOTIFY_REGISTRATION_URL: `https://member.${process.env.DOMAIN}/payfast/handleRegistrationPayment`,
+                NOTIFY_ORDER_URL: `https://member.${process.env.DOMAIN}/payfast/handleOrderPayment`,
                 USERS_TABLE_NAME: props.users_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
+                ORDERS_TABLE_NAME: props.orders_table.tableName,
             },
             permissions: {
                 [props.users_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.orders_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
                 [props.registrations_table.tableArn]: [
@@ -56,13 +61,11 @@ export class MSC_PayfastConstruct extends Construct {
             layers: [props.layers.jwt_layer, props.layers.axios_layer]
         });
 
-        const handle_payment = new MSC_Lambda(this, `${id}-HandlePayment`, {
-            code: "member/payfast/handle_payment",
+        const handle_registration_payment = new MSC_Lambda(this, `${id}-HandleRegistrationPayment`, {
+            code: "member/payfast/handle_registration_payment",
             envVariables: {
-                USER_POOL_ID: props.user_pool.userPoolId,
                 ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
                 CLUB_TABLE_NAME: props.club_table.tableName,
-                CLUB_NAME_INDEX: "ClubNameIndex",
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
@@ -70,17 +73,11 @@ export class MSC_PayfastConstruct extends Construct {
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
             },
             permissions: {
-                [props.user_pool.userPoolArn]: [
-                    "cognito-idp:AdminGetUser"
-                ],
                 [props.mail_queue.queueArn]: [
                     "sqs:SendMessage"
                 ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
-                ],
-                [`${props.club_table.tableArn}/index/ClubNameIndex`]: [
-                    "dynamodb:Query"
                 ],
                 [props.registrations_table.tableArn]: [
                     "dynamodb:GetItem",
@@ -101,10 +98,30 @@ export class MSC_PayfastConstruct extends Construct {
             layers: [props.layers.jwt_layer, props.layers.axios_layer]
         });
 
+        const handle_order_payment = new MSC_Lambda(this, `${id}-HandleOrderPayment`, {
+            code: "member/payfast/handle_order_payment",
+            envVariables: {
+                ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+                ORDERS_TABLE_NAME: props.orders_table.tableName,
+            },
+            permissions: {
+                [props.orders_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem"
+                ],
+                [props.transactions_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer, props.layers.axios_layer]
+        });
+
         const pay_fast_resource = props.api_gateway.root.addResource("payfast");
 
         const get_checkout_url_resource = pay_fast_resource.addResource("checkoutUrl");
-        const handle_payment_resource = pay_fast_resource.addResource("handlePayment");
+        const handle_registration_payment_resource = pay_fast_resource.addResource("handleRegistrationPayment");
+        const handle_order_payment_resource = pay_fast_resource.addResource("handleOrderPayment");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -113,6 +130,7 @@ export class MSC_PayfastConstruct extends Construct {
         }
 
         addCorsEnabledMethod(get_checkout_url_resource, get_checkout_url, methodOptions, undefined, "GET");
-        addCorsEnabledMethod(handle_payment_resource, handle_payment, { methodResponses: [] }, undefined, "POST");
+        addCorsEnabledMethod(handle_registration_payment_resource, handle_registration_payment, { methodResponses: [] }, undefined, "POST");
+        addCorsEnabledMethod(handle_order_payment_resource, handle_order_payment, { methodResponses: [] }, undefined, "POST");
     }
 }

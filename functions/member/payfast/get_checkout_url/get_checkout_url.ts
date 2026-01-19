@@ -14,6 +14,8 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_account_id (string) required." }, origin);
         }
 
+        const order_url = query_string_params?.order_id && typeof query_string_params.order_id === 'string';
+
         const user = await getItem(
             process.env.USERS_TABLE_NAME as string,
             {
@@ -36,15 +38,27 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Club member not found." }, origin);
         }
 
-        const registration = await getItem(process.env.REGISTRATIONS_TABLE_NAME as string, {
-            user_id: user_id as string,
-            registration_id: club_member.current_reg_id
-        });
-        if (registration == null) {
-            return createResponse(400, { message: "Registration not found." }, origin);
-        }
+        let amount = 0;
+        if (order_url) {
+            const order = await getItem(process.env.ORDERS_TABLE_NAME as string, {
+                club_account_id: query_string_params.club_account_id,
+                order_id: query_string_params.order_id as string
+            });
+            if (order == null) {
+                return createResponse(400, { message: "Order not found." }, origin);
+            }
+            amount = order?.total_amount / 100 - order?.amount_paid / 100;
+        } else {
+            const registration = await getItem(process.env.REGISTRATIONS_TABLE_NAME as string, {
+                user_id: user_id as string,
+                registration_id: club_member.current_reg_id
+            });
+            if (registration == null) {
+                return createResponse(400, { message: "Registration not found." }, origin);
+            }
+            amount = registration?.total_outstanding_amount / 100;
+        }   
 
-        // Fetch PayFast configuration from Parameter Store
         const paramName = `payfast_details_${query_string_params.club_account_id}`;
         let pfConfig: { merchant_id: string; merchant_key: string; passphrase?: string | null } | null = null;
         try {
@@ -71,12 +85,12 @@ export const handler = async (event: any) => {
             return createResponse(500, { message: 'Internal Server Error' }, origin);
         }
 
-        const config: { 
+        const config: {
             merchant_id: string;
             merchant_key: string;
             passphrase?: string;
             environment: string;
-         } = {
+        } = {
             merchant_id: pfConfig.merchant_id as string,
             merchant_key: pfConfig.merchant_key as string,
             environment: process.env.ENVIRONMENT === "Dev" ? "sandbox" : "production",
@@ -87,13 +101,16 @@ export const handler = async (event: any) => {
         const paymentData = {
             return_url: `${process.env.DOMAIN}/clubs/${query_string_params.club_account_id}`,
             cancel_url: `${process.env.DOMAIN}/clubs/${query_string_params.club_account_id}`,
-            notify_url: process.env.NOTIFY_URL,
+            notify_url: order_url ? process.env.NOTIFY_ORDER_URL : process.env.NOTIFY_REGISTRATION_URL,
             name_first: user.first_name,
             name_last: user.surname,
             email_address: user.email,
-            amount: registration?.total_outstanding_amount / 100,
-            item_name: 'Registration Fee',
+            amount: amount,
+            item_name: order_url ? 'Order Payment' : 'Registration Fee',
             item_description: club_member.club_name,
+            custom_str1: query_string_params.club_account_id,
+            custom_str2: user_id,
+            custom_str3: order_url ? query_string_params.order_id : undefined
         };
 
         const urlString = pf.createStringfromObject(paymentData);
@@ -102,7 +119,7 @@ export const handler = async (event: any) => {
         const generatePaymentUrl = await pf.generatePaymentUrl(paymentObject);
 
         console.log("Generated PayFast payment URL:", generatePaymentUrl);
-        
+
         return createResponse(200, { payment_url: generatePaymentUrl }, origin);
 
     } catch (error) {

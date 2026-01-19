@@ -10,7 +10,9 @@ import {
     MSC_ClubMemberConstruct,
     MSC_ImagesConstruct,
     MSC_TransactionsConstruct,
-    MSC_PayfastConstruct
+    MSC_PayfastConstruct,
+    MSC_MemberShopConstruct,
+    MSC_MemberOrdersConstruct
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs";
 
@@ -26,6 +28,8 @@ export interface MSC_MemberNestedStackProps extends StackProps {
     signatures_bucket: MSC_Bucket;
     mail_queue: MSC_Queue;
     billing_table: MSC_Table;
+    orders_table: MSC_Table;
+    product_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
         jwks_rsa_layer: MSC_LambdaLayer;
@@ -55,18 +59,35 @@ export class MSC_MemberNestedStack extends Stack {
             layers: props.layers
         });
 
+        new MSC_MemberOrdersConstruct(this, `${id}-Orders`, {
+            api_gateway: api_gateway,
+            orders_table: props.orders_table,
+            token_authorizer: jwt_construct.token_authorizer,
+            layers: props.layers,
+            product_table: props.product_table,
+            users_table: props.users_table,
+            transactions_table: props.transactions_table
+        });
+
+        new MSC_MemberShopConstruct(this, `${id}-Shop`, {
+            api_gateway: api_gateway,
+            product_table: props.product_table,
+            token_authorizer: jwt_construct.token_authorizer,
+            layers: props.layers
+        });
+
         new MSC_PayfastConstruct(this, `${id}-Payfast`, {
             api_gateway: api_gateway,
             mail_queue: props.mail_queue,
             token_authorizer: jwt_construct.token_authorizer,
             layers: props.layers,
-            user_pool: props.member_user_pool,
             club_member_table: props.club_member_table,
             registrations_table: props.registrations_table,
             users_table: props.users_table,
             club_table: props.club_table,
             transactions_table: props.transactions_table,
             billing_table: props.billing_table,
+            orders_table: props.orders_table
         });
 
         new MSC_TransactionsConstruct(this, `${id}-Transactions`, {
@@ -122,7 +143,8 @@ export class MSC_MemberNestedStack extends Stack {
             token_authorizer: jwt_construct.token_authorizer,
             image_bucket: props.image_bucket,
             layers: props.layers,
-            signatures_bucket: props.signatures_bucket
+            signatures_bucket: props.signatures_bucket,
+            orders_table: props.orders_table
         });
 
         new MSC_MemberUserConstruct(this, `${id}-User`, {

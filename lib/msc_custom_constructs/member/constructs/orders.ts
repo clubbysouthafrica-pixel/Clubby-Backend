@@ -1,0 +1,90 @@
+import { Construct } from "constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_LambdaLayer } from "../../../msc_service_constructs";
+import { addCorsEnabledMethod } from "../../../msc_custom_functions";
+import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
+
+interface MSC_MemberOrdersConstructProps {
+    api_gateway: MSC_APIGateway;
+    orders_table: MSC_Table;
+    token_authorizer: TokenAuthorizer;
+    transactions_table: MSC_Table;
+    product_table: MSC_Table;
+    users_table: MSC_Table;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+    };
+}
+
+export class MSC_MemberOrdersConstruct extends Construct {
+    constructor(scope: Construct, id: string, props: MSC_MemberOrdersConstructProps) {
+        super(scope, id);
+
+        const get_member_orders = new MSC_Lambda(this, `${id}-GetMemberOrders`, {
+            code: "member/orders/get_member_orders",
+            envVariables: {
+                ORDERS_TABLE_NAME: props.orders_table.tableName,
+                ORDERS_INDEX_NAME: "UserIDIndex"
+            },
+            permissions: {
+                [`${props.orders_table.tableArn}/index/UserIDIndex`]: [
+                    "dynamodb:Query"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
+        const create_orders = new MSC_Lambda(this, `${id}-CreateOrders`, {
+            code: "member/orders/create_orders",
+            envVariables: {
+                ORDER_TABLE_NAME: props.orders_table.tableName,
+                PRODUCT_TABLE_NAME: props.product_table.tableName,
+                USERS_TABLE_NAME: props.users_table.tableName,
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName
+            },
+            permissions: {
+                [props.orders_table.tableArn]: [
+                    "dynamodb:PutItem"
+                ],
+                [props.users_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.product_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ],
+                [props.transactions_table.tableArn]: [
+                    "dynamodb:PutItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
+        const update_order_fulfillment = new MSC_Lambda(this, `${id}-UpdateOrderFulfillment`, {
+            code: "member/orders/update_order_fulfillment",
+            envVariables: {
+                ORDERS_TABLE_NAME: props.orders_table.tableName
+            },
+            permissions: {
+                [props.orders_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
+        const orders_resource = props.api_gateway.root.addResource("orders");
+
+        const get_member_orders_resource = orders_resource.addResource("getMemberOrders");
+        const create_orders_resource = orders_resource.addResource("createOrder");
+        const update_order_fulfillment_resource = orders_resource.addResource("updateFulfillment");
+
+        const methodOptions: MethodOptions = {
+            methodResponses: [],
+            authorizationType: AuthorizationType.CUSTOM,
+            authorizer: props.token_authorizer
+        }
+
+        addCorsEnabledMethod(get_member_orders_resource, get_member_orders, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(create_orders_resource, create_orders, methodOptions, undefined, "POST");
+        addCorsEnabledMethod(update_order_fulfillment_resource, update_order_fulfillment, methodOptions, undefined, "POST");
+    }
+}

@@ -6,3 +6,5 @@ export { MSC_ClubMemberConstruct } from "./club_member";
 export { MSC_ImagesConstruct } from "./images";
 export { MSC_TransactionsConstruct } from "./transactions";
 export { MSC_PayfastConstruct } from "./payfast";
+export { MSC_MemberShopConstruct } from "./shop";
+export { MSC_MemberOrdersConstruct } from "./orders";
