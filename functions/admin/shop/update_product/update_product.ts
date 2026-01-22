@@ -1,8 +1,11 @@
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import {
     createResponse,
     deconstructEvent,
     updateItem
 } from "./function_helpers";
+
+const s3_client = new S3Client({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -16,8 +19,8 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Invalid or missing club_account_id." }, origin);
         }
 
-        if (body.initial_quantity === undefined && body.active_product === undefined && body.name === undefined) {
-            return createResponse(400, { message: "At least one field to update must be provided (name, initial_quantity, or active_product)." }, origin);
+        if (body.initial_quantity === undefined && body.active_product === undefined && body.name === undefined && body.product_image === undefined) {
+            return createResponse(400, { message: "At least one field to update must be provided (name, initial_quantity, active_product, or product_image)." }, origin);
         }
 
         if (body.name !== undefined) {
@@ -35,6 +38,36 @@ export const handler = async (event: any) => {
         if (body.active_product !== undefined) {
             if (typeof body.active_product !== "boolean") {
                 return createResponse(400, { message: "Invalid active_product provided (Must be a boolean)." }, origin);
+            }
+        }
+
+        if (body.product_image !== undefined) {
+            if (typeof body.product_image !== "string" || !body.product_image.startsWith("data:")) {
+                return createResponse(400, { message: "Invalid product image provided (Must be a base64 data URL)." }, origin);
+            }
+        }
+
+        // Upload product image to S3 if provided
+        let imageKey: string | undefined;
+        if (body.product_image) {
+            try {
+                const base64Data = body.product_image.split(",")[1];
+                const buffer = Buffer.from(base64Data, "base64");
+                const mimeMatch = body.product_image.match(/^data:(.+);base64,/);
+                const contentType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+
+                imageKey = `${body.club_account_id}/${body.product_id}`;
+                const command = new PutObjectCommand({
+                    Bucket: process.env.SHOP_IMAGES_BUCKET_NAME,
+                    Body: buffer,
+                    Key: imageKey,
+                    ContentEncoding: "base64",
+                    ContentType: contentType,
+                });
+                await s3_client.send(command);
+            } catch (uploadError: any) {
+                console.error('Image upload error:', uploadError);
+                return createResponse(500, { message: "Failed to upload product image." }, origin);
             }
         }
 
@@ -58,6 +91,12 @@ export const handler = async (event: any) => {
             updateExpressions.push("#ap = :ap");
             expressionAttributeNames["#ap"] = "active_product";
             expressionAttributeValues[":ap"] = body.active_product;
+        }
+
+        if (imageKey !== undefined) {
+            updateExpressions.push("#img = :img");
+            expressionAttributeNames["#img"] = "product_image_key";
+            expressionAttributeValues[":img"] = imageKey;
         }
 
         const updateExpression = `SET ${updateExpressions.join(", ")}`;

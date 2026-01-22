@@ -1,3 +1,4 @@
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { randomUUID } from "crypto";
 import {
     createResponse,
@@ -5,6 +6,8 @@ import {
     queryItems,
     addItem
 } from "./function_helpers";
+
+const s3_client = new S3Client({ region: process.env.REGION });
 
 export const handler = async (event: any) => {
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -35,8 +38,38 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Invalid active_product provided (Must be a boolean)." }, origin);
         }
 
+        if (body.product_image !== undefined) {
+            if (typeof body.product_image !== "string" || !body.product_image.startsWith("data:")) {
+                return createResponse(400, { message: "Invalid product_image provided (Must be a base64 data URL)." }, origin);
+            }
+        }
+
         const product_id = randomUUID();
         const created_date = Math.floor(Date.now() / 1000);
+
+        // Upload product image to S3 if provided
+        let product_image_key: string | undefined;
+        if (body.product_image) {
+            try {
+                const base64Data = body.product_image.split(",")[1];
+                const buffer = Buffer.from(base64Data, "base64");
+                const mimeMatch = body.product_image.match(/^data:(.+);base64,/);
+                const contentType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+
+                product_image_key = `${body.club_account_id}/${product_id}`;
+                const command = new PutObjectCommand({
+                    Bucket: process.env.SHOP_IMAGES_BUCKET_NAME,
+                    Body: buffer,
+                    Key: product_image_key,
+                    ContentEncoding: "base64",
+                    ContentType: contentType,
+                });
+                await s3_client.send(command);
+            } catch (uploadError: any) {
+                console.error('Image upload error:', uploadError);
+                return createResponse(500, { message: "Failed to upload product image." }, origin);
+            }
+        }
 
         const productItem = {
             product_id,
@@ -47,7 +80,8 @@ export const handler = async (event: any) => {
             active_product: body.active_product,
             purchase_limit: body.purchase_limit,
             created_date,
-            ...(body.description && { description: body.description })
+            ...(body.description && { description: body.description }),
+            ...(product_image_key && { product_image_key })
         };
 
         await addItem(process.env.PRODUCT_TABLE_NAME!, productItem);

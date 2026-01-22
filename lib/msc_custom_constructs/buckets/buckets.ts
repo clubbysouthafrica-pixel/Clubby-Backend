@@ -9,6 +9,7 @@ export class MSC_BucketsConstruct extends Construct {
     public readonly image_bucket: MSC_Bucket;
     public readonly club_history_bucket: MSC_Bucket;
     public readonly signatures_bucket: MSC_Bucket;
+    public readonly shop_images_bucket: MSC_Bucket;
     constructor(scope: Construct, id: string, props: MSC_BucketsProps) {
         super(scope, `${id}-Buckets`);
 
@@ -23,6 +24,11 @@ export class MSC_BucketsConstruct extends Construct {
 
         this.signatures_bucket = new MSC_Bucket(this, `${id}-Signatures`, {
             bucket_name: `${process.env.ENVIRONMENT as string}-${id}-Signatures`.toLocaleLowerCase(),
+            enableCors: true
+        });
+
+        this.shop_images_bucket = new MSC_Bucket(this, `${id}-ShopImages`, {
+            bucket_name: `${process.env.ENVIRONMENT as string}-${id}-ShopImages`.toLocaleLowerCase(),
             enableCors: true
         });
     }

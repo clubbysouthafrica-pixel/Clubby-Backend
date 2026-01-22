@@ -49,6 +49,7 @@ export class MSC_Stack extends cdk.Stack {
     new MSC_AdminNestedStack(this, `AdminStack`, {
       env: props?.env,
       signatures_bucket: buckets.signatures_bucket,
+      shop_images_bucket: buckets.shop_images_bucket,
       member_user_pool: member_user_pool,
       admin_user_pool: admin_user_pool,
       orders_table: tables.orders_table,
@@ -99,6 +100,7 @@ export class MSC_Stack extends cdk.Stack {
       registration_form_table: tables.registration_form_table,
       image_bucket: buckets.image_bucket,
       mail_queue: mail_queue,
+      shop_images_bucket: buckets.shop_images_bucket,
       layers: {
         jwt_layer: all_layers.jwt_layer,
         jwks_rsa_layer: all_layers.jwks_rsa_layer,

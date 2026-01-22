@@ -7,6 +7,7 @@ interface MSC_AdminShopConstructProps {
     api_gateway: MSC_APIGateway;
     product_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
+    shop_images_bucket: MSC_Bucket;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -19,11 +20,18 @@ export class MSC_AdminShopConstruct extends Construct {
         const add_product = new MSC_Lambda(this, `${id}-AddProduct`, {
             code: "admin/shop/add_product",
             envVariables: {
-                PRODUCT_TABLE_NAME: props.product_table.tableName
+                PRODUCT_TABLE_NAME: props.product_table.tableName,
+                SHOP_IMAGES_BUCKET_NAME: props.shop_images_bucket.bucketName
             },
             permissions: {
                 [props.product_table.tableArn]: [
                     "dynamodb:PutItem"
+                ],
+                [props.shop_images_bucket.bucketArn]: [
+                    "s3:PutObject"
+                ],
+                [`${props.shop_images_bucket.bucketArn}/*`]: [
+                    "s3:PutObject"
                 ]
             },
             layers: [props.layers.jwt_layer]
@@ -32,11 +40,20 @@ export class MSC_AdminShopConstruct extends Construct {
         const get_club_products = new MSC_Lambda(this, `${id}-GetClubProducts`, {
             code: "admin/shop/get_club_products",
             envVariables: {
-                PRODUCT_TABLE_NAME: props.product_table.tableName
+                PRODUCT_TABLE_NAME: props.product_table.tableName,
+                SHOP_IMAGES_BUCKET_NAME: props.shop_images_bucket.bucketName
             },
             permissions: {
                 [props.product_table.tableArn]: [
                     "dynamodb:Query"
+                ],
+                [props.shop_images_bucket.bucketArn]: [
+                    "s3:GetObject",
+                    "s3:HeadObject"
+                ],
+                [`${props.shop_images_bucket.bucketArn}/*`]: [
+                    "s3:GetObject",
+                    "s3:HeadObject"
                 ]
             },
             layers: [props.layers.jwt_layer]
@@ -45,11 +62,18 @@ export class MSC_AdminShopConstruct extends Construct {
         const update_product = new MSC_Lambda(this, `${id}-UpdateProduct`, {
             code: "admin/shop/update_product",
             envVariables: {
-                PRODUCT_TABLE_NAME: props.product_table.tableName
+                PRODUCT_TABLE_NAME: props.product_table.tableName,
+                SHOP_IMAGES_BUCKET_NAME: props.shop_images_bucket.bucketName
             },
             permissions: {
                 [props.product_table.tableArn]: [
                     "dynamodb:UpdateItem"
+                ],
+                [props.shop_images_bucket.bucketArn]: [
+                    "s3:PutObject"
+                ],
+                [`${props.shop_images_bucket.bucketArn}/*`]: [
+                    "s3:PutObject"
                 ]
             },
             layers: [props.layers.jwt_layer]

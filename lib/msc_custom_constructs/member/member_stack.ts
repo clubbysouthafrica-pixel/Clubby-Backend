@@ -27,6 +27,7 @@ export interface MSC_MemberNestedStackProps extends StackProps {
     image_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
     mail_queue: MSC_Queue;
+    shop_images_bucket: MSC_Bucket;
     billing_table: MSC_Table;
     orders_table: MSC_Table;
     product_table: MSC_Table;
@@ -73,6 +74,7 @@ export class MSC_MemberNestedStack extends Stack {
             api_gateway: api_gateway,
             product_table: props.product_table,
             token_authorizer: jwt_construct.token_authorizer,
+            shop_images_bucket: props.shop_images_bucket,
             layers: props.layers
         });
 

@@ -35,6 +35,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     club_deregistration_queue: MSC_Queue;
     club_member_table: MSC_Table;
     image_bucket: MSC_Bucket;
+    shop_images_bucket: MSC_Bucket;
     club_history_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
     mail_queue: MSC_Queue;
@@ -73,6 +74,7 @@ export class MSC_AdminNestedStack extends Stack {
             api_gateway: api_gateway,
             product_table: props.product_table,
             token_authorizer: jwt_construct.token_authorizer,
+            shop_images_bucket: props.shop_images_bucket,
             layers: props.layers
         });
 
@@ -123,6 +125,7 @@ export class MSC_AdminNestedStack extends Stack {
             registrations_table: props.registrations_table,
             token_authorizer: jwt_construct.token_authorizer,
             signatures_bucket: props.signatures_bucket,
+            orders_table: props.orders_table
         });
 
         new MSC_MailerConstruct(this, `${id}-Mail`, {
