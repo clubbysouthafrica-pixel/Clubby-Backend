@@ -211,6 +211,30 @@ async function handleRegistrationForm(club_account_id: string, cycle_name: strin
     await addToHistoricalReportingBucket(club_account_id, cycle_name, "RegistrationForm", historical_reports);
 }
 
+async function handleOrders(club_account_id: string, cycle_name: string) {
+    const orders = await queryItems(
+        process.env.ORDERS_TABLE_NAME as string,
+        "club_account_id = :clubId",
+        { ":clubId": club_account_id }
+    );
+    
+    const historical_reports: any[] = []
+    if (orders) {
+        for (const order of orders) {
+            historical_reports.push(order);
+
+            await removeItem(
+                process.env.ORDERS_TABLE_NAME as string,
+                {
+                    club_account_id: club_account_id,
+                    order_id: order.order_id
+                }
+            )
+        }
+    }
+    await addToHistoricalReportingBucket(club_account_id, cycle_name, "Orders", historical_reports);
+}
+
 async function deleteClubSignatures(club_account_id: string): Promise<void> {
     const prefix = `${club_account_id}/`;
     let continuationToken: string | undefined;
@@ -290,6 +314,7 @@ export const handler = async (event: any) => {
             await handleRegistrations(club_account_id, cycle_name);
             await handleTransactions(club_account_id, cycle_name);
             await handleRegistrationForm(club_account_id, cycle_name);
+            await handleOrders(club_account_id, cycle_name);
             await deleteClubSignatures(club_account_id);
 
             const currentEpoch = Date.now();

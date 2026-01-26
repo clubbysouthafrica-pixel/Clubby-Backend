@@ -12,6 +12,7 @@ interface MSC_DeregistrationConstructProps {
     transactions_table: MSC_Table;
     club_deregistration_queue: MSC_Queue;
     registrations_table: MSC_Table;
+    orders_table: MSC_Table;
     registration_form_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     club_history_bucket: MSC_Bucket;
@@ -61,7 +62,8 @@ export class MSC_DeregistrationConstruct extends Construct {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 BILLING_TABLE_NAME: props.billing_table.tableName,
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
-                REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName
+                REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
+                ORDERS_TABLE_NAME: props.orders_table.tableName
             },
             permissions: {
                 [props.club_table.tableArn]: [
@@ -75,6 +77,10 @@ export class MSC_DeregistrationConstruct extends Construct {
                     "dynamodb:Query"
                 ],
                 [props.billing_table.tableArn]: [
+                    "dynamodb:Query",
+                    "dynamodb:DeleteItem"
+                ],
+                [props.orders_table.tableArn]: [
                     "dynamodb:Query",
                     "dynamodb:DeleteItem"
                 ],

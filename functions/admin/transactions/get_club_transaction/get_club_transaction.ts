@@ -1,5 +1,4 @@
 import { createResponse, deconstructEvent, queryItemsWithPagination } from "./function_helpers";
-import { marshall } from "@aws-sdk/util-dynamodb";
 
 export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
@@ -22,8 +21,6 @@ const transformTransaction = (tx: any) => {
     }).replace(' ', '');
 
     const outstanding_amount = tx.amount - tx.amount_paid
-    delete tx.amount
-    delete tx.amount_paid
     return {
         ...tx,
         creation_date: `${formattedDate} ${formattedTime}`,

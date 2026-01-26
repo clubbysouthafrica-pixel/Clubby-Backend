@@ -92,11 +92,13 @@ async function addToRegistrationsTable(
     registration_submitted_on: number,
     transaction_id: string
 ): Promise<string> {
-    const member_registrations = await queryItems(
+    const all_registrations = await queryItems(
         process.env.REGISTRATIONS_TABLE_NAME as string,
         "user_id = :userId",
         { ":userId": user_id }
     )
+    const member_registrations = all_registrations?.filter((reg: any) => reg.club_account_id === club_account_id) || null;
+
 
     let new_registration_index = 1
     if (member_registrations !== null) {
@@ -154,7 +156,8 @@ async function addToTransactionsTable(
     surname: string,
     transaction_id: string,
     user_id: string,
-    membership_amount: number
+    membership_amount: number,
+    registration_id: string
 ) {
     await addItem(
         process.env.TRANSACTIONS_TABLE_NAME as string,
@@ -162,6 +165,7 @@ async function addToTransactionsTable(
             club_account_id: club_account_id,
             name: `${first_name} ${surname}`,
             transaction_id: transaction_id,
+            registration_id: registration_id,
             user_id: user_id as string,
             amount_paid: 0,
             club_income: true,
@@ -383,6 +387,7 @@ export const handler = async (event: any) => {
             current_reg_transaction_id,
             user_id as string,
             membership_amount,
+            current_reg_id
         )
 
         if (club.notify_on_member_registration !== false) {

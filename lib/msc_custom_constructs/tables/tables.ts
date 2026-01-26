@@ -15,6 +15,8 @@ export class MSC_TablesConstruct extends Construct {
     public readonly registration_form_table: MSC_Table;
     public readonly transactions_table: MSC_Table;
     public readonly registrations_table: MSC_Table;
+    public readonly products_table: MSC_Table;
+    public readonly orders_table: MSC_Table;
     constructor(scope: Construct, id: string, props: MSC_TablesProps) {
         super(scope, `${id}-Tables`);
 
@@ -46,12 +48,27 @@ export class MSC_TablesConstruct extends Construct {
             sortKey: { "user_id": "STRING" }
         });
 
+        this.products_table = new MSC_Table(this, `${id}-Products`, {
+            partitionKey: { "club_account_id": "STRING" },
+            sortKey: { "product_id": "STRING" }
+        });
+
         this.club_member_table = new MSC_Table(this, `${id}-ClubMember`, {
             partitionKey: { "user_id": "STRING" },
             sortKey: { "club_account_id": "STRING" },
             gsi: [{
                 indexName: "ClubAccountIDIndex",
                 partitionKey: { name: "club_account_id", type: AttributeType.STRING }
+            }]
+        });
+
+        this.orders_table = new MSC_Table(this, `${id}-Orders`, {
+            partitionKey: { "club_account_id": "STRING" },
+            sortKey: { "order_id": "STRING" },
+            gsi: [{
+                indexName: "UserIDIndex",
+                partitionKey: { name: "club_account_id", type: AttributeType.STRING },
+                sortKey: { name: "user_id", type: AttributeType.STRING }
             }]
         });
 

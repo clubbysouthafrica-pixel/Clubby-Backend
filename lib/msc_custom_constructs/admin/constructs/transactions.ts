@@ -46,10 +46,24 @@ export class MSC_TransactionsConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const confirm_refund = new MSC_Lambda(this, `${id}-ConfirmRefund`, {
+            code: "admin/transactions/confirm_refund",
+            envVariables: {
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName
+            },
+            permissions: {
+                [props.transactions_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const transactions = props.api_gateway.root.addResource("transactions");
 
         const get_member_transactions_resource = transactions.addResource("member");
         const get_club_transaction_resource = transactions.addResource("club");
+        const confirm_refund_resource = transactions.addResource("confirmRefund");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -59,5 +73,6 @@ export class MSC_TransactionsConstruct extends Construct {
 
         addCorsEnabledMethod(get_member_transactions_resource, get_member_transactions, methodOptions, undefined, "GET");
         addCorsEnabledMethod(get_club_transaction_resource, get_club_transactions, methodOptions, undefined, "POST");
+        addCorsEnabledMethod(confirm_refund_resource, confirm_refund, methodOptions, undefined, "POST");
     }
 }

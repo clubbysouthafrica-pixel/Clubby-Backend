@@ -150,6 +150,8 @@ export const handler = async (event: any) => {
                 members.push({
                     outstanding_amount: registration?.total_outstanding_amount,
                     registration_submitted_on: registration?.registration_submitted_on,
+                    deregistered_on: registration?.deregistered_on,
+                    total_fee: registration?.total_fee,
                     registered_on: registration?.registered_on,
                     user_id: item.user_id,
                     member_first_name: item.member_first_name,

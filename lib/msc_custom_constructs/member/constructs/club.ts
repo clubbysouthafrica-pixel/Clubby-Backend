@@ -12,6 +12,7 @@ interface MSC_MemberClubConstructProps {
     token_authorizer: TokenAuthorizer;
     image_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
+    orders_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -68,7 +69,9 @@ export class MSC_MemberClubConstruct extends Construct {
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
-                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                ORDERS_TABLE_NAME: props.orders_table.tableName,
+                ORDERS_INDEX_NAME: "UserIDIndex"
             },
             permissions: {
                 [props.club_table.tableArn]: [
@@ -79,6 +82,9 @@ export class MSC_MemberClubConstruct extends Construct {
                 ],
                 [props.registrations_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [`${props.orders_table.tableArn}/index/UserIDIndex`]: [
+                    "dynamodb:Query"
                 ]
             },
             layers: [props.layers.jwt_layer]
