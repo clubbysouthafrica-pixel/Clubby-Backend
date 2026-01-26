@@ -11,6 +11,7 @@ interface MSC_ReportingConstructProps {
     billing_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     club_history_bucket: MSC_Bucket;
+    orders_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -25,6 +26,7 @@ export class MSC_ReportingConstruct extends Construct {
             envVariables: {
                 CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                ORDERS_TABLE_NAME: props.orders_table.tableName,
                 REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
             },
             permissions: {
@@ -34,6 +36,9 @@ export class MSC_ReportingConstruct extends Construct {
                 [`${props.registrations_table.tableArn}/index/ClubAccountIDIndex`]: [
                     "dynamodb:Query"
                 ],
+                [props.orders_table.tableArn]: [
+                    "dynamodb:Query"
+                ]
             },
             memory: 2048,
             layers: [props.layers.jwt_layer]

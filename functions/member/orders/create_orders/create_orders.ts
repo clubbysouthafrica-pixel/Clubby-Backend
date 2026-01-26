@@ -143,6 +143,7 @@ export const handler = async (event: any) => {
             total_items: body.total_items,
             payment_status: "PENDING",
             fulfillment_status: "NOT_PROCESSED",
+            order_confirmed_by_admin: false,
             created_date,
             amount_paid: 0
         };

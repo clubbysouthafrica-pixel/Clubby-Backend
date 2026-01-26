@@ -44,16 +44,20 @@ async function updateOrdersTable(
             club_account_id: club_account_id,
             order_id: order_id
         },
-        "SET #amount_paid = #amount_paid + :amount_paid, #payment_status = :payment_status, #fulfillment_status = :fulfillment_status",
+        "SET #amount_paid = #amount_paid + :amount_paid, #payment_status = :payment_status, #fulfillment_status = :fulfillment_status, #order_confirmed_by_admin = :order_confirmed_by_admin, #order_confirmed_by_admin_timestamp = :order_confirmed_by_admin_timestamp",
         {
             "#amount_paid": "amount_paid",
             "#payment_status": "payment_status",
-            "#fulfillment_status": "fulfillment_status"
+            "#fulfillment_status": "fulfillment_status",
+            "#order_confirmed_by_admin": "order_confirmed_by_admin",
+            "#order_confirmed_by_admin_timestamp": "order_confirmed_by_admin_timestamp"
         },
         {
             ":amount_paid": payment_amount,
             ":payment_status": "PAID",
-            ":fulfillment_status": "PROCESSING"
+            ":fulfillment_status": "PROCESSING",
+            ":order_confirmed_by_admin": true,
+            ":order_confirmed_by_admin_timestamp": Date.now()
         }
     );
 }

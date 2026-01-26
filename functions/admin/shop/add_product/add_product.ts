@@ -3,7 +3,6 @@ import { randomUUID } from "crypto";
 import {
     createResponse,
     deconstructEvent,
-    queryItems,
     addItem
 } from "./function_helpers";
 
@@ -47,7 +46,6 @@ export const handler = async (event: any) => {
         const product_id = randomUUID();
         const created_date = Math.floor(Date.now() / 1000);
 
-        // Upload product image to S3 if provided
         let product_image_key: string | undefined;
         if (body.product_image) {
             try {
