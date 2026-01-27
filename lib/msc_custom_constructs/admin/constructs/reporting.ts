@@ -96,11 +96,33 @@ export class MSC_ReportingConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const shop_reporting = new MSC_Lambda(this, `${id}-ShopReporting`, {
+            code: "admin/reporting/shop_reporting",
+            envVariables: {
+                ORDERS_TABLE_NAME: props.orders_table.tableName,
+                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName
+            },
+            permissions: {
+                [props.orders_table.tableArn]: [
+                    "dynamodb:Query"
+                ],
+                [props.club_history_bucket.bucketArn]: [
+                    "s3:ListBucket"
+                ],
+                [`${props.club_history_bucket.bucketArn}/*`]: [
+                    "s3:GetObject"
+                ]
+            },
+            memory: 2048,
+            layers: [props.layers.jwt_layer]
+        });
+
         const reporting_resource = props.api_gateway.root.addResource("reporting");
 
         const general_reporting_resource = reporting_resource.addResource("generalReporting");
         const registration_fees_resource = reporting_resource.addResource("registrationBilling")
         const mcs_billing_resource = reporting_resource.addResource("mcsBilling");
+        const shop_reporting_resource = reporting_resource.addResource("shopReporting");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -111,5 +133,6 @@ export class MSC_ReportingConstruct extends Construct {
         addCorsEnabledMethod(general_reporting_resource, general_reporting, methodOptions, undefined, "GET");
         addCorsEnabledMethod(registration_fees_resource, registration_fees, methodOptions, undefined, "GET");
         addCorsEnabledMethod(mcs_billing_resource, mcs_billing, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(shop_reporting_resource, shop_reporting, methodOptions, undefined, "GET");
     }
 }
