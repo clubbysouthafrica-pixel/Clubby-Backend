@@ -40,6 +40,7 @@ export const handler = async (event: any) => {
           : undefined,
         instagram_url: item?.instagram_url,
         facebook_url: item?.facebook_url,
+        about_club: item?.about_club,
         opening_times: item?.opening_times,
         country_of_operation: item?.country_of_operation,
         currency: item?.currency,

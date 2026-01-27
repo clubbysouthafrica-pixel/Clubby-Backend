@@ -11,12 +11,10 @@ function validateTemplateVariables(template: string): string | null {
   while ((match = regex.exec(template)) !== null) {
     const variable = match[1];
 
-    // Check if variable contains uppercase letters
     if (variable !== variable.toLowerCase()) {
       return `Template variable '{{${variable}}}' contains uppercase letters. Variables must be lowercase. Valid example: {{custom_variable}}.`;
     }
 
-    // Check if variable only contains lowercase letters and underscores
     if (!/^[a-z_]+$/.test(variable)) {
       return `Template variable '{{${variable}}}' contains invalid characters. Variables can only contain lowercase letters and underscores. Valid example: {{custom_variable}}.`;
     }
@@ -35,36 +33,35 @@ function validateBody(body: Record<string, string>): string | null {
 
   if (body?.bank_details) {
     if (typeof body.bank_details !== "object") {
-      return "Please fill in bank details first.";
+      return "Invalid bank details format.";
     }
 
     const bank_details: Record<string, string> = body.bank_details;
 
-    if (
-      bank_details.bank == null ||
-      bank_details.account_number == null ||
-      bank_details.branch_code == null ||
-      bank_details.account_type == null
-    ) {
-      return "Please fill in bank details first. All bank details must be provided.";
-    }
+    const allFieldsProvided =
+      bank_details.bank != null &&
+      bank_details.account_number != null &&
+      bank_details.branch_code != null &&
+      bank_details.account_type != null;
 
-    if (
-      typeof bank_details.bank !== "string" ||
-      typeof bank_details.account_number !== "string" ||
-      typeof bank_details.branch_code !== "string" ||
-      typeof bank_details.account_type !== "string"
-    ) {
-      return "Please fill in bank details first. All bank details must be provided.";
-    }
+    if (allFieldsProvided) {
+      if (
+        typeof bank_details.bank !== "string" ||
+        typeof bank_details.account_number !== "string" ||
+        typeof bank_details.branch_code !== "string" ||
+        typeof bank_details.account_type !== "string"
+      ) {
+        return "All bank details must be strings.";
+      }
 
-    if (
-      bank_details.bank.trim() === "" ||
-      bank_details.account_number.trim() === "" ||
-      bank_details.branch_code.trim() === "" ||
-      bank_details.account_type.trim() === ""
-    ) {
-      return "Please fill in bank details first. All bank details must be provided.";
+      if (
+        bank_details.bank.trim() === "" ||
+        bank_details.account_number.trim() === "" ||
+        bank_details.branch_code.trim() === "" ||
+        bank_details.account_type.trim() === ""
+      ) {
+        return "Bank details cannot be empty.";
+      }
     }
   }
 
@@ -237,8 +234,8 @@ export const handler = async (event: any) => {
       body?.instagram_url !== undefined &&
       typeof body.instagram_url === "string"
     ) {
-      updateParts.push("instagram_url = :instagram_url");
-      expressionAttributeNames["instagram_url"] = "instagram_url";
+      updateParts.push("#instagram_url = :instagram_url");
+      expressionAttributeNames["#instagram_url"] = "instagram_url";
       expressionAttributeValues[":instagram_url"] = body.instagram_url;
     }
 
@@ -252,14 +249,14 @@ export const handler = async (event: any) => {
       body?.facebook_url !== undefined &&
       typeof body.facebook_url === "string"
     ) {
-      updateParts.push("facebook_url = :facebook_url");
-      expressionAttributeNames["facebook_url"] = "facebook_url";
+      updateParts.push("#facebook_url = :facebook_url");
+      expressionAttributeNames["#facebook_url"] = "facebook_url";
       expressionAttributeValues[":facebook_url"] = body.facebook_url;
     }
 
     if (body?.about_club !== undefined && typeof body.about_club === "string") {
-      updateParts.push("about_club = :about_club");
-      expressionAttributeNames["about_club"] = "about_club";
+      updateParts.push("#about_club = :about_club");
+      expressionAttributeNames["#about_club"] = "about_club";
       expressionAttributeValues[":about_club"] = body.about_club;
     }
 
@@ -303,6 +300,6 @@ export const handler = async (event: any) => {
     if (error.name === "ConditionalCheckFailedException") {
       console.error("Club does not exist");
     }
-    return createResponse(500, { message: "Internal Server Error" }, origin);
+    return createResponse(500, { message: error.message }, origin);
   }
 };
