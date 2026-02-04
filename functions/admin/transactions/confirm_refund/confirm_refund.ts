@@ -18,14 +18,24 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "transaction_id must be STRING type." }, origin);
         }
 
+        if (body?.refund_timestamp == null) {
+            return createResponse(400, { message: "refund_timestamp is required in body." }, origin);
+        }
+
+        if (typeof body.refund_timestamp !== 'number') {
+            return createResponse(400, { message: "refund_timestamp must be NUMBER type." }, origin);
+        }
+        
         await updateItem(
             process.env.TRANSACTIONS_TABLE_NAME as string,
             {
                 club_account_id: body.club_account_id,
                 transaction_id: body.transaction_id
             },
-            `SET #refund_completed = :refund_completed`,
+            `SET #lifecycle.#ts.#refund_completed = :refund_completed`,
             {
+                "#lifecycle": "lifecycle",
+                "#ts": String(body.refund_timestamp),
                 "#refund_completed": "refund_completed"
             },
             {

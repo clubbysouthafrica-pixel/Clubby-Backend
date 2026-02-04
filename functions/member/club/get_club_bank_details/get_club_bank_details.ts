@@ -56,9 +56,9 @@ export const handler = async (event: any) => {
             );
             outstanding_amount += orders?.reduce((sum, order) => {
                 const outstandingOrderAmount = order["total_amount"] - order["amount_paid"];
-                return outstandingOrderAmount > 0 ? sum + outstandingOrderAmount : sum;
+                return outstandingOrderAmount > 0 && order["payment_status"] === "PENDING" ? sum + outstandingOrderAmount : sum;
             }, 0) || 0;
-            options = orders?.filter(order => (order["total_amount"] - order["amount_paid"]) > 0).map(order => {
+            options = orders?.filter(order => (order["total_amount"] - order["amount_paid"]) > 0 && order["payment_status"] === "PENDING").map(order => {
                 const outstandingAmount = order["total_amount"] - order["amount_paid"];
                 return { order_id: order["order_id"], items: order["items"], outstanding_amount: outstandingAmount, total_amount: order["total_amount"] };
             }) ?? [];

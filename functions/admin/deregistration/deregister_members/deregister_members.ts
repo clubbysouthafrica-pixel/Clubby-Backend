@@ -2,6 +2,7 @@ import {
     createResponse,
     deconstructEvent,
     getItem,
+    queryItems,
     updateItem
 } from "./function_helpers";
 
@@ -99,25 +100,22 @@ async function processRefund(user_id: string, club_account_id: string, registrat
             club_account_id: club_account_id,
             transaction_id: member.current_reg_transaction_id
         },
-        `SET #refund_amount = :refund_amount, #refund_completed = :refund_completed, #amount_paid = :amount_paid, #status = :status, #lifecycle.#ts = :lifecycleValue`,
+        `SET #amount_paid = :amount_paid, #status = :status, #lifecycle.#ts = :lifecycleValue`,
         {
             "#status": "status",
             "#lifecycle": "lifecycle",
-            "#refund_completed": "refund_completed",
             "#amount_paid": "amount_paid",
-            "#refund_amount": "refund_amount",
             "#ts": `${Date.now()}`
         },
         {
             ":status": "REFUND",
-            ":refund_completed": false,
-            ":refund_amount": registration.total_fee - registration.total_outstanding_amount,
             ":amount_paid": 0,
             ":lifecycleValue": {
                 type: "REFUND",
                 description: "Refund issued due to member deregistration",
                 amount: registration.total_fee - registration.total_outstanding_amount,
-                payment_type: "REFUND"
+                payment_type: "REFUND",
+                refund_completed: false
             }
         }
     );
@@ -139,7 +137,31 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "user_ids must be ARRAY type." }, origin);
         }
 
+        if (body.user_ids.length > 25) {
+            return createResponse(410, { message: "Maximum of 25 members can be deregistered at a time." }, origin);
+        }
+
         const refunds = body?.refunds ?? [];
+
+        for (const user_id of body.user_ids) {
+            const orders = await queryItems(
+                process.env.ORDERS_TABLE_NAME!,
+                "user_id = :user_id AND club_account_id = :club_account_id",
+                {
+                    ":user_id": user_id as string,
+                    ":club_account_id": body.club_account_id
+                },
+                process.env.ORDERS_INDEX_NAME
+            );
+
+            if (!orders) continue
+
+            const hasPendingPayments = orders?.some((order) => order.payment_status === "PENDING");
+
+            if (hasPendingPayments) {
+                return createResponse(411, { message: `Member ${orders[0]?.first_name} ${orders[0]?.surname} has pending payments and cannot be deregistered. Please ensure all orders have been paid to cancelled if they are pending.`, name: `${orders[0]?.first_name} ${orders[0]?.surname}` }, origin);
+            }
+        }
 
         for (const user_id of body.user_ids) {
             const member = await getItem(

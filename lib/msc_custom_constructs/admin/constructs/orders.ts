@@ -8,6 +8,7 @@ interface MSC_AdminOrdersConstructProps {
     orders_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     transactions_table: MSC_Table;
+    product_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -66,11 +67,36 @@ export class MSC_AdminOrdersConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const refund_or_remove_order = new MSC_Lambda(this, `${id}-RefundOrRemoveOrder`, {
+            code: "admin/orders/refund_or_remove_order",
+            envVariables: {
+                ORDERS_TABLE_NAME: props.orders_table.tableName,
+                PRODUCT_TABLE_NAME: props.product_table.tableName,
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName
+            },
+            permissions: {
+                [props.orders_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem"
+                ],
+                [props.product_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem"
+                ],
+                [props.transactions_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const orders_resource = props.api_gateway.root.addResource("orders");
 
         const get_club_orders_resource = orders_resource.addResource("getClubOrders");
         const confirm_order_payment_resource = orders_resource.addResource("confirmOrderPayment");
         const update_order_fulfillment_resource = orders_resource.addResource("updateOrderFulfillment");
+        const refund_or_remove_order_resource = orders_resource.addResource("refundOrRemove");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -81,5 +107,6 @@ export class MSC_AdminOrdersConstruct extends Construct {
         addCorsEnabledMethod(get_club_orders_resource, get_club_orders, methodOptions, undefined, "GET");
         addCorsEnabledMethod(confirm_order_payment_resource, confirm_order_payment, methodOptions, undefined, "POST");
         addCorsEnabledMethod(update_order_fulfillment_resource, update_order_fulfillment, methodOptions, undefined, "POST");
+        addCorsEnabledMethod(refund_or_remove_order_resource, refund_or_remove_order, methodOptions, undefined, "POST");
     }
 }

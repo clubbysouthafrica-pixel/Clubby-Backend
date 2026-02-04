@@ -6,10 +6,10 @@ export const handler = async (event: any) => {
 
     try {
 
-        const { order_id, club_account_id } = body;
+        const { order_id, club_account_id, type } = body;
 
-        if (!order_id || !club_account_id) {
-            return createResponse(400, { message: "order_id and club_account_id are required." }, origin);
+        if (!order_id || !club_account_id || !type) {
+            return createResponse(400, { message: "order_id, club_account_id, and type are required." }, origin);
         }
 
         await updateItem(
@@ -23,7 +23,7 @@ export const handler = async (event: any) => {
                 "#fulfillment_status": "fulfillment_status"
             },
             {
-                ":fulfillment_status": "RECEIVED"
+                ":fulfillment_status": type === "fulfillment" ? "DELIVERED" : "REFUNDED"
             }
         );
 

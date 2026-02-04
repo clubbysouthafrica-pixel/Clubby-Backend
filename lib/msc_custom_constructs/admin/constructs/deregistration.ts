@@ -121,6 +121,8 @@ export class MSC_DeregistrationConstruct extends Construct {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+                ORDERS_TABLE_NAME: props.orders_table.tableName,
+                ORDERS_INDEX_NAME: "UserIDIndex"
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
@@ -133,6 +135,9 @@ export class MSC_DeregistrationConstruct extends Construct {
                 ],
                 [props.transactions_table.tableArn]: [
                     "dynamodb:UpdateItem"
+                ],
+                [`${props.orders_table.tableArn}/index/UserIDIndex`]: [
+                    "dynamodb:Query"
                 ]
             },
             timeout: 360,

@@ -98,7 +98,8 @@ export class MSC_AdminNestedStack extends Stack {
             token_authorizer: jwt_construct.token_authorizer,
             layers: props.layers,
             club_table: props.club_table,
-            transactions_table: props.transactions_table
+            transactions_table: props.transactions_table,
+            product_table: props.product_table
         });
 
         new MSC_ReportingConstruct(this, `${id}-Reporting`, {

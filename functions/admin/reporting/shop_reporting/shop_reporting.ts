@@ -127,7 +127,7 @@ export const handler = async (event: any) => {
 
                             if (!existingDateData) {
                                 existingDateData = {
-                                    date: formatToYearMonth(order.order_created_timestamp),
+                                    date: formatToYearMonth(order.created_date),
                                     revenue: 0,
                                     sold_units: 0,
                                     pending_revenue: item?.subtotal ?? 0,

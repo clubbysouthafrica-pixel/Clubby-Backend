@@ -125,6 +125,12 @@ export const handler = async (event: any) => {
                 process.env.CLUB_ACCOUNT_ID_INDEX as string
             ) || [];
         }
+        
+        monthly_billing.sort((a, b) => {
+            const dateA = a.year_month ?? '';
+            const dateB = b.year_month ?? '';
+            return dateA.localeCompare(dateB);
+        });
 
         const report = processBillingData(monthly_billing, club);
         return createResponse(200, { report }, origin);
