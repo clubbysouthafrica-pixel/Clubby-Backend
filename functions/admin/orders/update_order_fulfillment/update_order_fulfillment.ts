@@ -12,6 +12,10 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "order_id, club_account_id, and type are required." }, origin);
         }
 
+        if (type !== "REFUNDED" && type !== "DELIVERED") {
+            return createResponse(400, { message: "Type must be either 'REFUNDED' or 'DELIVERED'." }, origin);
+        }
+
         await updateItem(
             process.env.ORDERS_TABLE_NAME as string,
             {
@@ -23,7 +27,7 @@ export const handler = async (event: any) => {
                 "#fulfillment_status": "fulfillment_status"
             },
             {
-                ":fulfillment_status": type === "fulfillment" ? "DELIVERED" : "REFUNDED"
+                ":fulfillment_status": type
             }
         );
 
