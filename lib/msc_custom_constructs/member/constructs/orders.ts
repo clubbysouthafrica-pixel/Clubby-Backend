@@ -58,24 +58,10 @@ export class MSC_MemberOrdersConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
-        const update_order_fulfillment = new MSC_Lambda(this, `${id}-UpdateOrderFulfillment`, {
-            code: "member/orders/update_order_fulfillment",
-            envVariables: {
-                ORDERS_TABLE_NAME: props.orders_table.tableName
-            },
-            permissions: {
-                [props.orders_table.tableArn]: [
-                    "dynamodb:UpdateItem"
-                ]
-            },
-            layers: [props.layers.jwt_layer]
-        });
-
         const orders_resource = props.api_gateway.root.addResource("orders");
 
         const get_member_orders_resource = orders_resource.addResource("getMemberOrders");
         const create_orders_resource = orders_resource.addResource("createOrder");
-        const update_order_fulfillment_resource = orders_resource.addResource("updateFulfillment");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -85,6 +71,5 @@ export class MSC_MemberOrdersConstruct extends Construct {
 
         addCorsEnabledMethod(get_member_orders_resource, get_member_orders, methodOptions, undefined, "GET");
         addCorsEnabledMethod(create_orders_resource, create_orders, methodOptions, undefined, "POST");
-        addCorsEnabledMethod(update_order_fulfillment_resource, update_order_fulfillment, methodOptions, undefined, "POST");
     }
 }
