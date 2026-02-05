@@ -15,7 +15,8 @@ function formatToYearMonth(timestamp: number): string {
 
 const processOrders = (report: Record<string, any>, orders: Record<string, any>[]) => {
     orders.forEach(order => {
-
+        if (order?.payment_status === "REFUND") return;
+        
         report.total_shop_revenue += order.amount_paid;
         report.total_revenue += order.amount_paid;
 
