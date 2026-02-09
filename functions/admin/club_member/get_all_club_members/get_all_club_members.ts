@@ -159,7 +159,8 @@ export const handler = async (event: any) => {
                     member_email: item.member_email,
                     meta_standard: meta_standard,
                     meta_billing: meta_billing,
-                    registration_payment_reference: item?.registration_payment_reference,
+                    last_season_registration: item?.last_season_registration ?? undefined,
+                    registration_payment_reference: item?.registration_payment_reference
                 });
 
             }

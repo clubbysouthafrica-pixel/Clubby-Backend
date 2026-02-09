@@ -13,6 +13,9 @@ export const handler = async (event: any) => {
         if (!Array.isArray(body.member_ids) || body.member_ids.length === 0) {
             return createResponse(400, { message: 'member_ids (array) required in body.' }, origin);
         }
+        if (body.member_ids.length > 25) {
+            return createResponse(400, { message: 'Maximum of 25 members can be removed at a time.' }, origin);
+        }
 
         await Promise.all(
             body.member_ids.map((member_id: string) =>
@@ -29,7 +32,7 @@ export const handler = async (event: any) => {
         return createResponse(200, { message: `${body.member_ids.length} member(s) successfully removed.` }, origin);
 
     } catch (error: any) {
-        console.error('Submit registration error:', error);
+        console.error('Remove member error:', error);
         const message = error?.message || "Internal Server Error";
         const statusCode = error?.$metadata?.httpStatusCode || 500;
         return createResponse(statusCode, { message }, origin);
