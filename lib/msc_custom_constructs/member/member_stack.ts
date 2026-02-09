@@ -31,6 +31,7 @@ export interface MSC_MemberNestedStackProps extends StackProps {
     billing_table: MSC_Table;
     orders_table: MSC_Table;
     product_table: MSC_Table;
+    email_rate_limiter_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
         jwks_rsa_layer: MSC_LambdaLayer;
@@ -51,7 +52,8 @@ export class MSC_MemberNestedStack extends Stack {
         new MSC_MemberLoginConstruct(this, `${id}-Login`, {
             api_gateway: api_gateway, users_table: props.users_table,
             user_pool: props.member_user_pool,
-            layers: props.layers
+            layers: props.layers,
+            email_rate_limiter_table: props.email_rate_limiter_table
         });
 
         const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, {

@@ -87,6 +87,7 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_MemberNestedStack(this, `MemberStack`, {
       env: props?.env,
+      email_rate_limiter_table: tables.email_rate_limiter_table,
       product_table: tables.products_table,
       orders_table: tables.orders_table,
       signatures_bucket: buckets.signatures_bucket,

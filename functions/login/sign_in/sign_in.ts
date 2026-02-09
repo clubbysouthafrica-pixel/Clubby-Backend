@@ -17,7 +17,6 @@ export const handler = async (event: any) => {
     if (body?.username == null || body?.password == null) {
       return createResponse(400, { message: 'Username and password required.' }, origin);
     }
-
     const command = new InitiateAuthCommand({
       AuthFlow: 'USER_PASSWORD_AUTH',
       ClientId: process.env.USER_POOL_CLIENT_ID,
@@ -81,6 +80,11 @@ export const handler = async (event: any) => {
       } catch (resendErr: any) {
         console.error('Resend verification error: ', resendErr);
       }
+    }
+
+    if (error?.__type === 'NotAuthorizedException' && error?.message?.includes('Temporary password has expired')) {
+      console.log('Error name: ', error?.name);
+      return createResponse(411, { message: "Your temporary credentials have expired." }, origin);
     }
 
     const message = error?.message || "Internal Server Error";

@@ -15,6 +15,7 @@ interface MSC_TablePros {
     billingMode?: BillingMode;
     removalPolicy?: RemovalPolicy;
     gsi?: MSC_GSI[];
+    timeToLiveAttribute?: string;
 }
 
 export class MSC_Table extends Table {
@@ -41,6 +42,7 @@ export class MSC_Table extends Table {
             sortKey: sortKey,
             billingMode: props.billingMode ?? BillingMode.PAY_PER_REQUEST,
             removalPolicy: props.removalPolicy ?? RemovalPolicy.DESTROY,
+            timeToLiveAttribute: props?.timeToLiveAttribute ?? undefined
         });
 
         props.gsi?.forEach(gsi => {

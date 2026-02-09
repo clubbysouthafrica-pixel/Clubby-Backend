@@ -17,6 +17,7 @@ export class MSC_TablesConstruct extends Construct {
     public readonly registrations_table: MSC_Table;
     public readonly products_table: MSC_Table;
     public readonly orders_table: MSC_Table;
+    public readonly email_rate_limiter_table: MSC_Table;
     constructor(scope: Construct, id: string, props: MSC_TablesProps) {
         super(scope, `${id}-Tables`);
 
@@ -32,6 +33,12 @@ export class MSC_TablesConstruct extends Construct {
                     partitionKey: { name: "club_name", type: AttributeType.STRING }
                 }
             ]
+        });
+
+        this.email_rate_limiter_table = new MSC_Table(this, `${id}-EmailRateLimiter`, {
+            partitionKey: { "user_id": "STRING" },
+            sortKey: { "feature": "STRING" },
+            timeToLiveAttribute: "ttl"
         });
 
         this.billing_table = new MSC_Table(this, `${id}-MonthlyBilling`, {
