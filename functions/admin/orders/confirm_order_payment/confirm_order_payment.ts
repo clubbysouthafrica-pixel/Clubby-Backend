@@ -119,6 +119,36 @@ async function partiallyUpdateOrdersTable(
     );
 }
 
+async function updateClubsRegistrationBilling(club_account_id: string, fee: number) {
+    const now = new Date();
+    const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    await updateItem(
+        process.env.MONTHLY_BILLING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: year_month,
+        },
+        `SET 
+            #total_sales = if_not_exists(#total_sales, :zero) + :one,
+            #total_amount = if_not_exists(#total_amount, :zero) + :order_fee,
+            #outstanding_amount = if_not_exists(#outstanding_amount, :zero) + :order_fee,
+            #order_amount = if_not_exists(#order_amount, :zero) + :order_fee
+        `,
+        {
+            "#total_sales": "total_sales",
+            "#total_amount": "total_amount",
+            "#outstanding_amount": "outstanding_amount",
+            "#order_amount": "order_amount"
+        },
+        {
+            ":one": 1,
+            ":zero": 0,
+            ":order_fee": fee,
+        }
+    );
+}
+
 export const handler = async (event: any) => {
     
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -149,6 +179,7 @@ export const handler = async (event: any) => {
         if (order.total_amount - order.amount_paid - payment_amount === 0) {
             await updateTransactionsTable(club_account_id, transaction_id, payment_amount, payment_type);
             await updateOrdersTable(club_account_id, order_id, payment_amount);
+            await updateClubsRegistrationBilling(club_account_id, order.total_amount * 0.05);
 
             return createResponse(200, { message: "Order payment confirmed." }, origin);
         }

@@ -13,6 +13,7 @@ interface MSC_AdminOrdersConstructProps {
         jwt_layer: MSC_LambdaLayer;
     };
     club_table: MSC_Table;
+    billing_table: MSC_Table;
 }
 
 export class MSC_AdminOrdersConstruct extends Construct {
@@ -40,7 +41,8 @@ export class MSC_AdminOrdersConstruct extends Construct {
             code: "admin/orders/confirm_order_payment",
             envVariables: {
                 ORDERS_TABLE_NAME: props.orders_table.tableName,
-                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName
             },
             permissions: {
                 [props.orders_table.tableArn]: [
@@ -49,6 +51,10 @@ export class MSC_AdminOrdersConstruct extends Construct {
                 ],
                 [props.transactions_table.tableArn]: [
                     "dynamodb:UpdateItem"
+                ],
+                [props.billing_table.tableArn]: [
+                    "dynamodb:UpdateItem",
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
