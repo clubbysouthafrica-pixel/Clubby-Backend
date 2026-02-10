@@ -51,7 +51,7 @@ export const handler = async (event: any) => {
                 process.env.ORDERS_TABLE_NAME as string,
                 "club_account_id = :clubId",
                 { ":clubId": query_string_params.club_account_id }
-            )
+            ) || []
         }
 
         const report: any[] = [];
