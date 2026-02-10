@@ -99,7 +99,8 @@ export class MSC_AdminNestedStack extends Stack {
             layers: props.layers,
             club_table: props.club_table,
             transactions_table: props.transactions_table,
-            product_table: props.product_table
+            product_table: props.product_table,
+            billing_table: props.billing_table
         });
 
         new MSC_ReportingConstruct(this, `${id}-Reporting`, {
