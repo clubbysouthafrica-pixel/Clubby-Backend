@@ -67,14 +67,15 @@ export const handler = async (event: any) => {
                             existingEntry = {
                                 product_id: item.product_id,
                                 product_name: item.name,
-                                total_revenue: item?.subtotal ?? 0,
+                                price: item.price,
+                                total_revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
                                 total_pending_revenue: 0,
                                 total_sold_units: item?.quantity ?? 0,
                                 total_pending_units: 0,
                                 data: [
                                     {
                                         date: formatToYearMonth(order.order_confirmed_by_admin_timestamp),
-                                        revenue: item?.subtotal ?? 0,
+                                        revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
                                         sold_units: item?.quantity ?? 0,
                                         pending_revenue: 0,
                                         pending_units: 0
@@ -88,18 +89,18 @@ export const handler = async (event: any) => {
                             if (!existingDateData) {
                                 existingDateData = {
                                     date: formatToYearMonth(order.order_confirmed_by_admin_timestamp),
-                                    revenue: item?.subtotal ?? 0,
+                                    revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
                                     sold_units: item?.quantity ?? 0,
                                     pending_revenue: 0,
                                     pending_units: 0
                                 };
                                 existingEntry.data.push(existingDateData);
                             } else {
-                                existingDateData.revenue += item?.subtotal ?? 0;
+                                existingDateData.revenue += (item?.quantity ?? 0) * (item?.price ?? 0);
                                 existingDateData.sold_units += item?.quantity ?? 0;
                             }
 
-                            existingEntry.total_revenue += item?.subtotal ?? 0;
+                            existingEntry.total_revenue += (item?.quantity ?? 0) * (item?.price ?? 0);
                             existingEntry.total_sold_units += item?.quantity ?? 0;
                         }
                     } else {
@@ -107,8 +108,9 @@ export const handler = async (event: any) => {
                             existingEntry = {
                                 product_id: item.product_id,
                                 product_name: item.name,
+                                price: item.price,
                                 total_revenue: 0,
-                                total_pending_revenue: item?.subtotal ?? 0,
+                                total_pending_revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
                                 total_sold_units: 0,
                                 total_pending_units: item?.quantity ?? 0,
                                 data: [
@@ -116,7 +118,7 @@ export const handler = async (event: any) => {
                                         date: formatToYearMonth(order.created_date),
                                         revenue: 0,
                                         sold_units: 0,
-                                        pending_revenue: item?.subtotal ?? 0,
+                                        pending_revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
                                         pending_units: item?.quantity ?? 0
                                     }
                                 ]
@@ -130,16 +132,16 @@ export const handler = async (event: any) => {
                                     date: formatToYearMonth(order.created_date),
                                     revenue: 0,
                                     sold_units: 0,
-                                    pending_revenue: item?.subtotal ?? 0,
+                                    pending_revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
                                     pending_units: item?.quantity ?? 0
                                 };
                                 existingEntry.data.push(existingDateData);
                             } else {
-                                existingDateData.pending_revenue += item?.subtotal ?? 0;
+                                existingDateData.pending_revenue += (item?.quantity ?? 0) * (item?.price ?? 0);
                                 existingDateData.pending_units += item?.quantity ?? 0;
                             }
 
-                            existingEntry.total_pending_revenue += item?.subtotal ?? 0;
+                            existingEntry.total_pending_revenue += (item?.quantity ?? 0) * (item?.price ?? 0);
                             existingEntry.total_pending_units += item?.quantity ?? 0;
                         }
                     }
