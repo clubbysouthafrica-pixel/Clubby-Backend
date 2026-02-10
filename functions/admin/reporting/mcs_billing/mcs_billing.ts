@@ -1,4 +1,3 @@
-import { unmarshall } from "@aws-sdk/util-dynamodb";
 import {
     createResponse,
     deconstructEvent,
@@ -22,14 +21,19 @@ const processBillingData = (monthly_billing: Record<string, any>[], club: Record
             month_data: [],
             "Total email charge": 0,
             "Total emails sent": 0,
-            // "Monthly free emails": club.free_email_limit,
             "Charge per email": formatAmount(club.fee_per_email_to_club, club.currency),
             "Monthly email limit": club.maximum_monthly_emails
+        },
+        Orders: {
+            month_data: [],
+            "Total sales": 0,
+            "Charge per order": `5%`
         },
         total_outstanding_amount: 0,
         total_email_amount: 0,
         total_registration_amount: 0,
-        total_charge: 0
+        total_charge: 0,
+        total_order_amount: 0
     };
 
     monthly_billing?.forEach(month => {
@@ -37,6 +41,9 @@ const processBillingData = (monthly_billing: Record<string, any>[], club: Record
         report.total_email_amount += month?.email_amount ?? 0
         report.total_registration_amount += month?.registration_amount ?? 0
         report.total_charge += month.total_amount
+        report.total_order_amount += month?.order_amount ?? 0
+
+        report.Orders["Total sales"] += month?.total_sales ?? 0
 
         const registration_month_data = {
             name: month.year_month ?? 0,
@@ -52,6 +59,15 @@ const processBillingData = (monthly_billing: Record<string, any>[], club: Record
                 charge: month?.email_amount
             }
             report.Emails.month_data.push(email_month_data)
+        }
+
+        if (month?.order_amount) { 
+            const order_month_data = {
+                name: month.year_month ?? 0,
+                sales: month?.total_sales ?? 0,
+                charge: month?.order_amount ?? 0
+            }
+            report.Orders.month_data.push(order_month_data)
         }
 
         report.Registrations["Total registration charge"] += month?.registration_amount ?? 0

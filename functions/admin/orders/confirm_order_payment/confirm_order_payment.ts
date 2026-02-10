@@ -119,7 +119,7 @@ async function partiallyUpdateOrdersTable(
     );
 }
 
-async function updateClubsRegistrationBilling(club_account_id: string, fee: number) {
+async function updateClubsOrderBilling(club_account_id: string, fee: number) {
     const now = new Date();
     const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -179,7 +179,7 @@ export const handler = async (event: any) => {
         if (order.total_amount - order.amount_paid - payment_amount === 0) {
             await updateTransactionsTable(club_account_id, transaction_id, payment_amount, payment_type);
             await updateOrdersTable(club_account_id, order_id, payment_amount);
-            await updateClubsRegistrationBilling(club_account_id, order.total_amount * 0.05);
+            await updateClubsOrderBilling(club_account_id, order.total_amount * 0.05);
 
             return createResponse(200, { message: "Order payment confirmed." }, origin);
         }
