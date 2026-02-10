@@ -83,6 +83,7 @@ const processBillingData = (monthly_billing: Record<string, any>[], club: Record
         report.overall_month_data[month.year_month].email_amount = month?.email_amount ?? 0
         report.overall_month_data[month.year_month].registration_amount = month?.registration_amount ?? 0
         report.overall_month_data[month.year_month].total_amount = month.total_amount
+        report.overall_month_data[month.year_month].order_amount = month?.order_amount ?? 0
     });
 
     report.Registrations["Total registration charge"] = formatAmount(report.Registrations["Total registration charge"], club.currency)
