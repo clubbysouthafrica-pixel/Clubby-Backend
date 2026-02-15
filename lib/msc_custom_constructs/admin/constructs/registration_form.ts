@@ -88,6 +88,19 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const remove_registration = new MSC_Lambda(this, `${id}-RemoveRegistration`, {
+            code: "admin/registration/remove_registration",
+            envVariables: {
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+            },
+            permissions: {
+                [props.registrations_table.tableArn]: [
+                    "dynamodb:DeleteItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const update_admin_notes = new MSC_Lambda(this, `${id}-UpdateAdminNotes`, {
             code: "admin/registration/update_admin_notes",
             envVariables: {
@@ -103,6 +116,20 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
 
         const remove_admin_notes = new MSC_Lambda(this, `${id}-RemoveAdminNotes`, {
             code: "admin/registration/remove_admin_notes",
+            envVariables: {
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+            },
+            permissions: {
+                [props.registrations_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
+        const archive_registration = new MSC_Lambda(this, `${id}-ArchiveRegistration`, {
+            code: "admin/registration/archive_registration",
             envVariables: {
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
             },
@@ -153,8 +180,10 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
         const get_member_registration_resource = registration_resource.addResource("getMemberRegistration");
         const update_admin_notes_resource = registration_resource.addResource("updateAdminNotes");
         const remove_admin_notes_resource = registration_resource.addResource("removeAdminNotes");
+        const archive_registration_resource = registration_resource.addResource("archiveRegistration");
         const get_registration_field_resource = registration_resource.addResource("getRegistrationField");
         const update_registration_field_resource = registration_resource.addResource("updateRegistrationField");
+        const remove_registration_resource = registration_resource.addResource("removeRegistration");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -167,7 +196,9 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
         addCorsEnabledMethod(get_member_registration_resource, get_member_registration, methodOptions, undefined, "GET");
         addCorsEnabledMethod(update_admin_notes_resource, update_admin_notes, methodOptions);
         addCorsEnabledMethod(remove_admin_notes_resource, remove_admin_notes, methodOptions);
+        addCorsEnabledMethod(archive_registration_resource, archive_registration, methodOptions);
         addCorsEnabledMethod(get_registration_field_resource, get_registration_field, methodOptions, undefined, "GET");
         addCorsEnabledMethod(update_registration_field_resource, update_registration_field, methodOptions);
+        addCorsEnabledMethod(remove_registration_resource, remove_registration, methodOptions);
     }
 }

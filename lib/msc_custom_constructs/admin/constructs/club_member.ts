@@ -40,7 +40,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                     "dynamodb:Query"
                 ],
                 [props.registrations_table.tableArn]: [
-                    "dynamodb:GetItem"
+                    "dynamodb:Query"
                 ],
                 [props.registration_form_table.tableArn]: [
                     "dynamodb:Query"

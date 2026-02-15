@@ -17,8 +17,6 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'Maximum of 25 members can be removed at a time.' }, origin);
         }
 
-        return createResponse(400, { message: 'This process is currently under development.' }, origin);
-
         await Promise.all(
             body.member_ids.map((member_id: string) =>
                 removeItem(
