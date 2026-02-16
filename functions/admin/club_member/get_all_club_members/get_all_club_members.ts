@@ -92,6 +92,10 @@ const getMembersPageData = async (
                     continue;
                 }
 
+                if (registration.club_account_id !== query_string_params.club_account_id) {
+                    continue;
+                }
+
                 let registrationMatchesFilters = true;
                 if (body?.custom_filters && registration) {
                     const filters: RegistrationFieldFilter[] = body.custom_filters;
