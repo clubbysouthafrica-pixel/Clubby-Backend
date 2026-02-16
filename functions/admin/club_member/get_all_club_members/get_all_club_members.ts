@@ -266,6 +266,10 @@ const getRegistrationPageData = async (
                     continue;
                 }
 
+                if ((memberType === "registered" || memberType === "pending") && registration.deregistered) {
+                    continue;
+                }
+
                 let registrationMatchesFilters = true;
                 if (body?.custom_filters && registration) {
                     const filters: RegistrationFieldFilter[] = body.custom_filters;
