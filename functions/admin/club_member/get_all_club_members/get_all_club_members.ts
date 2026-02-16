@@ -249,11 +249,16 @@ const getRegistrationPageData = async (
                 { ":userId": item.user_id }
             );
 
+
+
             for (const registration of allRegistrations || []) {
                 if (body?.custom_filters && !registration) {
                     continue;
                 }
                 if (query_string_params?.show_archived !== "true" && registration?.archived) {
+                    continue;
+                }
+                if (registration.club_account_id !== query_string_params.club_account_id) {
                     continue;
                 }
 
