@@ -33,13 +33,20 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                CLUB_TABLE_NAME: props.club_table.tableName
+                CLUB_TABLE_NAME: props.club_table.tableName,
+                USERS_TABLE_NAME: props.users_table.tableName
             },
             permissions: {
                 [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
-                    "dynamodb:Query"
+                    "dynamodb:Query",
+                ],
+                [props.club_member_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ],
                 [props.registrations_table.tableArn]: [
+                    "dynamodb:Query"
+                ],
+                [`${props.registrations_table.tableArn}/index/ClubAccountIDIndex`]: [
                     "dynamodb:Query"
                 ],
                 [props.registration_form_table.tableArn]: [
@@ -47,7 +54,10 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
-                ]
+                ],
+                [props.users_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
             },
             layers: [props.layers.jwt_layer]
         });

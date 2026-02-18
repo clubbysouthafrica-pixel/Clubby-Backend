@@ -183,144 +183,157 @@ const getRegistrationPageData = async (
         return { type, fieldName };
     });
 
-    let filterExpression: string | undefined;
-    let expressionAttributeNames: Record<string, string> | undefined;
-    const expressionAttributeValues: Record<string, any> = { ":clubId": query_string_params.club_account_id };
+    // let filterExpression: string | undefined;
+    // let expressionAttributeNames: Record<string, string> | undefined;
+    // const expressionAttributeValues: Record<string, any> = { ":clubId": query_string_params.club_account_id };
 
     let queryLimit = limit;
 
-    if (memberType === "registered") {
-        filterExpression = "#registered = :true";
-        expressionAttributeValues[":true"] = true;
-        expressionAttributeNames = { "#registered": "registered" };
-    } else if (memberType === "pending") {
-        filterExpression = "#registered = :false AND #resubmission = :false";
-        expressionAttributeValues[":false"] = false;
-        expressionAttributeNames = { "#registered": "registered", "#resubmission": "resubmission_required" };
-    } else if (memberType === "previous") {
-        filterExpression = "#registered = :false AND #resubmission = :true";
-        expressionAttributeValues[":false"] = false;
-        expressionAttributeValues[":true"] = true;
-        expressionAttributeNames = { "#registered": "registered", "#resubmission": "resubmission_required" };
-    }
+    // if (memberType === "registered") {
+    //     filterExpression = "#registered = :true";
+    //     expressionAttributeValues[":true"] = true;
+    //     expressionAttributeNames = { "#registered": "registered" };
+    // } else if (memberType === "pending") {
+    //     filterExpression = "#registered = :false AND #resubmission = :false";
+    //     expressionAttributeValues[":false"] = false;
+    //     expressionAttributeNames = { "#registered": "registered", "#resubmission": "resubmission_required" };
+    // } else if (memberType === "previous") {
+    //     filterExpression = "#registered = :false AND #resubmission = :true";
+    //     expressionAttributeValues[":false"] = false;
+    //     expressionAttributeValues[":true"] = true;
+    //     expressionAttributeNames = { "#registered": "registered", "#resubmission": "resubmission_required" };
+    // }
 
     const members: any[] = [];
     let currentToken = previousToken;
     let lastEvaluatedKey: any = undefined;
+    let items = [];
 
     while (true) {
         const queryResult = await queryItemsWithPagination(
-            process.env.CLUB_MEMBER_TABLE_NAME as string,
+            process.env.REGISTRATIONS_TABLE_NAME as string,
             "club_account_id = :clubId",
-            expressionAttributeValues,
+            { ":clubId": query_string_params.club_account_id },
             process.env.CLUB_ACCOUNT_ID_INDEX as string,
             true,
             (queryLimit ?? 0) - members.length,
             currentToken,
-            filterExpression,
-            expressionAttributeNames
         );
-
-        const club_members = queryResult.items;
+        const registrations = queryResult.items;
         const queryLastEvaluatedKey = queryResult.lastEvaluatedKey;
 
-        let filteredItems = club_members ?? [];
-        if (body?.member_filters) {
-            filteredItems = filteredItems.filter((item: any) => {
-                let matches = true;
+        for (const registration of registrations || []) {
+            items.push(registration);
 
-                if (body.member_filters.member_name) {
-                    const fullName = `${item.member_first_name} ${item.member_surname}`.toLowerCase();
-                    if (!fullName.includes(body.member_filters.member_name.toLowerCase())) {
-                        matches = false;
-                    }
+            if (body?.custom_filters && !registration) {
+                continue;
+            }
+            if (query_string_params?.show_archived !== "true" && registration?.archived) {
+                continue;
+            }
+
+
+            let registrationMatchesFilters = true;
+            if (body?.custom_filters && registration) {
+                const filters: RegistrationFieldFilter[] = body.custom_filters;
+                const filterResult = applyFiltersToRegistration(registration, filters);
+                if (!filterResult.matches) {
+                    registrationMatchesFilters = false;
+                    continue;
                 }
+            }
 
-                if (body.member_filters.member_id && matches) {
-                    if (item.user_id !== body.member_filters.member_id) {
-                        matches = false;
-                    }
+            const club_member = await getItem(
+                process.env.CLUB_MEMBER_TABLE_NAME as string,
+                {
+                    user_id: registration.user_id,
+                    club_account_id: query_string_params.club_account_id
                 }
-
-                return matches;
-            });
-        }
-
-        for (const item of filteredItems) {
-            const allRegistrations = await queryItems(
-                process.env.REGISTRATIONS_TABLE_NAME as string,
-                "user_id = :userId",
-                { ":userId": item.user_id }
             );
 
+            if (memberType === "registered" && registration.registration_id !== club_member?.current_reg_id) {
+                continue;
+            } else if (memberType === "pending" && registration.registration_id !== club_member?.current_reg_id) {
+                continue;
+            } else if (memberType === "previous" && registration.deregistered === false) {
+                continue;
+            }
 
-
-            for (const registration of allRegistrations || []) {
-                if (body?.custom_filters && !registration) {
-                    continue;
-                }
-                if (query_string_params?.show_archived !== "true" && registration?.archived) {
-                    continue;
-                }
-                if (registration.club_account_id !== query_string_params.club_account_id) {
-                    continue;
-                }
-
-                if ((memberType === "registered" || memberType === "pending") && registration.deregistered) {
-                    continue;
-                }
-
-                let registrationMatchesFilters = true;
-                if (body?.custom_filters && registration) {
-                    const filters: RegistrationFieldFilter[] = body.custom_filters;
-                    const filterResult = applyFiltersToRegistration(registration, filters);
-                    registrationMatchesFilters = filterResult.matches;
+            if (body?.member_filters) {
+                if (body.member_filters.member_name) {
+                    const fullName = `${club_member?.member_first_name} ${club_member?.member_surname}`.toLowerCase();
+                    if (!fullName.includes(body.member_filters.member_name.toLowerCase())) {
+                        continue;
+                    }
                 }
 
-                if (!registrationMatchesFilters) {
-                    continue;
+                if (body.member_filters.member_id) {
+                    if (registration.user_id !== body.member_filters.member_id) {
+                        continue;
+                    }
                 }
+            }
 
-                const meta_billing: any = [];
-                const meta_standard: any = [];
-                if (registration && activeKeys.length > 0) {
-                    for (const key of Object.keys(registration)) {
-                        const field = registration[key];
+            const meta_billing: any = [];
+            const meta_standard: any = [];
+            if (registration && activeKeys.length > 0) {
+                for (const key of Object.keys(registration)) {
+                    const field = registration[key];
 
-                        if (key.includes("reg_field_") && field.type.includes("BILLING_")) {
-                            const matchingKey = parsedActiveKeys.find((ak: any) => ak.type === "billing" && ak.fieldName === field.field_name);
+                    if (key.includes("reg_field_") && field.type.includes("BILLING_")) {
+                        const matchingKey = parsedActiveKeys.find((ak: any) => ak.type === "billing" && ak.fieldName === field.field_name);
+                        if (matchingKey) {
+                            meta_billing.push(field);
+                        }
+                    } else if (key.includes("reg_field_") && field.type.includes("STANDARD_")) {
+                        if (!field?.signature_type) {
+                            const matchingKey = parsedActiveKeys.find((ak: any) => ak.type === "standard" && ak.fieldName === field.field_name);
                             if (matchingKey) {
-                                meta_billing.push(field);
-                            }
-                        } else if (key.includes("reg_field_") && field.type.includes("STANDARD_")) {
-                            if (!field?.signature_type) {
-                                const matchingKey = parsedActiveKeys.find((ak: any) => ak.type === "standard" && ak.fieldName === field.field_name);
-                                if (matchingKey) {
-                                    meta_standard.push(field);
-                                }
+                                meta_standard.push(field);
                             }
                         }
                     }
                 }
-
-                members.push({
-                    outstanding_amount: registration?.total_outstanding_amount,
-                    registration_id: registration?.registration_id,
-                    registration_submitted_on: registration?.registration_submitted_on,
-                    deregistered_on: registration?.deregistered_on,
-                    total_fee: registration?.total_fee,
-                    archived: registration?.archived ?? undefined,
-                    registered_on: registration?.registered_on,
-                    user_id: item.user_id,
-                    member_first_name: item.member_first_name,
-                    member_surname: item.member_surname,
-                    member_email: item.member_email,
-                    meta_standard: meta_standard,
-                    meta_billing: meta_billing,
-                    last_season_registration: registration?.last_season_registration ?? undefined,
-                    registration_payment_reference: item?.registration_payment_reference
-                });
             }
+
+            const user_information: Record<string, any> = {}
+            if (!club_member) {
+                const user = await getItem(
+                    process.env.USERS_TABLE_NAME as string,
+                    {
+                        user_type: "MEMBER",
+                        user_id: registration.user_id
+                    }
+                );
+
+                user_information["user_id"] = user?.user_id;
+                user_information["member_first_name"] = user?.first_name;
+                user_information["member_surname"] = user?.surname;
+                user_information["member_email"] = "n/a";
+                user_information["registration_payment_reference"] = "n/a";
+                user_information["missing_club_member"] = true;
+
+            } else {
+                user_information["user_id"] = club_member?.user_id;
+                user_information["member_first_name"] = club_member?.member_first_name;
+                user_information["member_surname"] = club_member?.member_surname;
+                user_information["member_email"] = club_member?.member_email;
+                user_information["registration_payment_reference"] = club_member?.registration_payment_reference ?? "n/a";
+            }
+
+            members.push({
+                outstanding_amount: registration?.total_outstanding_amount,
+                registration_id: registration?.registration_id,
+                registration_submitted_on: registration?.registration_submitted_on,
+                deregistered_on: registration?.deregistered_on,
+                total_fee: registration?.total_fee,
+                archived: registration?.archived ?? undefined,
+                registered_on: registration?.registered_on,
+                meta_standard: meta_standard,
+                meta_billing: meta_billing,
+                last_season_registration: registration?.last_season_registration ?? undefined,
+                ...user_information
+            });
         }
 
         if (limit && members.length >= limit) {
@@ -331,10 +344,10 @@ const getRegistrationPageData = async (
                     members.splice(members.length - excess, excess);
                 }
             }
-            const lastItem = filteredItems[filteredItems.length - 1];
+            const lastItem = items[items.length - 1];
             lastEvaluatedKey = {
                 user_id: { "S": lastItem.user_id },
-                club_account_id: { "S": lastItem.club_account_id }
+                registration_id: { "S": lastItem.registration_id }
             };
             break;
         }
@@ -346,6 +359,145 @@ const getRegistrationPageData = async (
 
         currentToken = queryLastEvaluatedKey;
     }
+
+    // while (true) {
+    //     const queryResult = await queryItemsWithPagination(
+    //         process.env.CLUB_MEMBER_TABLE_NAME as string,
+    //         "club_account_id = :clubId",
+    //         expressionAttributeValues,
+    //         process.env.CLUB_ACCOUNT_ID_INDEX as string,
+    //         true,
+    //         (queryLimit ?? 0) - members.length,
+    //         currentToken,
+    //         filterExpression,
+    //         expressionAttributeNames
+    //     );
+
+    //     const club_members = queryResult.items;
+    //     const queryLastEvaluatedKey = queryResult.lastEvaluatedKey;
+
+    //     let filteredItems = club_members ?? [];
+    //     if (body?.member_filters) {
+    //         filteredItems = filteredItems.filter((item: any) => {
+    //             let matches = true;
+
+    //             if (body.member_filters.member_name) {
+    //                 const fullName = `${item.member_first_name} ${item.member_surname}`.toLowerCase();
+    //                 if (!fullName.includes(body.member_filters.member_name.toLowerCase())) {
+    //                     matches = false;
+    //                 }
+    //             }
+
+    //             if (body.member_filters.member_id && matches) {
+    //                 if (item.user_id !== body.member_filters.member_id) {
+    //                     matches = false;
+    //                 }
+    //             }
+
+    //             return matches;
+    //         });
+    //     }
+
+    //     for (const item of filteredItems) {
+    //         const allRegistrations = await queryItems(
+    //             process.env.REGISTRATIONS_TABLE_NAME as string,
+    //             "user_id = :userId",
+    //             { ":userId": item.user_id }
+    //         );
+
+
+
+    //         for (const registration of allRegistrations || []) {
+    //             if (body?.custom_filters && !registration) {
+    //                 continue;
+    //             }
+    //             if (query_string_params?.show_archived !== "true" && registration?.archived) {
+    //                 continue;
+    //             }
+    //             if (registration.club_account_id !== query_string_params.club_account_id) {
+    //                 continue;
+    //             }
+
+    //             if ((memberType === "registered" || memberType === "pending") && registration.deregistered) {
+    //                 continue;
+    //             }
+
+    //             let registrationMatchesFilters = true;
+    //             if (body?.custom_filters && registration) {
+    //                 const filters: RegistrationFieldFilter[] = body.custom_filters;
+    //                 const filterResult = applyFiltersToRegistration(registration, filters);
+    //                 registrationMatchesFilters = filterResult.matches;
+    //             }
+
+    //             if (!registrationMatchesFilters) {
+    //                 continue;
+    //             }
+
+    //             const meta_billing: any = [];
+    //             const meta_standard: any = [];
+    //             if (registration && activeKeys.length > 0) {
+    //                 for (const key of Object.keys(registration)) {
+    //                     const field = registration[key];
+
+    //                     if (key.includes("reg_field_") && field.type.includes("BILLING_")) {
+    //                         const matchingKey = parsedActiveKeys.find((ak: any) => ak.type === "billing" && ak.fieldName === field.field_name);
+    //                         if (matchingKey) {
+    //                             meta_billing.push(field);
+    //                         }
+    //                     } else if (key.includes("reg_field_") && field.type.includes("STANDARD_")) {
+    //                         if (!field?.signature_type) {
+    //                             const matchingKey = parsedActiveKeys.find((ak: any) => ak.type === "standard" && ak.fieldName === field.field_name);
+    //                             if (matchingKey) {
+    //                                 meta_standard.push(field);
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+
+    //             members.push({
+    //                 outstanding_amount: registration?.total_outstanding_amount,
+    //                 registration_id: registration?.registration_id,
+    //                 registration_submitted_on: registration?.registration_submitted_on,
+    //                 deregistered_on: registration?.deregistered_on,
+    //                 total_fee: registration?.total_fee,
+    //                 archived: registration?.archived ?? undefined,
+    //                 registered_on: registration?.registered_on,
+    //                 user_id: item.user_id,
+    //                 member_first_name: item.member_first_name,
+    //                 member_surname: item.member_surname,
+    //                 member_email: item.member_email,
+    //                 meta_standard: meta_standard,
+    //                 meta_billing: meta_billing,
+    //                 last_season_registration: registration?.last_season_registration ?? undefined,
+    //                 registration_payment_reference: item?.registration_payment_reference
+    //             });
+    //         }
+    //     }
+
+    //     if (limit && members.length >= limit) {
+    //         const totalItems = members.length;
+    //         if (totalItems > limit) {
+    //             const excess = totalItems - limit;
+    //             if (excess > 0) {
+    //                 members.splice(members.length - excess, excess);
+    //             }
+    //         }
+    //         const lastItem = filteredItems[filteredItems.length - 1];
+    //         lastEvaluatedKey = {
+    //             user_id: { "S": lastItem.user_id },
+    //             club_account_id: { "S": lastItem.club_account_id }
+    //         };
+    //         break;
+    //     }
+
+    //     if (!queryLastEvaluatedKey) {
+    //         lastEvaluatedKey = undefined;
+    //         break;
+    //     }
+
+    //     currentToken = queryLastEvaluatedKey;
+    // }
 
     const form = await queryItems(
         process.env.REGISTRATION_FORM_TABLE_NAME as string,
