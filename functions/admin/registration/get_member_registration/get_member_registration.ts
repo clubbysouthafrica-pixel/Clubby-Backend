@@ -94,8 +94,8 @@ export const handler = async (event: any) => {
                 club_account_id: query_string_params.club_account_id
             }
         );
-        if (!club_member || !club) {
-            return createResponse(404, { message: "Club Member or Club not found." }, origin);
+        if (!club) {
+            return createResponse(404, { message: "Club not found." }, origin);
         }
 
         const registration_form = await getRegistrationForm(query_string_params.club_account_id)
