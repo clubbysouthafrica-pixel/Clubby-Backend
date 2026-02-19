@@ -306,7 +306,7 @@ const getRegistrationPageData = async (
                     }
                 );
 
-                user_information["user_id"] = user?.user_id;
+                user_information["user_id"] = registration.user_id;
                 user_information["member_first_name"] = user?.first_name;
                 user_information["member_surname"] = user?.surname;
                 user_information["member_email"] = "n/a";

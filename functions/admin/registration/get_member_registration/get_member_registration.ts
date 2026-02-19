@@ -75,7 +75,19 @@ export const handler = async (event: any) => {
         }
 
         const club_member = await getClubMember(query_string_params.user_id as string, query_string_params.club_account_id);
-        const member_registration = await getRegistration(query_string_params.user_id as string, club_member?.current_reg_id);
+
+        let current_reg_id = "";
+        if (!club_member) {
+            if (!query_string_params?.registration_id) {
+                return createResponse(404, { message: "Club Member not found and registration ID not provided." }, origin);
+            }
+
+            current_reg_id = query_string_params.registration_id;
+        } else {
+            current_reg_id = club_member.current_reg_id;
+        }
+
+        const member_registration = await getRegistration(query_string_params.user_id as string, current_reg_id);
         const club = await getItem(
             process.env.CLUB_TABLE_NAME as string,
             {
@@ -214,7 +226,7 @@ export const handler = async (event: any) => {
 
         let transaction_id = undefined;
         if (member_registration?.last_season_registration === undefined || member_registration.last_season_registration == false) {
-            transaction_id = club_member.current_reg_transaction_id;
+            transaction_id = member_registration?.transaction_id;
         }
 
         const template_variables = club?.registration_success_email_template_body
@@ -244,7 +256,7 @@ export const handler = async (event: any) => {
             registration_submitted_on: member_registration?.registration_submitted_on,
             transaction_id: transaction_id,
             admin_notes: member_registration?.admin_notes ?? undefined,
-            registration_id: club_member?.current_reg_id ?? undefined,
+            registration_id: current_reg_id,
             member_id: query_string_params.user_id,
             variables
         }, origin);

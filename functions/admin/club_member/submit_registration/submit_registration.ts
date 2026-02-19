@@ -270,6 +270,9 @@ export async function sendAccountCreatedEmail(
       </body>
     </html>`;
 
+    console.log('Email subject:', emailSubject);
+    console.log('Email body:', emailBody);
+
     const command = new SendEmailCommand({
         Destination: {
             ToAddresses: [toAddress],
