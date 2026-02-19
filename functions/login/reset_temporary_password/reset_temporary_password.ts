@@ -143,10 +143,6 @@ export const handler = async (event: any) => {
         return createResponse(429, { message: "A credential reset request has been submitted for this account in the last 24 hours. Please check your email for the message with subject 'Temporary password reset' before requesting another reset." }, origin);
     }
 
-    // if (!user) {
-    //   return createResponse(404, { message: "No account found with the provided email. Please contact: gregtorrington@icloud.com." }, origin)
-    // }
-
     const temporaryPassword = generateCognitoPassword();
     
     await cognitoClient.send(new AdminSetUserPasswordCommand({
