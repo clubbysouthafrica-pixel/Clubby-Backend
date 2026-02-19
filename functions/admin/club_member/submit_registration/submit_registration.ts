@@ -214,6 +214,8 @@ export async function sendAccountCreatedEmail(
     clubName: string,
 ): Promise<void> {
     const emailSubject = "Your Clubby Account Has Been Created";
+    const loginUrl = `https://${process.env.DOMAIN as string}/login?email=${encodeURIComponent(toAddress)}&tempPassword=${encodeURIComponent(tempPassword)}`;
+    
     const emailBody = `
     <html>
       <body style="margin:0;padding:0;background:#f7f7f9;font-family: Arial, Helvetica, sans-serif;color:#1f2937;">
@@ -229,26 +231,12 @@ export async function sendAccountCreatedEmail(
                 </tr>
                 <tr>
                   <td style="padding:0 24px 0 24px;">
-                    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin-bottom:16px;">
-                      <p style="margin:0 0 8px 0;font-weight:bold;color:#111827;">Your sign-in details</p>
-                      <p style="margin:0;line-height:1.6;"><strong>Email:</strong> ${toAddress}<br/>
-                      <strong>Temporary password:</strong> ${tempPassword}</p>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:0 24px 0 24px;">
-                    <p style="margin:0 0 12px 0;line-height:1.6;">First-time sign-in steps:</p>
-                    <ol style="margin:0 0 16px 20px;padding:0;line-height:1.8;">
-                      <li>Open the member portal using the button below.</li>
-                      <li>Sign in with your email and temporary password.</li>
-                      <li>Follow the prompt to set a new secure password.</li>
-                    </ol>
+                    <p style="margin:0 0 12px 0;line-height:1.6;">Click the button below to activate your account and set up your password.</p>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding:0 24px 24px 24px;">
-                    <a href="https://${process.env.DOMAIN as string}/login" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;padding:10px 16px;font-weight:600;">Go to Member Login</a>
+                    <a href="${loginUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;padding:10px 16px;font-weight:600;">Sign In to Your Account</a>
                   </td>
                 </tr>
                 <tr>
