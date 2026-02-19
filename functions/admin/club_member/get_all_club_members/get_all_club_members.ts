@@ -251,9 +251,9 @@ const getRegistrationPageData = async (
                 }
             );
 
-            if (memberType === "registered" && registration.registration_id !== club_member?.current_reg_id) {
+            if (memberType === "registered" && (registration.registration_id !== club_member?.current_reg_id || registration?.deregistered || club_member?.registered !== true)) {
                 continue;
-            } else if (memberType === "pending" && registration.registration_id !== club_member?.current_reg_id) {
+            } else if (memberType === "pending" && (registration.registration_id !== club_member?.current_reg_id || registration?.deregistered || club_member?.resubmission_required !== true || club_member?.registered === true)) {
                 continue;
             } else if (memberType === "previous" && registration.deregistered === false) {
                 continue;
