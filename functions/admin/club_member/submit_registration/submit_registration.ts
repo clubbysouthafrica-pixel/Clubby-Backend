@@ -236,7 +236,7 @@ export async function sendAccountCreatedEmail(
                 </tr>
                 <tr>
                   <td style="padding:0 24px 24px 24px;">
-                    <a href="${loginUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;padding:10px 16px;font-weight:600;">Sign In to Your Account</a>
+                    <a href="${loginUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;padding:10px 16px;font-weight:600;">Activate Your Account</a>
                   </td>
                 </tr>
                 <tr>
