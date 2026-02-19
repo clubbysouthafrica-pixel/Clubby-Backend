@@ -346,6 +346,7 @@ const getRegistrationPageData = async (
             }
             const lastItem = items[items.length - 1];
             lastEvaluatedKey = {
+                club_account_id: { "S": lastItem.club_account_id },
                 user_id: { "S": lastItem.user_id },
                 registration_id: { "S": lastItem.registration_id }
             };
