@@ -43,7 +43,9 @@ export async function sendAccountCreatedEmail(
   toAddress: string,
   tempPassword: string,
 ): Promise<void> {
-  const emailSubject = "Your Clubby admin account has been created";
+  const emailSubject = "Your Clubby Admin Account Has Been Created";
+  const loginUrl = `https://${process.env.DOMAIN as string}/admin/login?email=${encodeURIComponent(toAddress)}&tempPassword=${encodeURIComponent(tempPassword)}&login=admin`;
+  
   const emailBody = `
     <html>
       <body style="margin:0;padding:0;background:#f7f7f9;font-family: Arial, Helvetica, sans-serif;color:#1f2937;">
@@ -53,37 +55,18 @@ export async function sendAccountCreatedEmail(
               <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
                 <tr>
                   <td style="padding:24px 24px 0 24px;">
-                    <h1 style="margin:0 0 12px 0;font-size:20px;line-height:28px;color:#111827;">Welcome to Clubby</h1>
-                    <p style="margin:0 0 16px 0;line-height:1.6;">Your administrator account has been created. You can now sign in to manage your club(s) on Clubby.</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:0 24px 0 24px;">
-                    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin-bottom:16px;">
-                      <p style="margin:0 0 8px 0;font-weight:bold;color:#111827;">Your sign-in details</p>
-                      <p style="margin:0;line-height:1.6;"><strong>Email:</strong> ${toAddress}<br/>
-                      <strong>Temporary password:</strong> ${tempPassword}</p>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:0 24px 0 24px;">
-                    <p style="margin:0 0 12px 0;line-height:1.6;">First-time sign-in steps:</p>
-                    <ol style="margin:0 0 16px 20px;padding:0;line-height:1.8;">
-                      <li>Open the admin portal using the button below.</li>
-                      <li>Sign in with your email and temporary password.</li>
-                      <li>Follow the prompt to set a new secure password.</li>
-                    </ol>
+                    <h1 style="margin:0 0 12px 0;font-size:20px;line-height:28px;color:#111827;">Welcome to Clubby, Administrator!</h1>
+                    <p style="margin:0 0 16px 0;line-height:1.6;">Your administrator account has been created. Click the button below to sign in and start managing your club(s).</p>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding:0 24px 24px 24px;">
-                    <a href="https://${process.env.DOMAIN as string}/admin/login" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;padding:10px 16px;font-weight:600;">Go to Admin Login</a>
+                    <a href="${loginUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;padding:10px 16px;font-weight:600;">Activate Admin Account</a>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding:0 24px 24px 24px;">
-                    <p style="margin:0 0 8px 0;line-height:1.6;color:#374151;">Security tip: For your protection, please change your password after your first login and keep your credentials confidential. If you did not expect this email, contact us immediately.</p>
+                    <p style="margin:0 0 8px 0;line-height:1.6;color:#374151;">Security tip: For your protection, keep your credentials confidential. If you did not expect this email, contact us immediately.</p>
                     <p style="margin:0;line-height:1.6;color:#374151;">Need help? Email us at <a href="mailto:admin@${process.env.DOMAIN as string}" style="color:#2563eb;text-decoration:none;">admin@${process.env.DOMAIN as string}</a>.</p>
                   </td>
                 </tr>
