@@ -191,12 +191,11 @@ export const handler = async (event: any) => {
       return createResponse(400, { message: 'Username required.' }, origin);
     }
 
-    await createClubbyUser(body.username);
-
     return createResponse(
       200,
       {
-        message: "Admin creation successful!"
+        message: "Admin creation successful!",
+        user_id: await createClubbyUser(body.username),
       },
       origin
     );
