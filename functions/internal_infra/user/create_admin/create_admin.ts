@@ -44,7 +44,7 @@ export async function sendAccountCreatedEmail(
   tempPassword: string,
 ): Promise<void> {
   const emailSubject = "Your Clubby Admin Account Has Been Created";
-  const loginUrl = `https://${process.env.DOMAIN as string}/admin/login?email=${encodeURIComponent(toAddress)}&tempPassword=${encodeURIComponent(tempPassword)}&login=admin`;
+  const loginUrl = `https://${process.env.DOMAIN as string}/login?email=${encodeURIComponent(toAddress)}&tempPassword=${encodeURIComponent(tempPassword)}&login=admin`;
   
   const emailBody = `
     <html>
