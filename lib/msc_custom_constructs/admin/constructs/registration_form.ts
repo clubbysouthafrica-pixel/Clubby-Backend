@@ -11,6 +11,7 @@ interface MSC_AdminRegistrationFormConstructProps {
     club_member_table: MSC_Table;
     club_admin_table: MSC_Table;
     signatures_bucket: MSC_Bucket;
+    transactions_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     layers: {
         jwt_layer: MSC_LambdaLayer;
@@ -92,9 +93,13 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
             code: "admin/registration/remove_registration",
             envVariables: {
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName
             },
             permissions: {
                 [props.registrations_table.tableArn]: [
+                    "dynamodb:DeleteItem"
+                ],
+                [props.transactions_table.tableArn]: [
                     "dynamodb:DeleteItem"
                 ]
             },

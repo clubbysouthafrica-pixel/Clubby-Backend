@@ -8,13 +8,25 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'registration_id and user_id required in body.' }, origin);
         }
 
-        await removeItem(
+        const registration = await removeItem(
             process.env.REGISTRATIONS_TABLE_NAME as string,
             {
                 user_id: body.user_id,
                 registration_id: body.registration_id
-            }
+            },
+            true
         );
+
+
+        if (registration) {
+            await removeItem(
+                process.env.TRANSACTIONS_TABLE_NAME as string,
+                {
+                    club_account_id: registration.club_account_id,
+                    transaction_id: registration.transaction_id
+                }
+            )
+        }
 
         return createResponse(200, { message: `Registration successfully removed.` }, origin);
 
