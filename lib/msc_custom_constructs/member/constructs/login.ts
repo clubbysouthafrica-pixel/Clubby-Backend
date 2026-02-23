@@ -44,7 +44,8 @@ export class MSC_MemberLoginConstruct extends Construct {
                 USER_POOL_CLIENT_ID: props.user_pool.userPoolClient.userPoolClientId,
                 USER_POOL_ID: props.user_pool.userPoolId,
                 EMAIL_RATE_LIMITER_TABLE_NAME: props.email_rate_limiter_table.tableName,
-                DOMAIN: process.env.DOMAIN || "clubby.com"
+                DOMAIN: process.env.DOMAIN || "clubby.com",
+                USER: "MEMBER"
             },
             permissions: {
                 [props.user_pool.userPoolArn]: [

@@ -56,7 +56,8 @@ export class MSC_AdminLoginConstruct extends Construct {
                 USER_POOL_CLIENT_ID: props.admin_user_pool.userPoolClient.userPoolClientId,
                 USER_POOL_ID: props.admin_user_pool.userPoolId,
                 EMAIL_RATE_LIMITER_TABLE_NAME: props.email_rate_limiter_table.tableName,
-                DOMAIN: process.env.DOMAIN || "clubby.com"
+                DOMAIN: process.env.DOMAIN || "clubby.com",
+                USER: "ADMIN"
             },
             permissions: {
                 [props.admin_user_pool.userPoolArn]: [

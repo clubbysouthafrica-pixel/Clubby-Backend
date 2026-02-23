@@ -241,8 +241,14 @@ export async function sendAccountCreatedEmail(
                 </tr>
                 <tr>
                   <td style="padding:0 24px 24px 24px;">
-                    <p style="margin:0 0 8px 0;line-height:1.6;color:#374151;">To successfully register with ${clubName}, please complete the membership payment. You can find this in your member account under Payments & Billing.</p>
-                    <p style="margin:0 0 8px 0;line-height:1.6;color:#374151;">Security tip: For your protection, please change your password after your first login and keep your credentials confidential.</p>
+                    <p style="margin:0 0 12px 0;line-height:1.6;color:#374151;"><strong>We recommend using the button above for the easiest login experience.</strong></p>
+                    <p style="margin:0 0 12px 0;line-height:1.6;color:#374151;">If you prefer, you can also sign in manually with the credentials below:</p>
+                    <div style="background:#f3f4f6;border-left:4px solid #2563eb;padding:12px;border-radius:4px;margin:12px 0;">
+                      <p style="margin:0 0 8px 0;line-height:1.6;color:#1f2937;"><strong>Email:</strong> ${toAddress}</p>
+                      <p style="margin:0;line-height:1.6;color:#1f2937;"><strong>Temporary Password:</strong> ${tempPassword}</p>
+                    </div>
+                    <p style="margin:12px 0 0 0;line-height:1.6;color:#374151;">To successfully register with ${clubName}, please complete the membership payment. You can find this in your member account under Payments & Billing.</p>
+                    <p style="margin:8px 0 8px 0;line-height:1.6;color:#374151;">Security tip: For your protection, please change your password after your first login and keep your credentials confidential.</p>
                     <p style="margin:0;line-height:1.6;color:#374151;">Need help? Email us at <a href="mailto:admin@${process.env.DOMAIN as string}" style="color:#2563eb;text-decoration:none;">admin@${process.env.DOMAIN as string}</a>.</p>
                   </td>
                 </tr>

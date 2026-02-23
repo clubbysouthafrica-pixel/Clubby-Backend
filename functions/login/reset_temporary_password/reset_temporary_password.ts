@@ -10,10 +10,10 @@ const sesClient = new SESClient({ region: process.env.REGION });
 
 export async function sendTemporaryPasswordResetEmail(
     toAddress: string,
-    tempPassword: string,
+    tempPassword: string
 ): Promise<void> {
     const emailSubject = "Your New Clubby Activation Credentials";
-    const loginUrl = `https://${process.env.DOMAIN as string}/login?email=${encodeURIComponent(toAddress)}&tempPassword=${encodeURIComponent(tempPassword)}`;
+    const loginUrl = `https://${process.env.DOMAIN as string}/login?email=${encodeURIComponent(toAddress)}&tempPassword=${encodeURIComponent(tempPassword)}${process.env.USER === "ADMIN" ? "&login=admin" : ""}`;
     
     const emailBody = `
     <html>
@@ -35,7 +35,13 @@ export async function sendTemporaryPasswordResetEmail(
                 </tr>
                 <tr>
                   <td style="padding:0 24px 24px 24px;">
-                    <p style="margin:0 0 8px 0;line-height:1.6;color:#374151;">Security tip: This temporary password expires after your first use. Please change it to a secure password that only you know.</p>
+                    <p style="margin:0 0 8px 0;line-height:1.6;color:#374151;">Security tip: Please set a secure password that only you know.</p>
+                    <p style="margin:0 0 12px 0;line-height:1.6;color:#374151;"><strong>We recommend using the button above for the easiest login experience.</strong></p>
+                    <p style="margin:0 0 12px 0;line-height:1.6;color:#374151;">If you prefer, you can also sign in manually with the temporary credentials below:</p>
+                    <div style="background:#f3f4f6;border-left:4px solid #2563eb;padding:12px;border-radius:4px;margin:12px 0;">
+                      <p style="margin:0 0 8px 0;line-height:1.6;color:#1f2937;"><strong>Username:</strong> ${toAddress}</p>
+                      <p style="margin:0;line-height:1.6;color:#1f2937;"><strong>Temporary Password:</strong> ${tempPassword}</p>
+                    </div>
                     <p style="margin:0;line-height:1.6;color:#374151;">If you did not request a password reset, please contact us at <a href="mailto:admin@${process.env.DOMAIN as string}" style="color:#2563eb;text-decoration:none;">admin@${process.env.DOMAIN as string}</a>.</p>
                   </td>
                 </tr>
