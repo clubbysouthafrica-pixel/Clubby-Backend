@@ -7,6 +7,7 @@ interface MSC_AdminLoginConstructProps {
     api_gateway: MSC_APIGateway;
     users_table: MSC_Table;
     admin_user_pool: MSC_Cognito;
+    email_rate_limiter_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -44,6 +45,29 @@ export class MSC_AdminLoginConstruct extends Construct {
                 [props.admin_user_pool.userPoolArn]: [
                     "cognito-idp:InitiateAuth",
                     "cognito-idp:AdminInitiateAuth"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
+        const reset_temporary_password = new MSC_Lambda(this, `${id}-ResetTemporaryPassword`, {
+            code: "login/reset_temporary_password",
+            envVariables: {
+                USER_POOL_CLIENT_ID: props.admin_user_pool.userPoolClient.userPoolClientId,
+                USER_POOL_ID: props.admin_user_pool.userPoolId,
+                EMAIL_RATE_LIMITER_TABLE_NAME: props.email_rate_limiter_table.tableName,
+                DOMAIN: process.env.DOMAIN || "clubby.com"
+            },
+            permissions: {
+                [props.admin_user_pool.userPoolArn]: [
+                    "cognito-idp:AdminSetUserPassword"
+                ],
+                [props.email_rate_limiter_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem"
+                ],
+                "arn:aws:ses:*:*:*": [
+                    "ses:SendEmail"
                 ]
             },
             layers: [props.layers.jwt_layer]
@@ -97,6 +121,7 @@ export class MSC_AdminLoginConstruct extends Construct {
         const forgot_password_resource = admin_resource.addResource("forgotPassword");
         const reset_password_resource = admin_resource.addResource("resetPassword");
         const activate_user_resource = admin_resource.addResource("activateUser");
+        const reset_temporary_password_resource = admin_resource.addResource("resetTemporaryPassword");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -107,5 +132,6 @@ export class MSC_AdminLoginConstruct extends Construct {
         addCorsEnabledMethod(forgot_password_resource, forgot_password, methodOptions);
         addCorsEnabledMethod(reset_password_resource, reset_password, methodOptions);
         addCorsEnabledMethod(activate_user_resource, activate_user, methodOptions);
+        addCorsEnabledMethod(reset_temporary_password_resource, reset_temporary_password, methodOptions);
     }
 }

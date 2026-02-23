@@ -112,7 +112,7 @@ export const handler = async (event: any) => {
   try {
 
     if (body?.username == null) {
-      return createResponse(400, { message: 'Username required.' }, origin);
+      return createResponse(401, { message: 'Username required.' }, origin);
     }
     
     const item = await getItem(

@@ -33,6 +33,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     member_user_pool: MSC_Cognito;
     registration_form_table: MSC_Table;
     club_deregistration_queue: MSC_Queue;
+    email_rate_limiter_table: MSC_Table;
     club_member_table: MSC_Table;
     image_bucket: MSC_Bucket;
     shop_images_bucket: MSC_Bucket;
@@ -61,6 +62,7 @@ export class MSC_AdminNestedStack extends Stack {
             admin_user_pool: props.admin_user_pool,
             layers: props.layers,
             users_table: props.users_table,
+            email_rate_limiter_table: props.email_rate_limiter_table
         });
 
         const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, {

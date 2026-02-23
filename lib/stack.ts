@@ -65,6 +65,7 @@ export class MSC_Stack extends cdk.Stack {
       club_member_table: tables.club_member_table,
       image_bucket: buckets.image_bucket,
       club_history_bucket: buckets.club_history_bucket,
+      email_rate_limiter_table: tables.email_rate_limiter_table,
       mail_queue: mail_queue,
       layers: {
         jwt_layer: all_layers.jwt_layer,
