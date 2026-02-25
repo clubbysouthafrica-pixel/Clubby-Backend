@@ -93,7 +93,7 @@ export const handler = async (event: any) => {
         } = {
             merchant_id: pfConfig.merchant_id as string,
             merchant_key: pfConfig.merchant_key as string,
-            environment: process.env.ENVIRONMENT === "Dev" ? "sandbox" : "production",
+            environment: process.env.ENVIRONMENT as string,
         }
         if (pfConfig.passphrase) config.passphrase = pfConfig.passphrase;
         const pf = new PayFast(config);

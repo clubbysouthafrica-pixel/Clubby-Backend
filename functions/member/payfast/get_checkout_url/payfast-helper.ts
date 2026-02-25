@@ -19,10 +19,10 @@ export class PayFast {
     getApiUrl(): string {
         const env = this.config.environment;
 
-        if (env && env === 'sandbox') {
-            return 'https://sandbox.payfast.co.za';
+        if (env && env === "Prod") {
+            return 'https://www.payfast.co.za';
         }
-        return 'https://www.payfast.co.za';
+        return 'https://sandbox.payfast.co.za';
     }
 
     getMerchantId(): string | undefined {
