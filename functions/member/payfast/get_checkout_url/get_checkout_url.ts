@@ -110,7 +110,7 @@ export const handler = async (event: any) => {
             item_description: club_member.club_name,
             custom_str1: query_string_params.club_account_id,
             custom_str2: user_id,
-            custom_str3: order_url ? query_string_params.order_id : undefined
+            ...(order_url && { custom_str3: query_string_params.order_id })
         };
 
         const urlString = pf.createStringfromObject(paymentData);
