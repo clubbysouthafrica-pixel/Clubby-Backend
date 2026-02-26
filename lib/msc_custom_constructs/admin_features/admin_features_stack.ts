@@ -23,7 +23,7 @@ export interface MSC_AdminFeaturesNestedStackProps extends StackProps {
 export class MSC_AdminFeaturesNestedStack extends Stack {
     constructor(scope: Construct, id: string, props: MSC_AdminFeaturesNestedStackProps) {
         super(scope, id, props);
-        console.log('ADMIN_FEATURES_CERT_ARN: ', process.env.ADMIN_FEATURES_CERT_ARN);
+        
         const api_gateway = new MSC_APIGateway(this, id, {
             domain: "admin-features",
             cert_arn: process.env.ADMIN_FEATURES_CERT_ARN as string
