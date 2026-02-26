@@ -7,7 +7,7 @@ const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 export const queryItems = async (
     table_name: string,
     key_condition_expression: string,
-    expression_attribute_values: Record<string, string>,
+    expression_attribute_values: Record<string, string | number>,
     index_name?: string,
     unmarshall_item: boolean = true,
 ) => {

@@ -18,6 +18,8 @@ export class MSC_TablesConstruct extends Construct {
     public readonly products_table: MSC_Table;
     public readonly orders_table: MSC_Table;
     public readonly email_rate_limiter_table: MSC_Table;
+    public readonly venues_table: MSC_Table;
+    public readonly venues_bookings_table: MSC_Table;
     constructor(scope: Construct, id: string, props: MSC_TablesProps) {
         super(scope, `${id}-Tables`);
 
@@ -87,6 +89,17 @@ export class MSC_TablesConstruct extends Construct {
         this.registration_form_table = new MSC_Table(this, `${id}-RegistrationForms`, {
             partitionKey: { "club_account_id": "STRING" },
             sortKey: { "field_id": "STRING" }
+        });
+
+        this.venues_table = new MSC_Table(this, `${id}-BookingVenues`, {
+            partitionKey: { "club_account_id": "STRING" },
+            sortKey: { "venue_id": "STRING" },
+        });
+
+        this.venues_bookings_table = new MSC_Table(this, `${id}-VenuesBookings`, {
+            partitionKey: { "venue_id": "STRING" },
+            sortKey: { "slot_time": "NUMBER" },
+            timeToLiveAttribute: "ttl"
         });
 
         this.transactions_table = new MSC_Table(this, `${id}-Transaction`, {

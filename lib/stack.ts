@@ -6,7 +6,8 @@ import {
   MSC_TablesConstruct,
   MSC_Layers,
   MSC_InternalInfraStack,
-  MSC_MailingStack
+  MSC_MailingStack,
+  MSC_AdminFeaturesNestedStack
 } from "./msc_custom_constructs";
 import { MSC_BucketsConstruct } from './msc_custom_constructs/buckets/buckets';
 import { MSC_Cognito, MSC_Queue, MSC_Kms } from './msc_service_constructs';
@@ -44,6 +45,18 @@ export class MSC_Stack extends cdk.Stack {
       layers: {
         jwt_layer: all_layers.jwt_layer
       },
+    });
+
+    new MSC_AdminFeaturesNestedStack(this, `AdminFeaturesStack`, {
+      env: props?.env,
+      admin_user_pool: admin_user_pool,
+      venues_bookings_table: tables.venues_bookings_table,
+      venues_table: tables.venues_table,
+      layers: {
+        jwt_layer: all_layers.jwt_layer,
+        jwks_rsa_layer: all_layers.jwks_rsa_layer,
+        axios_layer: all_layers.axios_layer
+      }
     });
 
     new MSC_AdminNestedStack(this, `AdminStack`, {
