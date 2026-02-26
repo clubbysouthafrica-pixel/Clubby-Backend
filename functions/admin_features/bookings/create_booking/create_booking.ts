@@ -2,6 +2,7 @@ import {
     createResponse,
     deconstructEvent,
     addItem,
+    removeItem,
 } from "./function_helpers";
 import { randomUUID } from "crypto";
 
@@ -52,26 +53,51 @@ export const handler = async (event: any) => {
 
         let slot_time = body.start_time;
         let duration = 0;
-        while (true) {
-            await addItem(
-                process.env.VENUES_BOOKINGS_TABLE_NAME as string,
-                {
-                    venue_id,
-                    slot_time,
-                    ttl: slot_time + 86400,
-                    name: body.name,
-                    user_id: 'Created by Admin'
+        const createdSlots: number[] = [];
+
+        try {
+            while (true) {
+                await addItem(
+                    process.env.VENUES_BOOKINGS_TABLE_NAME as string,
+                    {
+                        venue_id,
+                        slot_time,
+                        ttl: slot_time + 86400,
+                        name: body.name,
+                        user_id: 'Created by Admin'
+                    },
+                    "attribute_not_exists(venue_id) AND attribute_not_exists(slot_time)"
+                );
+
+                createdSlots.push(slot_time);
+
+                duration += body.smallest_booking_unit;
+                slot_time += body.smallest_booking_unit * 60;
+                if (duration >= body.duration) {
+                    break;
                 }
-            );
-
-            duration += body.smallest_booking_unit;
-            slot_time += body.smallest_booking_unit * 60;
-            if (duration >= body.duration) {
-                break;
             }
-        }
 
-        return createResponse(200, { message: "Successfully created booking."}, origin);
+            return createResponse(200, { message: "Successfully created booking."}, origin);
+        } catch (bookingError: any) {
+            console.error("Error creating booking:", bookingError);
+
+            for (const createdSlot of createdSlots) {
+                try {
+                    await removeItem(
+                        process.env.VENUES_BOOKINGS_TABLE_NAME as string,
+                        {
+                            venue_id,
+                            slot_time: createdSlot as any
+                        }
+                    );
+                } catch (deleteError: any) {
+                    console.error(`Failed to delete slot ${createdSlot}:`, deleteError);
+                }
+            }
+
+            return createResponse(409, { message: 'This time has conflicting bookings.' }, origin);
+        }
 
     } catch (error: any) {
         console.error("Error:", error);

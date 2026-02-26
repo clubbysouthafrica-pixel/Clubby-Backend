@@ -39,7 +39,7 @@ export const handler = async (event: any) => {
             }
         );
 
-        return createResponse(200, { bookings }, origin);
+        return createResponse(200, { bookings: bookings ?? [] }, origin);
 
     } catch (error: any) {
         console.error("Error:", error);
