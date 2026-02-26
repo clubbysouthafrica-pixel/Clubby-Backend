@@ -12,6 +12,7 @@ export interface MSC_AdminFeaturesNestedStackProps extends StackProps {
     admin_user_pool: MSC_Cognito;
     venues_table: MSC_Table;
     venues_bookings_table: MSC_Table;
+    club_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
         jwks_rsa_layer: MSC_LambdaLayer;
@@ -39,7 +40,8 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
             api_gateway: api_gateway,
             token_authorizer: jwt_construct.token_authorizer,
             venues_table: props.venues_table,
-            layers: props.layers
+            layers: props.layers,
+            club_table: props.club_table
         });
 
         new MSC_BookingsConstruct(this, `${id}-Bookings`, {

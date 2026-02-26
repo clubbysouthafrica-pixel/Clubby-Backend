@@ -52,6 +52,7 @@ export class MSC_Stack extends cdk.Stack {
       admin_user_pool: admin_user_pool,
       venues_bookings_table: tables.venues_bookings_table,
       venues_table: tables.venues_table,
+      club_table: tables.club_table,
       layers: {
         jwt_layer: all_layers.jwt_layer,
         jwks_rsa_layer: all_layers.jwks_rsa_layer,

@@ -7,6 +7,7 @@ interface MSC_VenuesConstructProps {
     api_gateway: MSC_APIGateway;
     token_authorizer: TokenAuthorizer;
     venues_table: MSC_Table;
+    club_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -17,7 +18,7 @@ export class MSC_VenuesConstruct extends Construct {
         super(scope, id);
 
         const create_venue = new MSC_Lambda(this, `${id}-CreateVenue`, {
-            code: "admin/venues/create_venue",
+            code: "admin_features/venues/create_venue",
             envVariables: {
                 VENUES_TABLE_NAME: props.venues_table.tableName
             },
@@ -29,14 +30,31 @@ export class MSC_VenuesConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
-        const get_venues = new MSC_Lambda(this, `${id}-GetVenues`, {
-            code: "admin/venues/get_venues",
+        const enable_venues = new MSC_Lambda(this, `${id}-EnableVenues`, {
+            code: "admin_features/venues/enable_venues",
             envVariables: {
-                VENUES_TABLE_NAME: props.venues_table.tableName
+                CLUB_TABLE_NAME: props.club_table.tableName
+            },
+            permissions: {
+                [props.club_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
+        const get_venues = new MSC_Lambda(this, `${id}-GetVenues`, {
+            code: "admin_features/venues/get_venues",
+            envVariables: {
+                VENUES_TABLE_NAME: props.venues_table.tableName,
+                CLUB_TABLE_NAME: props.club_table.tableName
             },
             permissions: {
                 [props.venues_table.tableArn]: [
                     "dynamodb:Query"
+                ],
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
@@ -46,6 +64,7 @@ export class MSC_VenuesConstruct extends Construct {
 
         const create_venue_resource = venues_resource.addResource("createVenue");
         const get_venues_resource = venues_resource.addResource("getVenues");
+        const enable_venues_resource = venues_resource.addResource("enableVenues");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -55,5 +74,6 @@ export class MSC_VenuesConstruct extends Construct {
 
         addCorsEnabledMethod(create_venue_resource, create_venue, methodOptions, undefined, "POST");
         addCorsEnabledMethod(get_venues_resource, get_venues, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(enable_venues_resource, enable_venues, methodOptions, undefined, "POST");
     }
 }
