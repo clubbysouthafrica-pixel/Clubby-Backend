@@ -93,8 +93,10 @@ export const handler = async (event: any) => {
 
         return createResponse(200, {
             user_id: user_id,
+            member_name: `${club_member?.member_first_name ?? ""} ${club_member?.member_surname ?? ""}`.trim(),
             currency: item.currency,
             club_account_id: item["club_account_id"],
+            venues_enabled: item["venues_enabled"] ?? false,
             club_type: item["club_type"],
             club_name: item["club_name"],
             description: item["description"] ?? undefined,

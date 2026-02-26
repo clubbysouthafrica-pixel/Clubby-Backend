@@ -8,3 +8,5 @@ export { MSC_TransactionsConstruct } from "./transactions";
 export { MSC_PayfastConstruct } from "./payfast";
 export { MSC_MemberShopConstruct } from "./shop";
 export { MSC_MemberOrdersConstruct } from "./orders";
+export { MSC_VenuesConstruct } from "./venues";
+export { MSC_BookingsConstruct } from "./bookings";

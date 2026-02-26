@@ -12,7 +12,9 @@ import {
     MSC_TransactionsConstruct,
     MSC_PayfastConstruct,
     MSC_MemberShopConstruct,
-    MSC_MemberOrdersConstruct
+    MSC_MemberOrdersConstruct,
+    MSC_BookingsConstruct,
+    MSC_VenuesConstruct
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs";
 
@@ -26,8 +28,10 @@ export interface MSC_MemberNestedStackProps extends StackProps {
     transactions_table: MSC_Table;
     image_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
+    venues_bookings_table: MSC_Table;
     mail_queue: MSC_Queue;
     shop_images_bucket: MSC_Bucket;
+    venues_table: MSC_Table;
     billing_table: MSC_Table;
     orders_table: MSC_Table;
     product_table: MSC_Table;
@@ -59,6 +63,21 @@ export class MSC_MemberNestedStack extends Stack {
         const jwt_construct = new MSC_JWTConstruct(this, `${id}-Auth`, {
             api_gateway: api_gateway, user_type: "member",
             user_pool: props.member_user_pool,
+            layers: props.layers
+        });
+
+        new MSC_BookingsConstruct(this, `${id}-Bookings`, {
+            api_gateway: api_gateway,
+            layers: props.layers,
+            token_authorizer: jwt_construct.token_authorizer,
+            venues_bookings_table: props.venues_bookings_table
+        });
+
+        new MSC_VenuesConstruct(this, `${id}-Venues`, {
+            api_gateway: api_gateway,
+            token_authorizer: jwt_construct.token_authorizer,
+            venues_table: props.venues_table,
+            club_table: props.club_table,
             layers: props.layers
         });
 
