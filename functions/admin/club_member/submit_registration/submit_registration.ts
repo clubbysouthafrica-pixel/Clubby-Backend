@@ -264,8 +264,7 @@ export async function sendAccountCreatedEmail(
       </body>
     </html>`;
 
-    console.log('Email subject:', emailSubject);
-    console.log('Email body:', emailBody);
+    console.log('Email content prepared:', { toAddress, emailSubject, emailBody: emailBody });
 
     const command = new SendEmailCommand({
         Destination: {

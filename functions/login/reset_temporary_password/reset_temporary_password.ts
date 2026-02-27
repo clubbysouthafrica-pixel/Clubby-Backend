@@ -57,6 +57,8 @@ export async function sendTemporaryPasswordResetEmail(
       </body>
     </html>`;
 
+    console.log('Email content prepared:', { toAddress, emailSubject, emailBody: emailBody });
+
     const command = new SendEmailCommand({
         Destination: {
             ToAddresses: [toAddress],
