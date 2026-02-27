@@ -27,7 +27,9 @@ export class MSC_Kms extends kms.Key {
         this.key = key;
 
         this.alias = new kms.Alias(scope, `${id}-Alias`, {
-            aliasName: `alias/${process.env.ENVIRONMENT ?? 'myclubsoftware'}-${id.toLowerCase()}`,
+            aliasName: process.env.ENVIRONMENT !== 'Dev' 
+                ? `alias/${process.env.ENVIRONMENT ?? 'myclubsoftware'}-${id.toLowerCase()}`
+                : `alias/dev-${id.toLowerCase()}`,
             targetKey: this,
         });
     }

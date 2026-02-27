@@ -12,7 +12,7 @@ interface MSC_APIGatewayProps {
 export class MSC_APIGateway extends RestApi {
     constructor(scope: Construct, id: string, props: MSC_APIGatewayProps) {
         super(scope, `${id}-APIGateway`, {
-            restApiName: `${id}-APIGateway`,
+            ...(process.env.ENVIRONMENT !== 'Dev' && { restApiName: `${id}-APIGateway` }),
             endpointConfiguration: {
                 types: [EndpointType.REGIONAL]
             }

@@ -18,7 +18,7 @@ export class MSC_Cognito extends UserPool {
 
   constructor(scope: Construct, id: string, props?: MSC_CognitoProps) {
     super(scope, `${id}-UserPool`, {
-      userPoolName: `${id}-UserPool`,
+      ...(process.env.ENVIRONMENT !== 'Dev' && { userPoolName: `${id}-UserPool` }),
       selfSignUpEnabled: true,
       userVerification: {
         emailSubject: "Verify your email for Clubby",
@@ -41,7 +41,7 @@ export class MSC_Cognito extends UserPool {
 
     this.userPoolClient = new UserPoolClient(this, `${id}-UserPoolClient`, {
       userPool: this,
-      userPoolClientName: `${id}-UserPoolClient`,
+      ...(process.env.ENVIRONMENT !== 'Dev' && { userPoolClientName: `${id}-UserPoolClient` }),
       generateSecret: false,
       authFlows: {
         userPassword: true,

@@ -37,7 +37,7 @@ export class MSC_Table extends Table {
         }
 
         super(scope, `${id}-Table`, {
-            tableName: `${id}-Table`,
+            ...(process.env.ENVIRONMENT !== 'Dev' && { tableName: `${id}-Table` }),
             partitionKey: { name: partitionKeyName, type: partitionKeyValue },
             sortKey: sortKey,
             billingMode: props.billingMode ?? BillingMode.PAY_PER_REQUEST,
