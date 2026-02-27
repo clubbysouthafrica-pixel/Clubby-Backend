@@ -69,6 +69,6 @@ export class MSC_BookingsConstruct extends Construct {
 
         addCorsEnabledMethod(create_booking_resource, create_bookings, methodOptions, undefined, "POST");
         addCorsEnabledMethod(get_bookings_resource, get_bookings, methodOptions, undefined, "GET");
-        addCorsEnabledMethod(remove_booking_resource, remove_booking, methodOptions, undefined, "DELETE");
+        addCorsEnabledMethod(remove_booking_resource, remove_booking, methodOptions, undefined, "POST");
     }
 }
