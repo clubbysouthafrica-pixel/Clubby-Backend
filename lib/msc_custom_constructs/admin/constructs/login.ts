@@ -2,6 +2,7 @@ import { Construct } from "constructs";
 import { MSC_Cognito, MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_LambdaLayer } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { MethodOptions } from "aws-cdk-lib/aws-apigateway";
+import { RetentionDays } from "aws-cdk-lib/aws-logs";
 
 interface MSC_AdminLoginConstructProps {
     api_gateway: MSC_APIGateway;
@@ -71,7 +72,8 @@ export class MSC_AdminLoginConstruct extends Construct {
                     "ses:SendEmail"
                 ]
             },
-            layers: [props.layers.jwt_layer]
+            layers: [props.layers.jwt_layer],
+            retention: RetentionDays.ONE_MONTH
         });
 
         const forgot_password = new MSC_Lambda(this, `${id}-ForgotPassword`, {

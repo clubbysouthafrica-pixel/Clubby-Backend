@@ -2,6 +2,7 @@ import { Construct } from "constructs";
 import { MSC_Cognito, MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_LambdaLayer } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { MethodOptions } from "aws-cdk-lib/aws-apigateway";
+import { RetentionDays } from "aws-cdk-lib/aws-logs";
 
 interface MSC_InternalInfraUserConstructProps {
     api_gateway: MSC_APIGateway;
@@ -38,7 +39,8 @@ export class MSC_InternalInfraUserConstruct extends Construct {
                     "dynamodb:PutItem"
                 ]
             },
-            layers: [props.layers.jwt_layer]
+            layers: [props.layers.jwt_layer],
+            retention: RetentionDays.ONE_MONTH
         });
 
         const admin_resource = props.api_gateway.root.addResource("user");

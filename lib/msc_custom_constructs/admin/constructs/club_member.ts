@@ -2,6 +2,7 @@ import { Construct } from "constructs";
 import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_Cognito, MSC_Queue, MSC_LambdaLayer, MSC_Kms } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
+import { RetentionDays } from "aws-cdk-lib/aws-logs";
 
 interface MSC_ClubMemberClubConstructProps {
     users_table: MSC_Table;
@@ -122,7 +123,8 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                     "kms:GenerateDataKey"
                 ]
             },
-            layers: [props.layers.jwt_layer]
+            layers: [props.layers.jwt_layer],
+            retention: RetentionDays.ONE_MONTH
         });
         props.signatures_bucket.grantPut(submit_registration)
 

@@ -19,6 +19,7 @@ interface MSC_LambdaProps {
     memory?: number;
     layers?: MSC_LambdaLayer[],
     reservedConcurrentExecutions?: number;
+    retention?: RetentionDays;
 }
 
 export class MSC_Lambda extends Function {
@@ -57,7 +58,7 @@ export class MSC_Lambda extends Function {
             },
             role: lambdaRole,
             layers: props.layers ?? undefined,
-            logRetention: RetentionDays.ONE_WEEK,
+            logRetention: props.retention ?? RetentionDays.ONE_WEEK,
             reservedConcurrentExecutions: props.reservedConcurrentExecutions ?? undefined
         });
     }
