@@ -10,7 +10,8 @@
     "create-layers": "bash scripts/build-layers.sh",
     "update-helpers": "node scripts/copy-helpers.js",
     "predeploy": "node scripts/copy-helpers.js && npm run build",
-    "deploy": "npm run predeploy && cdk deploy --all --require-approval never"
+    "deploy": "npm run predeploy && cdk deploy --all --require-approval never",
+    "destroy": "bash scripts/destroy-all.sh"
   },
   "devDependencies": {
     "@types/aws-lambda": "8.10.147",

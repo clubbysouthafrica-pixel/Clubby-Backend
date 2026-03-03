@@ -15,7 +15,10 @@ import { MSC_Cognito, MSC_Queue, MSC_Kms } from './msc_service_constructs';
 export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
     super(scope, stack_id, props);
-    this.terminationProtection = true;
+
+    if (process.env.ENVIRONMENT !== 'Dev') {
+      this.terminationProtection = true;
+    }
 
     const kmsKey = new MSC_Kms(this, 'DataEncryption', {
       enableKeyRotation: true,
