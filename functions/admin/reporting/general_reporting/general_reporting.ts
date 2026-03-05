@@ -20,9 +20,10 @@ const processOrders = (report: Record<string, any>, orders: Record<string, any>[
         report.total_shop_revenue += order.amount_paid;
         report.total_revenue += order.amount_paid;
 
-        for (const item of order.items) {
-            report.total_shop_pending_revenue += (item?.quantity ?? 0) * (item?.price ?? 0)
+        if (!order.order_confirmed_by_admin) {
+            report.total_shop_pending_revenue += order.total_amount - order.amount_paid;
         }
+        
         report.total_pending_revenue += order.total_amount - order.amount_paid;
 
         report.total_shop_sold_items += order.order_confirmed_by_admin ? 1 : 0;
