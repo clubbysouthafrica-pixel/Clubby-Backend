@@ -22,9 +22,8 @@ const processOrders = (report: Record<string, any>, orders: Record<string, any>[
 
         if (!order.order_confirmed_by_admin) {
             report.total_shop_pending_revenue += order.total_amount - order.amount_paid;
+            report.total_pending_revenue += order.total_amount - order.amount_paid;
         }
-        
-        report.total_pending_revenue += order.total_amount - order.amount_paid;
 
         report.total_shop_sold_items += order.order_confirmed_by_admin ? 1 : 0;
         report.total_shop_pending_sold_items += order.order_confirmed_by_admin ? 0 : 1;
