@@ -87,6 +87,19 @@ const getMembersPageData = async (
                 { ":userId": item.user_id }
             );
 
+            if (!allRegistrations || allRegistrations.length === 0) {
+                members.push({
+                    user_id: item.user_id,
+                    member_first_name: item.member_first_name,
+                    member_surname: item.member_surname,
+                    member_email: item.member_email,
+                    registered: item.registered,
+                    resubmission_required: item.resubmission_required,
+                    registrations: []
+                });
+                continue;
+            }
+
             for (const registration of allRegistrations || []) {
                 if (body?.custom_filters && !registration) {
                     continue;

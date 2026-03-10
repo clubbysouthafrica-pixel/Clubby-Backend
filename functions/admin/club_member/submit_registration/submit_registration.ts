@@ -114,7 +114,7 @@ async function addToRegistrationsTable(
     standard_fields: any,
     membership_amount: number,
     registration_submitted_on: number,
-    transaction_id: string,
+    transaction_id?: string,
 ): Promise<string> {
     const all_registrations = await queryItems(
         process.env.REGISTRATIONS_TABLE_NAME as string,
@@ -215,7 +215,7 @@ export async function sendAccountCreatedEmail(
 ): Promise<void> {
     const emailSubject = "Your Clubby Account Has Been Created";
     const loginUrl = `https://${process.env.DOMAIN as string}/login?email=${encodeURIComponent(toAddress)}&tempPassword=${encodeURIComponent(tempPassword)}`;
-    
+
     const emailBody = `
     <html>
       <body style="margin:0;padding:0;background:#f7f7f9;font-family: Arial, Helvetica, sans-serif;color:#1f2937;">
@@ -532,7 +532,7 @@ export const handler = async (event: any) => {
             standard_fields,
             membership_amount,
             registration_submitted_on,
-            current_reg_transaction_id
+            membership_amount > 0 ? current_reg_transaction_id : undefined
         )
 
         const item = {
@@ -540,7 +540,7 @@ export const handler = async (event: any) => {
             resubmission_required: false,
             current_reg_id,
             user_id: member_user_id,
-            current_reg_transaction_id,
+            current_reg_transaction_id: membership_amount > 0 ? current_reg_transaction_id : undefined,
             member_email: body.member_email,
             member_first_name: body.first_name,
             member_surname: body.surname,
@@ -556,15 +556,17 @@ export const handler = async (event: any) => {
             item
         );
 
-        await addToTransactionsTable(
-            body.club_account_id,
-            body.first_name,
-            body.surname,
-            current_reg_transaction_id,
-            member_user_id as string,
-            membership_amount,
-            current_reg_id
-        )
+        if (membership_amount > 0) {
+            await addToTransactionsTable(
+                body.club_account_id,
+                body.first_name,
+                body.surname,
+                current_reg_transaction_id,
+                member_user_id as string,
+                membership_amount,
+                current_reg_id
+            )
+        }
 
         if (club.notify_on_member_registration !== false) {
             await sendEmailToAdmin(

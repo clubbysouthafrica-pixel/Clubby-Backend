@@ -90,7 +90,7 @@ async function addToRegistrationsTable(
     standard_fields: any,
     membership_amount: number,
     registration_submitted_on: number,
-    transaction_id: string
+    transaction_id?: string
 ): Promise<string> {
     const all_registrations = await queryItems(
         process.env.REGISTRATIONS_TABLE_NAME as string,
@@ -356,7 +356,7 @@ export const handler = async (event: any) => {
             standard_fields,
             membership_amount,
             registration_submitted_on,
-            current_reg_transaction_id
+            membership_amount > 0 ? current_reg_transaction_id : undefined
         )
 
         const item = {
@@ -364,7 +364,7 @@ export const handler = async (event: any) => {
             resubmission_required: false,
             current_reg_id,
             user_id: user_id,
-            current_reg_transaction_id,
+            current_reg_transaction_id: membership_amount > 0 ? current_reg_transaction_id : undefined,
             member_email: user.email,
             member_first_name: user.first_name,
             member_surname: user.surname,
@@ -380,15 +380,17 @@ export const handler = async (event: any) => {
             item
         );
 
-        await addToTransactionsTable(
-            body.club_account_id,
-            user.first_name,
-            user.surname,
-            current_reg_transaction_id,
-            user_id as string,
-            membership_amount,
-            current_reg_id
-        )
+        if (membership_amount > 0) {
+            await addToTransactionsTable(
+                body.club_account_id,
+                user.first_name,
+                user.surname,
+                current_reg_transaction_id,
+                user_id as string,
+                membership_amount,
+                current_reg_id
+            )
+        }
 
         if (club.notify_on_member_registration !== false) {
             await sendEmailToAdmin(

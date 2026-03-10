@@ -104,17 +104,13 @@ const processRegistrations = (report: Record<string, any>, registrations: Record
             return;
         }
 
-        if (registration.total_outstanding_amount === 0 && registration.deregistered === false) {
-            report.total_active_members += 1;
-        }
-        if (registration.registered_on) {
-            report.total_registered_members += 1;
-        }
-        if (registration.deregistered === false && registration.total_outstanding_amount > 0) {
-            report.total_pending_members += 1;
-        }
         if (registration.deregistered === true) {
             report.total_deregistered_members += 1;
+        } else if (registration?.registered_on) {
+            report.total_active_members += 1;
+            report.total_registered_members += 1;
+        } else {
+            report.total_pending_members += 1;
         }
 
         const registration_submission_date = registration?.registration_submitted_on ? formatToYearMonth(registration.registration_submitted_on) : undefined;

@@ -18,7 +18,7 @@ export const handler = async (event: any) => {
         );
 
 
-        if (registration) {
+        if (registration && registration?.transaction_id) {
             await removeItem(
                 process.env.TRANSACTIONS_TABLE_NAME as string,
                 {
