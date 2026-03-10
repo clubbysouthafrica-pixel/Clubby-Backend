@@ -1,6 +1,6 @@
 import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { createResponse, deconstructEvent, getItem } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, queryItems } from "./function_helpers";
 
 const s3_client = new S3Client({ region: process.env.REGION });
 
@@ -66,9 +66,18 @@ export const handler = async (event: any) => {
             }
         }
 
+        const registration_form_exists = await queryItems(
+            process.env.REGISTRATION_FORM_TABLE_NAME as string,
+            "club_account_id = :clubId",
+            { ":clubId": query_string_params.club_account_id }
+        );
+
         return createResponse(200, {
             club_account_id: item["club_account_id"],
-            currency: item?.["currency"] ?? undefined,
+            registration_form_exists: registration_form_exists ? true : false,
+            currency_exists: item?.currency ? true : false,
+            country_exists: item?.country_of_operation ? true : false,
+            bank_details_exists: item?.account_number && item?.bank && item?.branch_code && item?.account_type ? true : false,
             club_type: item["club_type"],
             season_cycle: item?.season_cycle ?? 1,
             club_name: item["club_name"],
@@ -77,7 +86,7 @@ export const handler = async (event: any) => {
             support_email: item["support_email"],
             country_of_operation: item["country_of_operation"],
             joined: item["joined"],
-            hide_from_public: item?.hide_from_public ?? false, 
+            hide_from_public: item?.hide_from_public ?? false,
             deregistration_in_progress: item?.deregistration_in_progress ?? false,
             images: query_string_params?.includeImages === "true" ? {
                 cover: { uploadUrl: cover_upload_url, fetchUrl: cover_fetch_url },

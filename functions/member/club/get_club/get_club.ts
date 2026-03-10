@@ -1,8 +1,13 @@
-import { GetObjectCommand, S3Client, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, S3Client, HeadObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createResponse, deconstructEvent, getItem, queryItems } from "./function_helpers";
 
 const s3_client = new S3Client({ region: process.env.REGION });
+
+export interface GalleryImage {
+  key: string;
+  url: string;
+}
 
 async function getClubImageUrls(club_account_id: string): Promise<Record<string, string | undefined>> {
     const result: Record<string, string | undefined> = {
@@ -43,6 +48,46 @@ async function getClubImageUrls(club_account_id: string): Promise<Record<string,
     }
 
     return result;
+}
+
+async function getGalleryImages(clubAccountId: string): Promise<GalleryImage[]> {
+  try {
+    const prefix = `gallery/${clubAccountId}/`;
+    
+    const listCommand = new ListObjectsV2Command({
+      Bucket: process.env.IMAGE_BUCKET_NAME,
+      Prefix: prefix,
+    });
+
+    const listResponse = await s3_client.send(listCommand);
+    
+    if (!listResponse.Contents || listResponse.Contents.length === 0) {
+      return [];
+    }
+
+    const galleryImages: GalleryImage[] = [];
+
+    for (const object of listResponse.Contents) {
+      if (object.Key) {
+        const getCommand = new GetObjectCommand({
+          Bucket: process.env.IMAGE_BUCKET_NAME,
+          Key: object.Key,
+        });
+
+        const signedUrl = await getSignedUrl(s3_client, getCommand, { expiresIn: 3600 });
+        
+        galleryImages.push({
+          key: object.Key,
+          url: signedUrl,
+        });
+      }
+    }
+
+    return galleryImages;
+  } catch (error) {
+    console.error("Error fetching gallery images:", error);
+    throw error;
+  }
 }
 
 export const handler = async (event: any) => {
@@ -116,7 +161,8 @@ export const handler = async (event: any) => {
             club_member_exists,
             registered,
             resubmission_required,
-            ...await getClubImageUrls(query_string_params.club_account_id)
+            ...await getClubImageUrls(query_string_params.club_account_id),
+            gallery_images: await getGalleryImages(query_string_params.club_account_id)
         }, origin);
 
     } catch (error) {

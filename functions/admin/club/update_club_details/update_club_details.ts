@@ -53,15 +53,6 @@ function validateBody(body: Record<string, string>): string | null {
       ) {
         return "All bank details must be strings.";
       }
-
-      if (
-        bank_details.bank.trim() === "" ||
-        bank_details.account_number.trim() === "" ||
-        bank_details.branch_code.trim() === "" ||
-        bank_details.account_type.trim() === ""
-      ) {
-        return "Bank details cannot be empty.";
-      }
     }
   }
 
