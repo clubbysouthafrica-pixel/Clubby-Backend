@@ -1,15 +1,10 @@
 import { updateItem, createResponse, deconstructEvent, getItem } from "./function_helpers";
 
-interface Unit {
-    returnToInventory: boolean;
-}
-
 interface Item {
     product_id: string;
     name: string;
     quantity: number;
     price: number;
-    units: Unit[];
     subtotal?: number;
 }
 
@@ -36,9 +31,7 @@ const validateItem = (item: any): item is Item => {
         typeof item.product_id === "string" &&
         typeof item.name === "string" &&
         typeof item.quantity === "number" &&
-        typeof item.price === "number" &&
-        Array.isArray(item.units) &&
-        item.units.every((unit: any) => typeof unit.returnToInventory === "boolean")
+        typeof item.price === "number"
     );
 };
 
@@ -100,6 +93,7 @@ const handleFullOrderRefund = async (order_id: string, club_account_id: string) 
                 return {
                     ...item,
                     refund_quantity: (item.refund_quantity || 0) + item.quantity,
+                    fulfillment_quantity: 0,
                     quantity: 0
                 };
             }
@@ -122,7 +116,7 @@ const handleFullOrderRefund = async (order_id: string, club_account_id: string) 
             {
                 ":zero": 0,
                 ":payment_status": "REFUND",
-                ":fulfillment_status": "PROCESSING",
+                ":fulfillment_status": "REFUNDED",
                 ":items": updatedItems
             }
         );
@@ -166,42 +160,6 @@ const handleFullTransactionRefund = async (transaction_id: string, club_account_
     }
 };
 
-const handleInventoryRestock = async (club_account_id: string, items: Item[]) => {
-    try {
-        for (const item of items) {
-            const product_id = item.product_id;
-
-            let inventory_return_amount = 0;
-            for (const unit of item.units) {
-                if (unit.returnToInventory) {
-                    inventory_return_amount += 1;
-                }
-            }
-
-            if (inventory_return_amount > 0) {
-                await updateItem(
-                    process.env.PRODUCT_TABLE_NAME as string,
-                    {
-                        club_account_id: club_account_id,
-                        product_id: product_id
-                    },
-                    "SET #initial_quantity = #initial_quantity + :return_amount",
-                    {
-                        "#initial_quantity": "initial_quantity"
-                    },
-                    {
-                        ":return_amount": inventory_return_amount
-                    }
-                );
-            }
-
-        }
-    } catch (error) {
-        console.error("Error in handleInventoryRestock:", error);
-        throw error;
-    }
-};
-
 const handlePartialOrderRefund = async (order_id: string, club_account_id: string, refund_amount: number, items: Item[]) => {
     try {
         const order = await getItem(
@@ -219,6 +177,7 @@ const handlePartialOrderRefund = async (order_id: string, club_account_id: strin
                 return {
                     ...orderItem,
                     refund_quantity: (orderItem.refund_quantity || 0) + refundItem.quantity,
+                    fulfillment_quantity: orderItem.fulfillment_quantity - refundItem.quantity > 0 ? orderItem.fulfillment_quantity - refundItem.quantity : 0,
                     quantity: orderItem.quantity - refundItem.quantity
                 };
             }
@@ -258,14 +217,16 @@ const handlePartialTransactionRefund = async (transaction_id: string, club_accou
                 club_account_id: club_account_id,
                 transaction_id: transaction_id
             },
-            `SET #amount_paid = #amount_paid - :refund_amount, #lifecycle.#ts = :lifecycleValue`,
+            `SET #amount_paid = #amount_paid - :refund_amount, #status = :status, #lifecycle.#ts = :lifecycleValue`,
             {
                 "#amount_paid": "amount_paid",
+                "#status": "status",
                 "#lifecycle": "lifecycle",
                 "#ts": `${Date.now()}`
             },
             {
                 ":refund_amount": refund_amount,
+                ":status": "PAID (Partial Refund)",
                 ":lifecycleValue": {
                     type: "REFUND",
                     description: "Refund issued for part of the order",
@@ -353,11 +314,9 @@ export const handler = async (event: any) => {
 
             if (refundData.is_full_refund) {
                 await handleFullOrderRefund(refundData.order_id, refundData.club_account_id);
-                await handleInventoryRestock(refundData.club_account_id, refundData.items);
                 await handleFullTransactionRefund(refundData.transaction_id, refundData.club_account_id, refundData.refund_amount);
             } else {
                 await handlePartialOrderRefund(refundData.order_id, refundData.club_account_id, refundData.refund_amount, refundData.items);
-                await handleInventoryRestock(refundData.club_account_id, refundData.items);
                 await handlePartialTransactionRefund(refundData.transaction_id, refundData.club_account_id, refundData.refund_amount);
             }
 
@@ -365,7 +324,6 @@ export const handler = async (event: any) => {
         } else {
             const deleteData = data as DeleteRequest;
 
-            await handleInventoryRestock(deleteData.club_account_id, deleteData.items);
             await handleTransactionDeletion(deleteData.transaction_id, deleteData.club_account_id);
             await handleOrderDeletion(deleteData.order_id, deleteData.club_account_id);
 

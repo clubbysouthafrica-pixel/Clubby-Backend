@@ -19,19 +19,9 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Invalid or missing club_account_id." }, origin);
         }
 
-        if (body.initial_quantity === undefined && body.active_product === undefined && body.name === undefined && body.product_image === undefined) {
-            return createResponse(400, { message: "At least one field to update must be provided (name, initial_quantity, active_product, or product_image)." }, origin);
-        }
-
         if (body.name !== undefined) {
             if (typeof body.name !== "string" || body.name === "") {
                 return createResponse(400, { message: "Invalid name provided (Must be a non-empty string)." }, origin);
-            }
-        }
-
-        if (body.initial_quantity !== undefined) {
-            if (typeof body.initial_quantity !== "number" || body.initial_quantity <= 0) {
-                return createResponse(400, { message: "Invalid initial_quantity provided (Must be greater than 0)." }, origin);
             }
         }
 
@@ -79,12 +69,6 @@ export const handler = async (event: any) => {
             updateExpressions.push("#n = :n");
             expressionAttributeNames["#n"] = "name";
             expressionAttributeValues[":n"] = body.name;
-        }
-
-        if (body.initial_quantity !== undefined) {
-            updateExpressions.push("#iq = :iq");
-            expressionAttributeNames["#iq"] = "initial_quantity";
-            expressionAttributeValues[":iq"] = body.initial_quantity;
         }
 
         if (body.active_product !== undefined) {

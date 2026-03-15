@@ -2,7 +2,6 @@ import { randomUUID } from "crypto";
 import {
     createResponse,
     deconstructEvent,
-    updateItem,
     addItem,
     getItem
 } from "./function_helpers";
@@ -80,56 +79,15 @@ export const handler = async (event: any) => {
             }
         }
 
-        const successfulUpdates: Array<{ product_id: string; quantity: number }> = [];
-
-        for (const item of body.items) {
-            try {
-                await updateItem(
-                    process.env.PRODUCT_TABLE_NAME!,
-                    {
-                        club_account_id: body.club_account_id,
-                        product_id: item.product_id
-                    },
-                    "SET #initial_quantity = #initial_quantity - :qty",
-                    {
-                        "#initial_quantity": "initial_quantity"
-                    },
-                    { ":qty": item.quantity },
-                    "#initial_quantity >= :qty",
-                    false
-                );
-                successfulUpdates.push({ product_id: item.product_id, quantity: item.quantity });
-            } catch (error: any) {
-                console.error(`Product update error for ${item.product_id}:`, error);
-                if (error.name === 'ConditionalCheckFailedException') {
-                    for (const rollback of successfulUpdates) {
-                        try {
-                            await updateItem(
-                                process.env.PRODUCT_TABLE_NAME!,
-                                {
-                                    club_account_id: body.club_account_id,
-                                    product_id: rollback.product_id
-                                },
-                                "SET #initial_quantity = #initial_quantity + :qty",
-                                {
-                                    "#initial_quantity": "initial_quantity"
-                                },
-                                { ":qty": rollback.quantity }
-                            );
-                        } catch (rollbackError) {
-                            console.error(`Rollback failed for product ${rollback.product_id}:`, rollbackError);
-                        }
-                    }
-                    return createResponse(400, { message: `Insufficient inventory for product ${item.name}.` }, origin);
-                }
-                throw error;
-            }
-        }
-
         const order_id = randomUUID();
         const created_date = Math.floor(Date.now() / 1000);
 
         const transaction_id = randomUUID();
+
+        for (const item of body.items) {
+            item["fulfillment_status"] = "NOT_PROCESSED";
+            item["fulfillment_quantity"] = 0
+        }
 
         const orderItem = {
             order_id,

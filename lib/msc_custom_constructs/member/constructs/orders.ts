@@ -37,7 +37,6 @@ export class MSC_MemberOrdersConstruct extends Construct {
             code: "member/orders/create_orders",
             envVariables: {
                 ORDER_TABLE_NAME: props.orders_table.tableName,
-                PRODUCT_TABLE_NAME: props.product_table.tableName,
                 USERS_TABLE_NAME: props.users_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName
             },
@@ -47,9 +46,6 @@ export class MSC_MemberOrdersConstruct extends Construct {
                 ],
                 [props.users_table.tableArn]: [
                     "dynamodb:GetItem"
-                ],
-                [props.product_table.tableArn]: [
-                    "dynamodb:UpdateItem"
                 ],
                 [props.transactions_table.tableArn]: [
                     "dynamodb:PutItem"

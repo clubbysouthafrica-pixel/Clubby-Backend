@@ -56,6 +56,11 @@ export class MSC_Stack extends cdk.Stack {
       venues_bookings_table: tables.venues_bookings_table,
       venues_table: tables.venues_table,
       club_table: tables.club_table,
+      product_table: tables.products_table,
+      shop_images_bucket: buckets.shop_images_bucket,
+      orders_table: tables.orders_table,
+      transactions_table: tables.transactions_table,
+      billing_table: tables.billing_table,
       layers: {
         jwt_layer: all_layers.jwt_layer,
         jwks_rsa_layer: all_layers.jwks_rsa_layer,

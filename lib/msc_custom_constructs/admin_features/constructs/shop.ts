@@ -18,7 +18,7 @@ export class MSC_AdminShopConstruct extends Construct {
         super(scope, id);
 
         const add_product = new MSC_Lambda(this, `${id}-AddProduct`, {
-            code: "admin/shop/add_product",
+            code: "admin_features/shop/add_product",
             envVariables: {
                 PRODUCT_TABLE_NAME: props.product_table.tableName,
                 SHOP_IMAGES_BUCKET_NAME: props.shop_images_bucket.bucketName
@@ -38,7 +38,7 @@ export class MSC_AdminShopConstruct extends Construct {
         });
 
         const get_club_products = new MSC_Lambda(this, `${id}-GetClubProducts`, {
-            code: "admin/shop/get_club_products",
+            code: "admin_features/shop/get_club_products",
             envVariables: {
                 PRODUCT_TABLE_NAME: props.product_table.tableName,
                 SHOP_IMAGES_BUCKET_NAME: props.shop_images_bucket.bucketName
@@ -60,7 +60,7 @@ export class MSC_AdminShopConstruct extends Construct {
         });
 
         const update_product = new MSC_Lambda(this, `${id}-UpdateProduct`, {
-            code: "admin/shop/update_product",
+            code: "admin_features/shop/update_product",
             envVariables: {
                 PRODUCT_TABLE_NAME: props.product_table.tableName,
                 SHOP_IMAGES_BUCKET_NAME: props.shop_images_bucket.bucketName

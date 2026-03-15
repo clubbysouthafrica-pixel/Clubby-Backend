@@ -12,9 +12,7 @@ import {
     MSC_ReportingConstruct,
     MSC_DeregistrationConstruct,
     MSC_TransactionsConstruct,
-    MSC_PayFastConstruct,
-    MSC_AdminShopConstruct,
-    MSC_AdminOrdersConstruct
+    MSC_PayFastConstruct
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
@@ -72,14 +70,6 @@ export class MSC_AdminNestedStack extends Stack {
             layers: props.layers
         });
 
-        new MSC_AdminShopConstruct(this, `${id}-Shop`, {
-            api_gateway: api_gateway,
-            product_table: props.product_table,
-            token_authorizer: jwt_construct.token_authorizer,
-            shop_images_bucket: props.shop_images_bucket,
-            layers: props.layers
-        });
-
         new MSC_PayFastConstruct(this, `${id}-PayFast`, {
             api_gateway: api_gateway,
             token_authorizer: jwt_construct.token_authorizer,
@@ -92,17 +82,6 @@ export class MSC_AdminNestedStack extends Stack {
             layers: props.layers,
             token_authorizer: jwt_construct.token_authorizer,
             transactions_table: props.transactions_table
-        });
-
-        new MSC_AdminOrdersConstruct(this, `${id}-Orders`, {
-            api_gateway: api_gateway,
-            orders_table: props.orders_table,
-            token_authorizer: jwt_construct.token_authorizer,
-            layers: props.layers,
-            club_table: props.club_table,
-            transactions_table: props.transactions_table,
-            product_table: props.product_table,
-            billing_table: props.billing_table
         });
 
         new MSC_ReportingConstruct(this, `${id}-Reporting`, {

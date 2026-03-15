@@ -25,10 +25,6 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Invalid price provided (Must be greater than 0)." }, origin);
         }
 
-        if (!body?.initial_quantity || typeof body.initial_quantity !== "number" || body.initial_quantity <= 0) {
-            return createResponse(400, { message: "Invalid Initial Quantity provided (Must be greater than 0)." }, origin);
-        }
-
         if (body?.active_product === undefined || body?.purchase_limit === undefined) {
             return createResponse(400, { message: "Missing required fields: Active Product and/or Purchase Limit." }, origin);
         }
@@ -74,7 +70,6 @@ export const handler = async (event: any) => {
             club_account_id: body.club_account_id,
             name: body.name,
             price: body.price,
-            initial_quantity: body.initial_quantity,
             active_product: body.active_product,
             purchase_limit: body.purchase_limit,
             created_date,

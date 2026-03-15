@@ -21,7 +21,7 @@ export class MSC_AdminOrdersConstruct extends Construct {
         super(scope, id);
 
         const get_club_orders = new MSC_Lambda(this, `${id}-GetClubOrders`, {
-            code: "admin/orders/get_club_orders",
+            code: "admin_features/orders/get_club_orders",
             envVariables: {
                 ORDERS_TABLE_NAME: props.orders_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName
@@ -38,7 +38,7 @@ export class MSC_AdminOrdersConstruct extends Construct {
         });
 
         const confirm_order_payment = new MSC_Lambda(this, `${id}-ConfirmOrderPayment`, {
-            code: "admin/orders/confirm_order_payment",
+            code: "admin_features/orders/confirm_order_payment",
             envVariables: {
                 ORDERS_TABLE_NAME: props.orders_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
@@ -61,20 +61,21 @@ export class MSC_AdminOrdersConstruct extends Construct {
         });
 
         const update_order_fulfillment = new MSC_Lambda(this, `${id}-UpdateOrderFulfillment`, {
-            code: "admin/orders/update_order_fulfillment",
+            code: "admin_features/orders/update_order_fulfillment",
             envVariables: {
                 ORDERS_TABLE_NAME: props.orders_table.tableName
             },
             permissions: {
                 [props.orders_table.tableArn]: [
-                    "dynamodb:UpdateItem"
+                    "dynamodb:UpdateItem",
+                    "dynamodb:GetItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
         });
 
         const refund_or_remove_order = new MSC_Lambda(this, `${id}-RefundOrRemoveOrder`, {
-            code: "admin/orders/refund_or_remove_order",
+            code: "admin_features/orders/refund_or_remove_order",
             envVariables: {
                 ORDERS_TABLE_NAME: props.orders_table.tableName,
                 PRODUCT_TABLE_NAME: props.product_table.tableName,
