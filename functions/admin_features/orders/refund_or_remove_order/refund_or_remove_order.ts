@@ -6,6 +6,9 @@ interface Item {
     quantity: number;
     price: number;
     subtotal?: number;
+    units?: Array<{
+        is_delivered: boolean;
+    }>;
 }
 
 interface RefundRequest {
@@ -88,16 +91,16 @@ const handleFullOrderRefund = async (order_id: string, club_account_id: string) 
             throw new Error(`Order ${order_id} not found or has no items`);
         }
 
-        const updatedItems = order.items.map((item: any) => {
-            if (item.quantity > 0) {
+        const updatedItems = order.items.map((orderItem: any) => {
+            if (orderItem.quantity > 0) {
                 return {
-                    ...item,
-                    refund_quantity: (item.refund_quantity || 0) + item.quantity,
+                    ...orderItem,
+                    refund_quantity: (orderItem.refund_quantity || 0) + orderItem.quantity,
                     fulfillment_quantity: 0,
                     quantity: 0
                 };
             }
-            return item;
+            return orderItem;
         });
 
         await updateItem(
@@ -174,15 +177,27 @@ const handlePartialOrderRefund = async (order_id: string, club_account_id: strin
         const updatedItems = order.items.map((orderItem: any) => {
             const refundItem = items.find(i => i.product_id === orderItem.product_id);
             if (refundItem) {
+                const deliveredUnitsCount = refundItem.units ? refundItem.units.filter(u => u.is_delivered).length : 0;
+                
                 return {
                     ...orderItem,
                     refund_quantity: (orderItem.refund_quantity || 0) + refundItem.quantity,
-                    fulfillment_quantity: orderItem.fulfillment_quantity - refundItem.quantity > 0 ? orderItem.fulfillment_quantity - refundItem.quantity : 0,
+                    fulfillment_quantity: Math.max(0, (orderItem.fulfillment_quantity || 0) - deliveredUnitsCount),
                     quantity: orderItem.quantity - refundItem.quantity
                 };
             }
             return orderItem;
         });
+
+        const allItemsDelivered = updatedItems.every((item: any) => item.fulfillment_quantity === item.quantity);
+        const allItemsNotDelivered = updatedItems.every((item: any) => item.fulfillment_quantity === 0);
+
+        let fulfillmentStatus = "PARTIALLY_DELIVERED";
+        if (allItemsNotDelivered) {
+            fulfillmentStatus = "PROCESSING";
+        } else if (allItemsDelivered) {
+            fulfillmentStatus = "DELIVERED";
+        }
 
         await updateItem(
             process.env.ORDERS_TABLE_NAME as string,
@@ -190,16 +205,18 @@ const handlePartialOrderRefund = async (order_id: string, club_account_id: strin
                 club_account_id: club_account_id,
                 order_id: order_id
             },
-            "SET #payment_status = :payment_status, #amount_paid = #amount_paid - :refund_amount, #items = :items",
+            "SET #payment_status = :payment_status, #amount_paid = #amount_paid - :refund_amount, #items = :items, #fulfillment_status = :fulfillment_status",
             {
                 "#payment_status": "payment_status",
                 "#amount_paid": "amount_paid",
-                "#items": "items"
+                "#items": "items",
+                "#fulfillment_status": "fulfillment_status"
             },
             {
                 ":refund_amount": refund_amount,
                 ":items": updatedItems,
-                ":payment_status": "PAID (Partial Refund)"
+                ":payment_status": "PAID (Partial Refund)",
+                ":fulfillment_status": fulfillmentStatus
             }
         );
     } catch (error) {

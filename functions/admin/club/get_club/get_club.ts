@@ -81,6 +81,7 @@ export const handler = async (event: any) => {
             club_type: item["club_type"],
             season_cycle: item?.season_cycle ?? 1,
             club_name: item["club_name"],
+            currency: item["currency"] ?? undefined,
             description: item["description"] ?? undefined,
             address: item["address"] ?? undefined,
             support_email: item["support_email"],
