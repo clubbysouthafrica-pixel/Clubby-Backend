@@ -104,6 +104,7 @@ export class MSC_PayfastConstruct extends Construct {
                 ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 ORDERS_TABLE_NAME: props.orders_table.tableName,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
             },
             permissions: {
                 [props.orders_table.tableArn]: [
@@ -111,6 +112,9 @@ export class MSC_PayfastConstruct extends Construct {
                     "dynamodb:UpdateItem"
                 ],
                 [props.transactions_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ],
+                [props.billing_table.tableArn]: [
                     "dynamodb:UpdateItem"
                 ]
             },

@@ -179,7 +179,7 @@ export const handler = async (event: any) => {
         if (order.total_amount - order.amount_paid - payment_amount === 0) {
             await updateTransactionsTable(club_account_id, transaction_id, payment_amount, payment_type);
             await updateOrdersTable(club_account_id, order_id, payment_amount);
-            await updateClubsOrderBilling(club_account_id, order.total_amount * 0.05);
+            await updateClubsOrderBilling(club_account_id, order.total_amount * 0.02);
 
             return createResponse(200, { message: "Order payment confirmed." }, origin);
         }

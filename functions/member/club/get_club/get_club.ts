@@ -142,6 +142,7 @@ export const handler = async (event: any) => {
             currency: item.currency,
             club_account_id: item["club_account_id"],
             venues_enabled: item["venues_enabled"] ?? false,
+            enable_shop: item["enable_shop"] ?? false,
             club_type: item["club_type"],
             club_name: item["club_name"],
             description: item["description"] ?? undefined,

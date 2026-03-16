@@ -58,6 +58,36 @@ async function updateOrdersTable(
     );
 }
 
+async function updateClubsOrderBilling(club_account_id: string, fee: number) {
+    const now = new Date();
+    const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    await updateItem(
+        process.env.MONTHLY_BILLING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: year_month,
+        },
+        `SET 
+            #total_sales = if_not_exists(#total_sales, :zero) + :one,
+            #total_amount = if_not_exists(#total_amount, :zero) + :order_fee,
+            #outstanding_amount = if_not_exists(#outstanding_amount, :zero) + :order_fee,
+            #order_amount = if_not_exists(#order_amount, :zero) + :order_fee
+        `,
+        {
+            "#total_sales": "total_sales",
+            "#total_amount": "total_amount",
+            "#outstanding_amount": "outstanding_amount",
+            "#order_amount": "order_amount"
+        },
+        {
+            ":one": 1,
+            ":zero": 0,
+            ":order_fee": fee,
+        }
+    );
+}
+
 export const handler = async (event: any) => {
     console.log('Received event:', JSON.stringify(event));
     const passPhrase = process.env.PAYFAST_PASSPHRASE;
@@ -116,6 +146,8 @@ export const handler = async (event: any) => {
             order_id,
             amount_paid
         );
+
+        await updateClubsOrderBilling(club_account_id, order.total_amount * 0.02);
     }
 
     return { statusCode: 200, body: "OK" };

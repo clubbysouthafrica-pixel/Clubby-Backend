@@ -267,6 +267,12 @@ export const handler = async (event: any) => {
       expressionAttributeValues[":hide_from_public"] = body.hide_from_public;
     }
 
+    if (typeof body?.enable_shop === "boolean") {
+      updateParts.push("#enable_shop = :enable_shop");
+      expressionAttributeNames["#enable_shop"] = "enable_shop";
+      expressionAttributeValues[":enable_shop"] = body.enable_shop;
+    }
+
     if (updateParts.length === 0) {
       return createResponse(200, { message: "Nothing to update." }, origin);
     }
