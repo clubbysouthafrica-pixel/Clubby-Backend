@@ -1,4 +1,4 @@
-import { deconstructEvent, createResponse, getItem } from './function_helpers';
+import { deconstructEvent, createResponse, getItem, decryptData } from './function_helpers';
 import PayFast from './payfast-helper';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 
@@ -67,7 +67,7 @@ export const handler = async (event: any) => {
             if (!raw) {
                 return createResponse(400, { message: 'Payment configuration not found.' }, origin);
             }
-            const parsedCfg = JSON.parse(raw);
+            const parsedCfg = JSON.parse(await decryptData(raw));
             if (!parsedCfg.merchant_id || !parsedCfg.merchant_key) {
                 return createResponse(400, { message: 'Payment configuration incomplete.' }, origin);
             }

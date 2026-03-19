@@ -91,6 +91,7 @@ export const handler = async (event: any) => {
         club_variables: item?.club_variables ?? undefined,
         facebook_url: item?.facebook_url,
         about_club: item?.about_club,
+        auto_register_members_if_paid: item?.auto_register_members_if_paid ?? false,
         opening_times: item?.opening_times,
         country_of_operation: item?.country_of_operation,
         currency: item?.currency,

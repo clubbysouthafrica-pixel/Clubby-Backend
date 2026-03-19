@@ -14,6 +14,14 @@ function formatToYearMonth(timestamp: number): string {
 }
 
 const processOrders = (report: Record<string, any>, orders: Record<string, any>[]) => {
+    if (!Array.isArray(report.order_data)) {
+        report.order_data = [];
+    }
+
+    if (!Array.isArray(report.data)) {
+        report.data = [];
+    }
+
     orders.forEach(order => {
         if (order?.payment_status === "REFUND") return;
         
@@ -30,10 +38,6 @@ const processOrders = (report: Record<string, any>, orders: Record<string, any>[
 
         const order_created_date = formatToYearMonth(order.created_date);
         const order_confirmed_date = formatToYearMonth(order.order_confirmed_by_admin_timestamp);
-
-        if (!report.order_data) {
-            report.order_data = [];
-        }
 
         let existingCreatedEntry = report.order_data.find((entry: Record<string, any>) => entry.date === order_created_date);
         let existingConfirmedEntry = report.order_data.find((entry: Record<string, any>) => entry.date === order_confirmed_date);
@@ -99,6 +103,14 @@ const processOrders = (report: Record<string, any>, orders: Record<string, any>[
 }
 
 const processRegistrations = (report: Record<string, any>, registrations: Record<string, any>[]) => {
+    if (!Array.isArray(report.registration_data)) {
+        report.registration_data = [];
+    }
+
+    if (!Array.isArray(report.data)) {
+        report.data = [];
+    }
+
     registrations.forEach(registration => {
         if (registration?.last_season_registration === true) {
             return;
@@ -116,14 +128,6 @@ const processRegistrations = (report: Record<string, any>, registrations: Record
         const registration_submission_date = registration?.registration_submitted_on ? formatToYearMonth(registration.registration_submitted_on) : undefined;
         const registered_on_date = registration?.registered_on ? formatToYearMonth(registration.registered_on) : undefined;
         const deregistered_on = registration?.deregistered_on ? formatToYearMonth(registration.deregistered_on) : undefined;
-
-        if (!report.registration_data) {
-            report.registration_data = [];
-        }
-
-        if (!report.data) {
-            report.data = [];
-        }
 
         if (registration_submission_date) {
             let existingEntry = report.registration_data.find((entry: Record<string, any>) => entry.date === registration_submission_date);
@@ -196,7 +200,10 @@ export const handler = async (event: any) => {
             total_shop_revenue: 0,
             total_shop_pending_revenue: 0,
             total_shop_sold_items: 0,
-            total_shop_pending_sold_items: 0
+            total_shop_pending_sold_items: 0,
+            data: [],
+            registration_data: [],
+            order_data: []
         };
 
         if (query_string_params?.season_cycle) {

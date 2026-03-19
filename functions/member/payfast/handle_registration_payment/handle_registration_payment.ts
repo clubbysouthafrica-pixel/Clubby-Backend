@@ -1,4 +1,4 @@
-import { getItem, queryItems, sendSqsMessage, updateItem, getClubEmailSendingLimit } from "./function_helpers";
+import { getItem, sendSqsMessage, updateItem, getClubEmailSendingLimit } from "./function_helpers";
 import { validatePayFastPayment } from "./payfast_validation";
 
 async function updateClubsRegistrationBilling(club_account_id: string, fee: number) {
@@ -65,7 +65,8 @@ async function updateTransactionsTable(
 async function updateRegistrationsTable(
     member_id: string,
     current_reg_id: string,
-    payment_amount: number
+    payment_amount: number,
+    shouldAutoRegisterMember: boolean
 ) {
     const paymentHistoryEntry = {
         date: Date.now(),
@@ -79,18 +80,31 @@ async function updateRegistrationsTable(
             user_id: member_id,
             registration_id: current_reg_id
         },
-        "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #registered_on = :registered_on, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)",
-        {
-            "#total_outstanding_amount": "total_outstanding_amount",
-            "#registered_on": "registered_on",
-            "#payment_history": "payment_history"
-        },
-        {
-            ":payment_amount": payment_amount,
-            ":registered_on": Date.now(),
-            ":payment_entry": [paymentHistoryEntry],
-            ":empty_list": []
-        }
+        shouldAutoRegisterMember
+            ? "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #registered_on = :registered_on, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)"
+            : "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)",
+        shouldAutoRegisterMember
+            ? {
+                "#total_outstanding_amount": "total_outstanding_amount",
+                "#registered_on": "registered_on",
+                "#payment_history": "payment_history"
+            }
+            : {
+                "#total_outstanding_amount": "total_outstanding_amount",
+                "#payment_history": "payment_history"
+            },
+        shouldAutoRegisterMember
+            ? {
+                ":payment_amount": payment_amount,
+                ":registered_on": Date.now(),
+                ":payment_entry": [paymentHistoryEntry],
+                ":empty_list": []
+            }
+            : {
+                ":payment_amount": payment_amount,
+                ":payment_entry": [paymentHistoryEntry],
+                ":empty_list": []
+            }
     );
 }
 
@@ -172,31 +186,34 @@ export const handler = async (event: any) => {
     if (isValid) {
         console.log("✅ Payment verified successfully");
 
+        const shouldAutoRegisterMember = club?.auto_register_members_if_paid === true;
+
         await updateTransactionsTable(
             club_account_id,
             club_member.current_reg_transaction_id,
             amount_paid
         );
 
-        const now = new Date();
-
         await updateRegistrationsTable(
             user_id,
             club_member.current_reg_id,
-            amount_paid
+            amount_paid,
+            shouldAutoRegisterMember
         );
 
-        await updateClubMembersTable(
-            club_account_id,
-            user_id
-        );
+        if (shouldAutoRegisterMember) {
+            await updateClubMembersTable(
+                club_account_id,
+                user_id
+            );
+        }
 
         await updateClubsRegistrationBilling(
             club_account_id,
             registration.total_fee * (club.member_registration_fee_to_club / 100)
         );
 
-        if (club.use_success_email_template) {
+        if (club.use_success_email_template && shouldAutoRegisterMember) {
 
             const club_sending_limit = await getClubEmailSendingLimit(club_account_id, [club_member.member_email], club);
             if (typeof club_sending_limit === 'string') {

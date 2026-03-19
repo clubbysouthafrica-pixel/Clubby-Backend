@@ -1,6 +1,6 @@
 import { AdminCreateUserCommand, AdminGetUserCommand, AdminSetUserPasswordCommand, CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
-import { randomUUID, createHash } from "crypto";
+import { randomUUID } from "crypto";
 import {
     createResponse,
     deconstructEvent,

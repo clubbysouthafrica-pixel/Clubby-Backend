@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_LambdaLayer, MSC_Table } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_LambdaLayer, MSC_Table, MSC_Kms } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { Stack } from "aws-cdk-lib";
@@ -12,6 +12,7 @@ interface MSC_PayFastConstructProps {
         jwt_layer: MSC_LambdaLayer;
         axios_layer: MSC_LambdaLayer;
     };
+    kms_key: MSC_Kms;
 }
 
 export class MSC_PayFastConstruct extends Construct {
@@ -27,6 +28,7 @@ export class MSC_PayFastConstruct extends Construct {
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
+                KMS_KEY_ID: props.kms_key.keyId
             },
             permissions: {
                 [props.club_table.tableArn]: [
@@ -34,6 +36,10 @@ export class MSC_PayFastConstruct extends Construct {
                 ],
                 [ssmParamArn]: [
                     "ssm:PutParameter"
+                ],
+                [props.kms_key.keyArn]: [
+                    "kms:Encrypt",
+                    "kms:GenerateDataKey"
                 ]
             },
             layers: [props.layers.jwt_layer, props.layers.axios_layer]

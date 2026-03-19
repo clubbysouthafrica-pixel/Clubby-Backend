@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_LambdaLayer, MSC_Table, MSC_Cognito, MSC_Queue } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_LambdaLayer, MSC_Table, MSC_Cognito, MSC_Queue, MSC_Kms } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { Stack } from "aws-cdk-lib";
@@ -19,6 +19,7 @@ interface MSC_PayfastConstructProps {
     };
     billing_table: MSC_Table;
     mail_queue: MSC_Queue;
+    kms_key: MSC_Kms;
 }
 
 export class MSC_PayfastConstruct extends Construct {
@@ -39,7 +40,7 @@ export class MSC_PayfastConstruct extends Construct {
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
-                ORDERS_TABLE_NAME: props.orders_table.tableName,
+                ORDERS_TABLE_NAME: props.orders_table.tableName
             },
             permissions: {
                 [props.users_table.tableArn]: [
@@ -56,6 +57,9 @@ export class MSC_PayfastConstruct extends Construct {
                 ],
                 [ssmParamArn]: [
                     "ssm:GetParameter"
+                ],
+                [props.kms_key.keyArn]: [
+                    "kms:Decrypt"
                 ]
             },
             layers: [props.layers.jwt_layer, props.layers.axios_layer]

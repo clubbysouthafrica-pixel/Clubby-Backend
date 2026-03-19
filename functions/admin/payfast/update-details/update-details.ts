@@ -1,5 +1,5 @@
 import { SSMClient, PutParameterCommand } from "@aws-sdk/client-ssm";
-import { createResponse, deconstructEvent, updateItem } from "./function_helpers";
+import { createResponse, deconstructEvent, updateItem, encryptData } from "./function_helpers";
 import { PayFast } from "./payfast-helper";
 
 const ssm_client = new SSMClient({ region: process.env.REGION });
@@ -77,7 +77,7 @@ export const handler = async (event: any) => {
             await ssm_client.send(new PutParameterCommand({
                 Name: paramName,
                 Type: "SecureString",
-                Value: JSON.stringify(valueObj),
+                Value: await encryptData(JSON.stringify(valueObj), process.env.KMS_KEY_ID as string),
                 Overwrite: false,
                 Tier: "Standard",
             }));

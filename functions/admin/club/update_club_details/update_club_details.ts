@@ -166,6 +166,16 @@ export const handler = async (event: any) => {
       expressionAttributeValues[":support_email"] = body.support_email;
     }
 
+    if (typeof body?.auto_register_members_if_paid === "boolean") {
+      updateParts.push(
+        "#auto_register_members_if_paid = :auto_register_members_if_paid",
+      );
+      expressionAttributeNames["#auto_register_members_if_paid"] =
+        "auto_register_members_if_paid";
+      expressionAttributeValues[":auto_register_members_if_paid"] =
+        body.auto_register_members_if_paid;
+    }
+
     if (typeof body?.notify_on_member_registration === "boolean") {
       updateParts.push(
         "#notify_on_member_registration = :notify_on_member_registration",
