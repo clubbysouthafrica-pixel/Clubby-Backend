@@ -140,6 +140,27 @@ export const filterBillingNumberField = (
 };
 
 /**
+ * Filter a club variable against a filter
+ * Club variables are stored in registration.template_variables
+ */
+export const filterClubVariableField = (
+    fieldValue: any,
+    filter: RegistrationFieldFilter
+): FilterResult => {
+    if (!fieldValue) {
+        return { matches: false, reason: "Field value is empty" };
+    }
+
+    const value = String(fieldValue).toLowerCase();
+    const filterValue = String(filter.value).toLowerCase();
+
+    return {
+        matches: value.includes(filterValue),
+        reason: !value.includes(filterValue) ? `Text does not contain "${filter.value}"` : undefined
+    };
+};
+
+/**
  * Apply filters to registration data
  * Returns true if all filters match, false otherwise
  */
@@ -156,6 +177,27 @@ export const applyFiltersToRegistration = (
     for (const filter of filters) {
         let fieldValue: any;
         let filterResult: FilterResult;
+
+        if (filter.type === "club_variable") {
+            const templateVariable = registration?.template_variables?.find(
+                (variable: any) => variable?.name === filter.field_id
+            );
+
+            if (!templateVariable) {
+                failedFilters.push(`Field ${filter.field_id} not found in registration`);
+                continue;
+            }
+
+            filterResult = filterClubVariableField(templateVariable.value, filter);
+
+            if (!filterResult.matches) {
+                failedFilters.push(
+                    `${filter.field_id} (${filter.type}): ${filterResult.reason || "No match"}`
+                );
+            }
+
+            continue;
+        }
 
         const regField = Object.entries(registration).find(([key, val]: any) => {
             return key === filter.field_id;

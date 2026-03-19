@@ -192,8 +192,8 @@ const getRegistrationPageData = async (
     const memberType = query_string_params?.memberType;
     const activeKeys = query_string_params?.activeKeys ? query_string_params.activeKeys.split(',') : [];
     const parsedActiveKeys = activeKeys.map((key: any) => {
-        const [type, fieldName] = key.split(':');
-        return { type, fieldName };
+        const [type, ...fieldNameParts] = key.split(':');
+        return { type, fieldName: fieldNameParts.join(':') };
     });
 
     let queryLimit = limit;
@@ -270,6 +270,7 @@ const getRegistrationPageData = async (
 
             const meta_billing: any = [];
             const meta_standard: any = [];
+            const meta_club_variables: any = [];
             if (registration && activeKeys.length > 0) {
                 for (const key of Object.keys(registration)) {
                     const field = registration[key];
@@ -286,6 +287,23 @@ const getRegistrationPageData = async (
                                 meta_standard.push(field);
                             }
                         }
+                    }
+                }
+
+                for (const activeKey of parsedActiveKeys) {
+                    if (activeKey.type !== "club_variable") {
+                        continue;
+                    }
+
+                    const templateVariable = registration?.template_variables?.find(
+                        (variable: any) => variable?.name === activeKey.fieldName
+                    );
+
+                    if (templateVariable) {
+                        meta_club_variables.push({
+                            name: templateVariable.name,
+                            value: templateVariable.value
+                        });
                     }
                 }
             }
@@ -325,6 +343,7 @@ const getRegistrationPageData = async (
                 registered_on: registration?.registered_on,
                 meta_standard: meta_standard,
                 meta_billing: meta_billing,
+                meta_club_variables: meta_club_variables,
                 last_season_registration: registration?.last_season_registration ?? undefined,
                 ...user_information
             });
@@ -426,28 +445,38 @@ const getRegistrationPageData = async (
         }
     }
 
+    for (const variable of club?.club_variables || []) {
+        filters.push(
+            {
+                key: `club_variable:${variable.key}`,
+                field_id: variable.key,
+                field_name: variable.name,
+                input_type: "text",
+                type: "club_variable"
+            }
+        );
+    }
+
     const payment_methods = [
         "EFT/Cash",
         ...(club?.custom_payment_methods?.map((pm: { name: string, url: string }) => pm.name) || [])
     ];
+    
+    const template_variables = (club?.club_variables || []).map((variable: any) => ({ title: variable.name, name: variable.key }));
 
-    const template_variables = club?.registration_success_email_template_body
-        ? extractTemplateVariables(club.registration_success_email_template_body)
-        : [];
-
-    if (club?.registration_success_email_template_body?.includes("{{member_name}}") && !template_variables.some(v => v.name === "member_name")) {
+    if (club?.registration_success_email_template_body?.includes("{{member_name}}") && !template_variables.some((v: any) => v.name === "member_name")) {
         template_variables.unshift({
             name: "member_name",
             title: "Member Name"
         });
     }
-    if (club?.registration_success_email_template_body?.includes("{{club_name}}") && !template_variables.some(v => v.name === "club_name")) {
+    if (club?.registration_success_email_template_body?.includes("{{club_name}}") && !template_variables.some((v: any) => v.name === "club_name")) {
         template_variables.unshift({
             name: "club_name",
             title: "Club Name"
         });
     }
-    if (club?.registration_success_email_template_body?.includes("{{club_email}}") && !template_variables.some(v => v.name === "club_email")) {
+    if (club?.registration_success_email_template_body?.includes("{{club_email}}") && !template_variables.some((v: any) => v.name === "club_email")) {
         template_variables.unshift({
             name: "club_email",
             title: "Club Email"

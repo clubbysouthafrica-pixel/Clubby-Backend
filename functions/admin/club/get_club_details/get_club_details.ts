@@ -12,14 +12,14 @@ export interface GalleryImage {
 async function getGalleryImages(clubAccountId: string): Promise<GalleryImage[]> {
   try {
     const prefix = `gallery/${clubAccountId}/`;
-    
+
     const listCommand = new ListObjectsV2Command({
       Bucket: process.env.IMAGE_BUCKET_NAME,
       Prefix: prefix,
     });
 
     const listResponse = await s3_client.send(listCommand);
-    
+
     if (!listResponse.Contents || listResponse.Contents.length === 0) {
       return [];
     }
@@ -34,7 +34,7 @@ async function getGalleryImages(clubAccountId: string): Promise<GalleryImage[]> 
         });
 
         const signedUrl = await getSignedUrl(s3_client, getCommand, { expiresIn: 3600 });
-        
+
         galleryImages.push({
           key: object.Key,
           url: signedUrl,
@@ -81,13 +81,14 @@ export const handler = async (event: any) => {
       {
         bank_details: hasBankDetails
           ? {
-              bank: item.bank,
-              account_number: item.account_number,
-              branch_code: item.branch_code,
-              account_type: item.account_type,
-            }
+            bank: item.bank,
+            account_number: item.account_number,
+            branch_code: item.branch_code,
+            account_type: item.account_type,
+          }
           : undefined,
         instagram_url: item?.instagram_url,
+        club_variables: item?.club_variables ?? undefined,
         facebook_url: item?.facebook_url,
         about_club: item?.about_club,
         opening_times: item?.opening_times,

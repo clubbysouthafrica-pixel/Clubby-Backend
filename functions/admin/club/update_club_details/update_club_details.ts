@@ -80,6 +80,30 @@ function validateBody(body: Record<string, string>): string | null {
     }
   }
 
+  if (body?.club_variables) {
+    if (!Array.isArray(body.club_variables)) {
+      return "Invalid club_variables format. Must be an array.";
+    }
+
+    for (const variable of body.club_variables) {
+      if (typeof variable !== "object" || variable === null) {
+        return "Each club_variable must be an object.";
+      }
+
+      if (typeof variable.name !== "string") {
+        return "Each club_variable must have a 'name' property of type string.";
+      }
+
+      if (typeof variable.key !== "string") {
+        return "Each club_variable must have a 'key' property of type string.";
+      }
+
+      if (typeof variable.visible !== "boolean") {
+        return "Each club_variable must have a 'visible' property of type boolean.";
+      }
+    }
+  }
+
   return null;
 }
 
@@ -259,6 +283,12 @@ export const handler = async (event: any) => {
         "use_submission_email_template";
       expressionAttributeValues[":use_submission_email_template"] =
         body.use_submission_email_template;
+    }
+
+    if (Array.isArray(body?.club_variables)) {
+      updateParts.push("#club_variables = :club_variables");
+      expressionAttributeNames["#club_variables"] = "club_variables";
+      expressionAttributeValues[":club_variables"] = body.club_variables;
     }
 
     if (typeof body.hide_from_public === "boolean") {

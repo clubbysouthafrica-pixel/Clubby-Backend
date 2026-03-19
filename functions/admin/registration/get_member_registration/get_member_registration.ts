@@ -229,19 +229,18 @@ export const handler = async (event: any) => {
             transaction_id = member_registration?.transaction_id;
         }
 
-        const template_variables = club?.registration_success_email_template_body
-            ? extractTemplateVariables(club.registration_success_email_template_body)
-            : [];
+        const template_variables = club?.club_variables?.map((variable: any) => ({title: variable.name, name: variable.key}));
 
         let variables = [] as Array<{ name: string; title: string; value?: string }>;
         if (template_variables) {
-            variables = template_variables.filter(v => v.name !== "member_name");
+            variables = template_variables.filter((v: any) => v.name !== "member_name");
 
             const registration_variables = member_registration?.template_variables ?? [];
             for (const variable of variables) {
                 for (const reg_variable of registration_variables) {
                     if (variable.name === reg_variable.name) {
                         variable["value"] = reg_variable.value;
+                        variable["title"] = variable.title;
                         break;
                     }
                 }
