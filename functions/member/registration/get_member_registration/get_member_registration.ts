@@ -219,16 +219,14 @@ export const handler = async (event: any) => {
         const admin_notes = (member_registration?.admin_notes || []).filter((note: any) => note.visibleToMember);
 
         const club = await getClub(query_string_params.club_account_id);
-        const template_variables = club?.registration_success_email_template_body
-            ? extractTemplateVariables(club.registration_success_email_template_body)
-            : [];
+        const template_variables = club?.club_variables?.map((variable: any) => ({ title: variable.name, name: variable.key }));
 
         let variables = [] as Array<{ name: string; title: string; value?: string }>;
         if (template_variables) {
             variables = template_variables;
-            variables = template_variables.filter(v => v.name !== "member_name");
-            variables = template_variables.filter(v => v.name !== "club_name");
-            variables = template_variables.filter(v => v.name !== "club_email");
+            variables = template_variables.filter((v: any) => v.name !== "member_name");
+            variables = template_variables.filter((v: any) => v.name !== "club_name");
+            variables = template_variables.filter((v: any) => v.name !== "club_email");
 
             const registration_variables = member_registration?.template_variables ?? [];
             for (const variable of variables) {
