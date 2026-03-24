@@ -2,7 +2,7 @@ import {
   createResponse,
   deconstructEvent,
   removeItem,
-} from "../create_storage/function_helpers";
+} from "./function_helpers";
 
 export const handler = async (event: any) => {
   const { origin, body, query_string_params } = deconstructEvent(event, false);
