@@ -8,6 +8,7 @@
     "clean": "rm -rf dist",
     "build": "tsc --build",
     "create-layers": "bash scripts/build-layers.sh",
+    "create-layers-windows": "powershell -ExecutionPolicy ByPass -File ./scripts/build-layers.ps1",
     "update-helpers": "node scripts/copy-helpers.js",
     "predeploy": "node scripts/copy-helpers.js && npm run build",
     "deploy": "npm run predeploy && cdk deploy --all --require-approval never",
