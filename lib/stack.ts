@@ -61,6 +61,7 @@ export class MSC_Stack extends cdk.Stack {
       orders_table: tables.orders_table,
       transactions_table: tables.transactions_table,
       billing_table: tables.billing_table,
+      events_table: tables.events_table,
       layers: {
         jwt_layer: all_layers.jwt_layer,
         jwks_rsa_layer: all_layers.jwks_rsa_layer,
@@ -110,6 +111,7 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_MemberNestedStack(this, `MemberStack`, {
       env: props?.env,
+      events_table: tables.events_table,
       venues_table: tables.venues_table,
       venues_bookings_table: tables.venues_bookings_table,
       email_rate_limiter_table: tables.email_rate_limiter_table,
@@ -124,6 +126,7 @@ export class MSC_Stack extends cdk.Stack {
       club_table: tables.club_table,
       club_member_table: tables.club_member_table,
       registration_form_table: tables.registration_form_table,
+      event_registrations_table: tables.event_registrations_table,
       image_bucket: buckets.image_bucket,
       mail_queue: mail_queue,
       shop_images_bucket: buckets.shop_images_bucket,

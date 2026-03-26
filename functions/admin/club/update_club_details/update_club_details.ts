@@ -186,6 +186,16 @@ export const handler = async (event: any) => {
         body.notify_on_member_registration;
     }
 
+    if (typeof body?.enable_events === "boolean") {
+      updateParts.push(
+        "#enable_events = :enable_events",
+      );
+      expressionAttributeNames["#enable_events"] =
+        "enable_events";
+      expressionAttributeValues[":enable_events"] =
+        body.enable_events;
+    }
+
     if (
       body?.registration_submission_email_template_body &&
       typeof body.registration_submission_email_template_body === "string"

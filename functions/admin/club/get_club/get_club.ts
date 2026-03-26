@@ -76,6 +76,7 @@ export const handler = async (event: any) => {
             club_account_id: item["club_account_id"],
             registration_form_exists: registration_form_exists ? true : false,
             currency_exists: item?.currency ? true : false,
+            enable_events: item?.enable_events ?? false,
             country_exists: item?.country_of_operation ? true : false,
             bank_details_exists: item?.account_number && item?.bank && item?.branch_code && item?.account_type ? true : false,
             club_type: item["club_type"],

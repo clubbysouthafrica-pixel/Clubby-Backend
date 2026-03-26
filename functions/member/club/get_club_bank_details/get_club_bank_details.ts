@@ -40,28 +40,42 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "User has no registration fee associated." }, origin);
         }
 
-        let outstanding_amount = 0;
-        let options = [] as any[];
+        let total_outstanding_amount = 0;
+        let transaction_options = [] as any[];
         if (club_member.registered === false) {
-            outstanding_amount = registration_fee["total_outstanding_amount"];
+            total_outstanding_amount = registration_fee["total_outstanding_amount"];
         } else {
-            const orders = await queryItems(
-                process.env.ORDERS_TABLE_NAME!,
-                "user_id = :user_id AND club_account_id = :club_account_id",
+            const transactions = await queryItems(
+                process.env.TRANSACTIONS_TABLE_NAME as string,
+                "club_account_id = :clubId AND user_id = :userId",
                 {
-                    ":user_id": user_id as string,
-                    ":club_account_id": query_string_params.club_account_id
+                    ":clubId": query_string_params.club_account_id,
+                    ":userId": user_id as string,
                 },
-                process.env.ORDERS_INDEX_NAME
+                process.env.TRANSACTIONS_USER_ID_INDEX as string
             );
-            outstanding_amount += orders?.reduce((sum, order) => {
-                const outstandingOrderAmount = order["total_amount"] - order["amount_paid"];
-                return outstandingOrderAmount > 0 && order["payment_status"] === "PENDING" ? sum + outstandingOrderAmount : sum;
-            }, 0) || 0;
-            options = orders?.filter(order => (order["total_amount"] - order["amount_paid"]) > 0 && order["payment_status"] === "PENDING").map(order => {
-                const outstandingAmount = order["total_amount"] - order["amount_paid"];
-                return { order_id: order["order_id"], items: order["items"], outstanding_amount: outstandingAmount, total_amount: order["total_amount"] };
+
+            const filteredTransactions = transactions?.filter((transaction) => {
+                const outstandingAmount = (transaction["amount"] ?? 0) - (transaction["amount_paid"] ?? 0);
+                const status = transaction["status"];
+
+                return outstandingAmount > 0 && (status === "PENDING" || status === "PARTIALLY PAID");
             }) ?? [];
+
+            transaction_options = filteredTransactions.map((transaction) => {
+                const outstandingAmount = (transaction["amount"] ?? 0) - (transaction["amount_paid"] ?? 0);
+                total_outstanding_amount += outstandingAmount;
+                return {
+                    transaction_id: transaction["transaction_id"],
+                    type: transaction["type"],
+                    outstanding_amount: outstandingAmount,
+                    total_amount: transaction["amount"],
+                    order_id: transaction?.["order_id"] ?? undefined,         	
+                    event_registration_id: transaction?.["event_registration_id"] ?? undefined,
+                    event_id: transaction?.["event_id"] ?? undefined
+                };
+            });
+            
         }
 
         return createResponse(200, {
@@ -70,8 +84,8 @@ export const handler = async (event: any) => {
             branch_code: item["branch_code"],
             account_type: item["account_type"],
             registration_payment_reference: club_member["registration_payment_reference"],
-            outstanding_amount: outstanding_amount,
-            order_options: options
+            outstanding_amount: total_outstanding_amount,
+            transaction_options: transaction_options
         }, origin);
 
     } catch (error) {

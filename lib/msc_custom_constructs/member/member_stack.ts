@@ -14,7 +14,8 @@ import {
     MSC_MemberShopConstruct,
     MSC_MemberOrdersConstruct,
     MSC_BookingsConstruct,
-    MSC_VenuesConstruct
+    MSC_VenuesConstruct,
+    MSC_EventsConstruct
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs";
 
@@ -34,6 +35,8 @@ export interface MSC_MemberNestedStackProps extends StackProps {
     venues_table: MSC_Table;
     billing_table: MSC_Table;
     orders_table: MSC_Table;
+    event_registrations_table: MSC_Table;
+    events_table: MSC_Table;
     product_table: MSC_Table;
     email_rate_limiter_table: MSC_Table;
     layers: {
@@ -111,7 +114,18 @@ export class MSC_MemberNestedStack extends Stack {
             transactions_table: props.transactions_table,
             billing_table: props.billing_table,
             orders_table: props.orders_table,
-            kms_key: props.kms_key
+            kms_key: props.kms_key,
+            event_registrations_table: props.event_registrations_table
+        });
+
+        new MSC_EventsConstruct(this, `${id}-Events`, {
+            api_gateway: api_gateway,
+            layers: props.layers,
+            token_authorizer: jwt_construct.token_authorizer,
+            events_table: props.events_table,
+            club_member_table: props.club_member_table,
+            event_registrations_table: props.event_registrations_table,
+            transactions_table: props.transactions_table
         });
 
         new MSC_TransactionsConstruct(this, `${id}-Transactions`, {
@@ -168,7 +182,7 @@ export class MSC_MemberNestedStack extends Stack {
             image_bucket: props.image_bucket,
             layers: props.layers,
             signatures_bucket: props.signatures_bucket,
-            orders_table: props.orders_table
+            transactions_table: props.transactions_table
         });
 
         new MSC_MemberUserConstruct(this, `${id}-User`, {

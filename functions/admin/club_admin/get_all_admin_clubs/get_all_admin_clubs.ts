@@ -46,6 +46,7 @@ export const handler = async (event: any) => {
             item.season_cycle = club?.season_cycle ?? 1
             item.deregistration_in_progress = club?.deregistration_in_progress ?? false
             item.enable_shop = club?.enable_shop === true ? true : false
+            item.enable_events = club?.enable_events === true ? true : false
         
             return item;
         }));

@@ -5,7 +5,8 @@ import {
     MSC_BookingsConstruct,
     MSC_VenuesConstruct,
     MSC_AdminShopConstruct,
-    MSC_AdminOrdersConstruct
+    MSC_AdminOrdersConstruct,
+    MSC_EventsConstruct
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
@@ -19,6 +20,7 @@ export interface MSC_AdminFeaturesNestedStackProps extends StackProps {
     orders_table: MSC_Table;
     transactions_table: MSC_Table;
     billing_table: MSC_Table;
+    events_table: MSC_Table;
     shop_images_bucket: MSC_Bucket;
     layers: {
         jwt_layer: MSC_LambdaLayer;
@@ -68,6 +70,13 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
             transactions_table: props.transactions_table,
             product_table: props.product_table,
             billing_table: props.billing_table
+        });
+
+        new MSC_EventsConstruct(this, `${id}-Events`, {
+            api_gateway: api_gateway,
+            token_authorizer: jwt_construct.token_authorizer,
+            layers: props.layers,
+            events_table: props.events_table
         });
 
         new MSC_BookingsConstruct(this, `${id}-Bookings`, {

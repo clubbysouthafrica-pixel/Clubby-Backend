@@ -9,10 +9,10 @@ interface MSC_MemberClubConstructProps {
     club_member_table: MSC_Table;
     registration_form_table: MSC_Table;
     registrations_table: MSC_Table;
+    transactions_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     image_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
-    orders_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -70,21 +70,21 @@ export class MSC_MemberClubConstruct extends Construct {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                ORDERS_TABLE_NAME: props.orders_table.tableName,
-                ORDERS_INDEX_NAME: "UserIDIndex"
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+                TRANSACTIONS_USER_ID_INDEX: "UserIDIndex"
             },
             permissions: {
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [`${props.transactions_table.tableArn}/index/UserIDIndex`]: [
+                    "dynamodb:Query"
                 ],
                 [props.club_member_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
                 [props.registrations_table.tableArn]: [
                     "dynamodb:GetItem"
-                ],
-                [`${props.orders_table.tableArn}/index/UserIDIndex`]: [
-                    "dynamodb:Query"
                 ]
             },
             layers: [props.layers.jwt_layer]
