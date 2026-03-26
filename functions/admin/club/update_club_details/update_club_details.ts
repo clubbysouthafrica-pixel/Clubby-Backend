@@ -196,6 +196,16 @@ export const handler = async (event: any) => {
         body.enable_events;
     }
 
+    if (typeof body?.venues_enabled === "boolean") {
+      updateParts.push(
+        "#venues_enabled = :venues_enabled",
+      );
+      expressionAttributeNames["#venues_enabled"] =
+        "venues_enabled";
+      expressionAttributeValues[":venues_enabled"] =
+        body.venues_enabled;
+    }
+
     if (
       body?.registration_submission_email_template_body &&
       typeof body.registration_submission_email_template_body === "string"

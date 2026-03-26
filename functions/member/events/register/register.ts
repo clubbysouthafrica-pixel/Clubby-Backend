@@ -365,16 +365,6 @@ export const handler = async (event: any) => {
 			}, origin);
 		}
 
-		const event_registration_id = randomUUID();
-		const transaction_id = randomUUID();
-		await addItem(process.env.EVENT_REGISTRATIONS_TABLE_NAME as string, {
-			...body,
-			event_registration_id: event_registration_id,
-			transaction_id: transaction_id,
-			amount_paid: 0,
-			submitted_on: Date.now()
-		});
-
 		const club_member = await getItem(
 			process.env.CLUB_MEMBER_TABLE_NAME as string,
 			{
@@ -386,6 +376,18 @@ export const handler = async (event: any) => {
 		if (!club_member) {
 			return createResponse(400, { message: "User is not a member of the club." }, origin);
 		}
+
+		const event_registration_id = randomUUID();
+		const transaction_id = randomUUID();
+		await addItem(process.env.EVENT_REGISTRATIONS_TABLE_NAME as string, {
+			...body,
+			event_registration_id: event_registration_id,
+			transaction_id: transaction_id,
+			amount_paid: 0,
+			submitted_on: Date.now(),
+			member_first_name: club_member.member_first_name,
+			member_surname: club_member.member_surname,
+		});
 
 		await addToTransactionsTable(
 			body.club_account_id,

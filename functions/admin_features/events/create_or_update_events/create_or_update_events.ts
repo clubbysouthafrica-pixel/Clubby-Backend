@@ -2,7 +2,7 @@ import {
 	addItem,
 	createResponse,
 	deconstructEvent,
-} from "./function_helpers";
+} from "../confirm_payment/function_helpers";
 
 type FormInputType = "TEXT" | "DROPDOWN" | "CHECKBOX";
 type PricingType = "FREE" | "SINGLE" | "MULTIPLE" | "ADDITIONAL";

@@ -21,6 +21,7 @@ export interface MSC_AdminFeaturesNestedStackProps extends StackProps {
     transactions_table: MSC_Table;
     billing_table: MSC_Table;
     events_table: MSC_Table;
+    event_registrations_table: MSC_Table;
     shop_images_bucket: MSC_Bucket;
     layers: {
         jwt_layer: MSC_LambdaLayer;
@@ -76,7 +77,9 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
             api_gateway: api_gateway,
             token_authorizer: jwt_construct.token_authorizer,
             layers: props.layers,
-            events_table: props.events_table
+            events_table: props.events_table,
+            event_registrations_table: props.event_registrations_table,
+            transactions_table: props.transactions_table
         });
 
         new MSC_BookingsConstruct(this, `${id}-Bookings`, {
