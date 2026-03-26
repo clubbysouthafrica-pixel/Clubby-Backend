@@ -10,7 +10,13 @@ import {
   MSC_StorageConstruct,
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
-import { MSC_Table } from "../../msc_service_constructs";
+import {
+  MSC_APIGateway,
+  MSC_Bucket,
+  MSC_Cognito,
+  MSC_LambdaLayer,
+  MSC_Table,
+} from "../../msc_service_constructs";
 
 export interface MSC_AdminFeaturesNestedStackProps extends StackProps {
   admin_user_pool: MSC_Cognito;
