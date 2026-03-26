@@ -1,5 +1,5 @@
-import * as cdk from 'aws-cdk-lib';
-import { Construct } from 'constructs';
+import * as cdk from "aws-cdk-lib";
+import { Construct } from "constructs";
 import {
   MSC_MemberNestedStack,
   MSC_AdminNestedStack,
@@ -7,31 +7,35 @@ import {
   MSC_Layers,
   MSC_InternalInfraStack,
   MSC_MailingStack,
-  MSC_AdminFeaturesNestedStack
+  MSC_AdminFeaturesNestedStack,
 } from "./msc_custom_constructs";
-import { MSC_BucketsConstruct } from './msc_custom_constructs/buckets/buckets';
-import { MSC_Cognito, MSC_Queue, MSC_Kms } from './msc_service_constructs';
+import { MSC_BucketsConstruct } from "./msc_custom_constructs/buckets/buckets";
+import { MSC_Cognito, MSC_Queue, MSC_Kms } from "./msc_service_constructs";
 
 export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
     super(scope, stack_id, props);
 
-    if (process.env.ENVIRONMENT !== 'Dev') {
+    if (process.env.ENVIRONMENT !== "Dev") {
       this.terminationProtection = true;
     }
 
-    const kmsKey = new MSC_Kms(this, 'DataEncryption', {
+    const kmsKey = new MSC_Kms(this, "DataEncryption", {
       enableKeyRotation: true,
-      description: 'KMS key for encrypting MyClubSoftware data',
+      description: "KMS key for encrypting MyClubSoftware data",
     });
 
     const mail_queue = new MSC_Queue(this, `SendMail`, {
-      queue_name: 'SendMail',
+      queue_name: "SendMail",
     });
-    const club_deregistration_queue = new MSC_Queue(this, `ClubDeregistration`, {
-      queue_name: 'ClubDeregistration',
-      timeout: 900
-    });
+    const club_deregistration_queue = new MSC_Queue(
+      this,
+      `ClubDeregistration`,
+      {
+        queue_name: "ClubDeregistration",
+        timeout: 900,
+      },
+    );
 
     const member_user_pool = new MSC_Cognito(this, `${stack_id}-Member`);
     const admin_user_pool = new MSC_Cognito(this, `${stack_id}-Admin`);
@@ -46,7 +50,7 @@ export class MSC_Stack extends cdk.Stack {
       mail_queue: mail_queue,
       billing_table: tables.billing_table,
       layers: {
-        jwt_layer: all_layers.jwt_layer
+        jwt_layer: all_layers.jwt_layer,
       },
     });
 
@@ -61,11 +65,13 @@ export class MSC_Stack extends cdk.Stack {
       orders_table: tables.orders_table,
       transactions_table: tables.transactions_table,
       billing_table: tables.billing_table,
+      storage_table: tables.storage_table,
+      storage_requests_table: tables.storage_request_table,
       layers: {
         jwt_layer: all_layers.jwt_layer,
         jwks_rsa_layer: all_layers.jwks_rsa_layer,
-        axios_layer: all_layers.axios_layer
-      }
+        axios_layer: all_layers.axios_layer,
+      },
     });
 
     new MSC_AdminNestedStack(this, `AdminStack`, {
@@ -92,9 +98,9 @@ export class MSC_Stack extends cdk.Stack {
       layers: {
         jwt_layer: all_layers.jwt_layer,
         jwks_rsa_layer: all_layers.jwks_rsa_layer,
-        axios_layer: all_layers.axios_layer
+        axios_layer: all_layers.axios_layer,
       },
-      kms_key: kmsKey
+      kms_key: kmsKey,
     });
 
     new MSC_InternalInfraStack(this, `InternalInfra`, {
@@ -105,7 +111,7 @@ export class MSC_Stack extends cdk.Stack {
       },
       club_admin_table: tables.club_admin_table,
       users_table: tables.users_table,
-      club_table: tables.club_table
+      club_table: tables.club_table,
     });
 
     new MSC_MemberNestedStack(this, `MemberStack`, {
@@ -123,6 +129,8 @@ export class MSC_Stack extends cdk.Stack {
       users_table: tables.users_table,
       club_table: tables.club_table,
       club_member_table: tables.club_member_table,
+      storage_table: tables.storage_table,
+      storage_request_table: tables.storage_request_table,
       registration_form_table: tables.registration_form_table,
       image_bucket: buckets.image_bucket,
       mail_queue: mail_queue,
@@ -130,9 +138,9 @@ export class MSC_Stack extends cdk.Stack {
       layers: {
         jwt_layer: all_layers.jwt_layer,
         jwks_rsa_layer: all_layers.jwks_rsa_layer,
-        axios_layer: all_layers.axios_layer
+        axios_layer: all_layers.axios_layer,
       },
-      kms_key: kmsKey
+      kms_key: kmsKey,
     });
   }
 }

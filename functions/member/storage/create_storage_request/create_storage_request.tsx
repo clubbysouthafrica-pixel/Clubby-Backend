@@ -106,6 +106,7 @@ export const handler = async (event: any) => {
     const paymentIntentId =
       body?.paymentIntentId ?? body?.payment_intent_id ?? null;
     const notes = body?.notes ?? null;
+    const club_account_id = body?.club_account_id ?? body?.clubAccountId;
 
     // Determine userId: prefer user_id from deconstructEvent
     const userId = user_id ?? body?.userId ?? body?.user_id;
@@ -225,6 +226,7 @@ export const handler = async (event: any) => {
     const newId = randomUUID();
     const item = {
       storage_request_id: newId,
+      club_account_id,
       storage_id,
       userId,
       date,

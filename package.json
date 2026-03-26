@@ -6,7 +6,7 @@
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "tsc --build",
+    "build": "npx tsc --build",
     "create-layers": "bash scripts/build-layers.sh",
     "create-layers-windows": "powershell -ExecutionPolicy ByPass -File ./scripts/build-layers.ps1",
     "update-helpers": "node scripts/copy-helpers.js",
