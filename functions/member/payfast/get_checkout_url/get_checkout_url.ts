@@ -15,6 +15,7 @@ export const handler = async (event: any) => {
         }
 
         const order_url = query_string_params?.order_id && typeof query_string_params.order_id === 'string';
+        const event_url = query_string_params?.event_id && typeof query_string_params.event_id === 'string' && query_string_params?.event_registration_id && typeof query_string_params.event_registration_id === 'string';
 
         const user = await getItem(
             process.env.USERS_TABLE_NAME as string,
@@ -48,6 +49,18 @@ export const handler = async (event: any) => {
                 return createResponse(400, { message: "Order not found." }, origin);
             }
             amount = order?.total_amount / 100 - order?.amount_paid / 100;
+        } else if (event_url) {
+
+            const event_registration = await getItem(process.env.EVENT_REGISTRATIONS_TABLE_NAME as string, {
+                event_id: query_string_params.event_id as string,
+                event_registration_id: query_string_params.event_registration_id as string
+            });
+
+            if (event_registration == null) {
+                return createResponse(400, { message: "Event registration not found." }, origin);
+            }
+            amount = event_registration?.entry_fee_amount / 100 - event_registration?.amount_paid / 100;
+
         } else {
             const registration = await getItem(process.env.REGISTRATIONS_TABLE_NAME as string, {
                 user_id: user_id as string,
@@ -56,6 +69,11 @@ export const handler = async (event: any) => {
             if (registration == null) {
                 return createResponse(400, { message: "Registration not found." }, origin);
             }
+
+            if (club_member?.registered) {
+                return createResponse(400, { message: "No outstanding amount for registered member." }, origin);
+            }
+
             amount = registration?.total_outstanding_amount / 100;
         }   
 
@@ -101,16 +119,17 @@ export const handler = async (event: any) => {
         const paymentData = {
             return_url: `${process.env.DOMAIN}/clubs/${query_string_params.club_account_id}`,
             cancel_url: `${process.env.DOMAIN}/clubs/${query_string_params.club_account_id}`,
-            notify_url: order_url ? process.env.NOTIFY_ORDER_URL : process.env.NOTIFY_REGISTRATION_URL,
+            notify_url: order_url ? process.env.NOTIFY_ORDER_URL : event_url ? process.env.NOTIFY_EVENT_URL : process.env.NOTIFY_REGISTRATION_URL,
             name_first: user.first_name,
             name_last: user.surname,
             email_address: user.email,
             amount: amount,
-            item_name: order_url ? 'Order Payment' : 'Registration Fee',
+            item_name: order_url ? 'Shop Order Payment' : event_url ? 'Event Registration Payment' : 'Registration Fee',
             item_description: club_member.club_name,
             custom_str1: query_string_params.club_account_id,
             custom_str2: user_id,
-            ...(order_url && { custom_str3: query_string_params.order_id })
+            ...(order_url && { custom_str3: query_string_params.order_id }),
+            ...(event_url && { custom_str3: query_string_params.event_id, custom_str4: query_string_params.event_registration_id }),
         };
 
         const urlString = pf.createStringfromObject(paymentData);

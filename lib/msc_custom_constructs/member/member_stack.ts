@@ -1,58 +1,53 @@
 import { Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import {
-  MSC_APIGateway,
-  MSC_Bucket,
-  MSC_Cognito,
-  MSC_Kms,
-  MSC_LambdaLayer,
-  MSC_Queue,
-} from "../../msc_service_constructs";
-import { MSC_JWTConstruct } from "../authorization";
-import {
-  MSC_MemberLoginConstruct,
-  MSC_MemberUserConstruct,
-  MSC_MemberClubConstruct,
-  MSC_MemberRegistrationFormConstruct,
-  MSC_ClubMemberConstruct,
-  MSC_ImagesConstruct,
-  MSC_TransactionsConstruct,
-  MSC_PayfastConstruct,
-  MSC_MemberShopConstruct,
-  MSC_MemberOrdersConstruct,
-  MSC_BookingsConstruct,
-  MSC_VenuesConstruct,
-  MSC_StorageRequestConstruct,
+    MSC_MemberLoginConstruct,
+    MSC_MemberUserConstruct,
+    MSC_MemberClubConstruct,
+    MSC_MemberRegistrationFormConstruct,
+    MSC_ClubMemberConstruct,
+    MSC_ImagesConstruct,
+    MSC_TransactionsConstruct,
+    MSC_PayfastConstruct,
+    MSC_MemberShopConstruct,
+    MSC_MemberOrdersConstruct,
+    MSC_BookingsConstruct,
+    MSC_VenuesConstruct,
+    MSC_EventsConstruct
+    MSC_StorageRequestConstruct,
+    MSC_StorageConstruct
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs";
 import { MSC_StorageConstruct } from "../admin_features/constructs";
 
 export interface MSC_MemberNestedStackProps extends StackProps {
-  users_table: MSC_Table;
-  club_table: MSC_Table;
-  member_user_pool: MSC_Cognito;
-  club_member_table: MSC_Table;
-  storage_table: MSC_Table;
-  storage_request_table: MSC_Table;
-  registration_form_table: MSC_Table;
-  registrations_table: MSC_Table;
-  transactions_table: MSC_Table;
-  image_bucket: MSC_Bucket;
-  signatures_bucket: MSC_Bucket;
-  venues_bookings_table: MSC_Table;
-  mail_queue: MSC_Queue;
-  shop_images_bucket: MSC_Bucket;
-  venues_table: MSC_Table;
-  billing_table: MSC_Table;
-  orders_table: MSC_Table;
-  product_table: MSC_Table;
-  email_rate_limiter_table: MSC_Table;
-  layers: {
-    jwt_layer: MSC_LambdaLayer;
-    jwks_rsa_layer: MSC_LambdaLayer;
-    axios_layer: MSC_LambdaLayer;
-  };
-  kms_key: MSC_Kms;
+    users_table: MSC_Table;
+    club_table: MSC_Table;
+    member_user_pool: MSC_Cognito;
+    club_member_table: MSC_Table;
+    registration_form_table: MSC_Table;
+    registrations_table: MSC_Table;
+    transactions_table: MSC_Table;
+    image_bucket: MSC_Bucket;
+    signatures_bucket: MSC_Bucket;
+    venues_bookings_table: MSC_Table;
+    mail_queue: MSC_Queue;
+    shop_images_bucket: MSC_Bucket;
+    venues_table: MSC_Table;
+    billing_table: MSC_Table;
+    orders_table: MSC_Table;
+    event_registrations_table: MSC_Table;
+    events_table: MSC_Table;
+    product_table: MSC_Table;
+    email_rate_limiter_table: MSC_Table;
+    storage_table: MSC_Table;
+    storage_request_table: MSC_Table;
+    layers: {
+        jwt_layer: MSC_LambdaLayer;
+        jwks_rsa_layer: MSC_LambdaLayer;
+        axios_layer: MSC_LambdaLayer;
+    };
+    kms_key: MSC_Kms;
 }
 
 export class MSC_MemberNestedStack extends Stack {
@@ -112,20 +107,31 @@ export class MSC_MemberNestedStack extends Stack {
       layers: props.layers,
     });
 
-    new MSC_PayfastConstruct(this, `${id}-Payfast`, {
-      api_gateway: api_gateway,
-      mail_queue: props.mail_queue,
-      token_authorizer: jwt_construct.token_authorizer,
-      layers: props.layers,
-      club_member_table: props.club_member_table,
-      registrations_table: props.registrations_table,
-      users_table: props.users_table,
-      club_table: props.club_table,
-      transactions_table: props.transactions_table,
-      billing_table: props.billing_table,
-      orders_table: props.orders_table,
-      kms_key: props.kms_key,
-    });
+        new MSC_PayfastConstruct(this, `${id}-Payfast`, {
+            api_gateway: api_gateway,
+            mail_queue: props.mail_queue,
+            token_authorizer: jwt_construct.token_authorizer,
+            layers: props.layers,
+            club_member_table: props.club_member_table,
+            registrations_table: props.registrations_table,
+            users_table: props.users_table,
+            club_table: props.club_table,
+            transactions_table: props.transactions_table,
+            billing_table: props.billing_table,
+            orders_table: props.orders_table,
+            kms_key: props.kms_key,
+            event_registrations_table: props.event_registrations_table
+        });
+
+        new MSC_EventsConstruct(this, `${id}-Events`, {
+            api_gateway: api_gateway,
+            layers: props.layers,
+            token_authorizer: jwt_construct.token_authorizer,
+            events_table: props.events_table,
+            club_member_table: props.club_member_table,
+            event_registrations_table: props.event_registrations_table,
+            transactions_table: props.transactions_table
+        });
 
     new MSC_TransactionsConstruct(this, `${id}-Transactions`, {
       api_gateway: api_gateway,
@@ -171,18 +177,18 @@ export class MSC_MemberNestedStack extends Stack {
       image_bucket: props.image_bucket,
     });
 
-    new MSC_MemberClubConstruct(this, `${id}-Club`, {
-      api_gateway: api_gateway,
-      club_table: props.club_table,
-      registration_form_table: props.registration_form_table,
-      registrations_table: props.registrations_table,
-      club_member_table: props.club_member_table,
-      token_authorizer: jwt_construct.token_authorizer,
-      image_bucket: props.image_bucket,
-      layers: props.layers,
-      signatures_bucket: props.signatures_bucket,
-      orders_table: props.orders_table,
-    });
+        new MSC_MemberClubConstruct(this, `${id}-Club`, {
+            api_gateway: api_gateway,
+            club_table: props.club_table,
+            registration_form_table: props.registration_form_table,
+            registrations_table: props.registrations_table,
+            club_member_table: props.club_member_table,
+            token_authorizer: jwt_construct.token_authorizer,
+            image_bucket: props.image_bucket,
+            layers: props.layers,
+            signatures_bucket: props.signatures_bucket,
+            transactions_table: props.transactions_table
+        });
 
     new MSC_MemberUserConstruct(this, `${id}-User`, {
       api_gateway: api_gateway,

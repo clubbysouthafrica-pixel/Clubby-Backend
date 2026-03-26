@@ -84,7 +84,7 @@ async function partiallyUpdateTransactionsTable(
         },
         {
             ":payment_amount": payment_amount,
-            ":status": "PARTIALLY_PAID",
+            ":status": "PARTIALLY PAID",
             ":lifecycleValue": {
                 type: "CONFIRMATION",
                 description: "Payment confirmation",
@@ -114,7 +114,7 @@ async function partiallyUpdateOrdersTable(
         },
         {
             ":amount_paid": payment_amount,
-            ":payment_status": "PARTIALLY_PAID"
+            ":payment_status": "PARTIALLY PAID"
         }
     );
 }

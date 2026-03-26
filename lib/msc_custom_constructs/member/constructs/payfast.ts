@@ -12,6 +12,7 @@ interface MSC_PayfastConstructProps {
     transactions_table: MSC_Table;
     club_table: MSC_Table;
     users_table: MSC_Table;
+    event_registrations_table: MSC_Table;
     orders_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
@@ -36,9 +37,11 @@ export class MSC_PayfastConstruct extends Construct {
                 DOMAIN: process.env.ENVIRONMENT === "Dev" ? "http://localhost:5173" : `https://${process.env.DOMAIN}` as string,
                 NOTIFY_REGISTRATION_URL: `https://member.${process.env.DOMAIN}/payfast/handleRegistrationPayment`,
                 NOTIFY_ORDER_URL: `https://member.${process.env.DOMAIN}/payfast/handleOrderPayment`,
+                NOTIFY_EVENT_URL: `https://member.${process.env.DOMAIN}/payfast/handleEventRegistrationPayment`,
                 USERS_TABLE_NAME: props.users_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                EVENT_REGISTRATIONS_TABLE_NAME: props.event_registrations_table.tableName,
                 ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
                 ORDERS_TABLE_NAME: props.orders_table.tableName
             },
@@ -49,7 +52,13 @@ export class MSC_PayfastConstruct extends Construct {
                 [props.orders_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
+                [props.club_member_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
                 [props.registrations_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.event_registrations_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
                 [props.club_member_table.tableArn]: [
@@ -102,6 +111,29 @@ export class MSC_PayfastConstruct extends Construct {
             layers: [props.layers.jwt_layer, props.layers.axios_layer]
         });
 
+        const handle_event_registration_payment = new MSC_Lambda(this, `${id}-HandleEventRegistrationPayment`, {
+            code: "member/payfast/handle_event_registration_payment",
+            envVariables: {
+                ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
+                EVENT_REGISTRATIONS_TABLE_NAME: props.event_registrations_table.tableName,
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
+            },
+            permissions: {
+                [props.event_registrations_table.tableArn]: [
+                    "dynamodb:UpdateItem",
+                    "dynamodb:GetItem"
+                ],
+                [props.transactions_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ],
+                [props.billing_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer, props.layers.axios_layer]
+        });
+
         const handle_order_payment = new MSC_Lambda(this, `${id}-HandleOrderPayment`, {
             code: "member/payfast/handle_order_payment",
             envVariables: {
@@ -130,6 +162,7 @@ export class MSC_PayfastConstruct extends Construct {
         const get_checkout_url_resource = pay_fast_resource.addResource("checkoutUrl");
         const handle_registration_payment_resource = pay_fast_resource.addResource("handleRegistrationPayment");
         const handle_order_payment_resource = pay_fast_resource.addResource("handleOrderPayment");
+        const handle_event_registration_payment_resource = pay_fast_resource.addResource("handleEventRegistrationPayment");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -140,5 +173,6 @@ export class MSC_PayfastConstruct extends Construct {
         addCorsEnabledMethod(get_checkout_url_resource, get_checkout_url, methodOptions, undefined, "GET");
         addCorsEnabledMethod(handle_registration_payment_resource, handle_registration_payment, { methodResponses: [] }, undefined, "POST");
         addCorsEnabledMethod(handle_order_payment_resource, handle_order_payment, { methodResponses: [] }, undefined, "POST");
+        addCorsEnabledMethod(handle_event_registration_payment_resource, handle_event_registration_payment, { methodResponses: [] }, undefined, "POST");
     }
 }

@@ -1,18 +1,13 @@
 import { Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import {
-  MSC_APIGateway,
-  MSC_Bucket,
-  MSC_Cognito,
-  MSC_LambdaLayer,
-} from "../../msc_service_constructs";
-import {
   MSC_BookingsConstruct,
-  MSC_StorageConstruct,
   MSC_VenuesConstruct,
   MSC_AdminShopConstruct,
   MSC_AdminOrdersConstruct,
+  MSC_EventsConstruct,
   MSC_StorageRequestConstruct,
+  MSC_StorageConstruct,
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
@@ -22,13 +17,14 @@ export interface MSC_AdminFeaturesNestedStackProps extends StackProps {
   venues_table: MSC_Table;
   venues_bookings_table: MSC_Table;
   club_table: MSC_Table;
-  storage_table: MSC_Table;
-  storage_requests_table: MSC_Table;
   product_table: MSC_Table;
   orders_table: MSC_Table;
   transactions_table: MSC_Table;
   billing_table: MSC_Table;
+  events_table: MSC_Table;
   shop_images_bucket: MSC_Bucket;
+  storage_table: MSC_Table;
+  storage_requests_table: MSC_Table;
   layers: {
     jwt_layer: MSC_LambdaLayer;
     jwks_rsa_layer: MSC_LambdaLayer;
@@ -83,13 +79,6 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
       billing_table: props.billing_table,
     });
 
-    new MSC_BookingsConstruct(this, `${id}-Bookings`, {
-      api_gateway: api_gateway,
-      layers: props.layers,
-      token_authorizer: jwt_construct.token_authorizer,
-      venues_bookings_table: props.venues_bookings_table,
-    });
-
     new MSC_StorageConstruct(this, `${id}-Storage`, {
       api_gateway: api_gateway,
       token_authorizer: jwt_construct.token_authorizer,
@@ -104,6 +93,20 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
       storage_table: props.storage_table,
       club_table: props.club_table,
       layers: props.layers,
+    });
+
+    new MSC_EventsConstruct(this, `${id}-Events`, {
+      api_gateway: api_gateway,
+      token_authorizer: jwt_construct.token_authorizer,
+      layers: props.layers,
+      events_table: props.events_table,
+    });
+
+    new MSC_BookingsConstruct(this, `${id}-Bookings`, {
+      api_gateway: api_gateway,
+      layers: props.layers,
+      token_authorizer: jwt_construct.token_authorizer,
+      venues_bookings_table: props.venues_bookings_table,
     });
   }
 }

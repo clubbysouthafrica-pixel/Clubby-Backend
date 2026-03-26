@@ -7,8 +7,6 @@ interface MSC_TablesProps {}
 export class MSC_TablesConstruct extends Construct {
   public readonly users_table: MSC_Table;
   public readonly club_member_table: MSC_Table;
-  public readonly storage_table: MSC_Table;
-  public readonly storage_request_table: MSC_Table;
   public readonly club_admin_table: MSC_Table;
   public readonly club_table: MSC_Table;
   public readonly billing_table: MSC_Table;
@@ -20,6 +18,10 @@ export class MSC_TablesConstruct extends Construct {
   public readonly email_rate_limiter_table: MSC_Table;
   public readonly venues_table: MSC_Table;
   public readonly venues_bookings_table: MSC_Table;
+  public readonly storage_table: MSC_Table;
+  public readonly storage_request_table: MSC_Table;
+  public readonly events_table: MSC_Table;
+  public readonly event_registrations_table: MSC_Table;
   constructor(scope: Construct, id: string, props: MSC_TablesProps) {
     super(scope, `${id}-Tables`);
 
@@ -35,6 +37,26 @@ export class MSC_TablesConstruct extends Construct {
           partitionKey: { name: "club_name", type: AttributeType.STRING },
         },
       ],
+    });
+
+    this.event_registrations_table = new MSC_Table(
+      this,
+      `${id}-EventRegistrations`,
+      {
+        partitionKey: { event_id: "STRING" },
+        sortKey: { event_registration_id: "STRING" },
+        gsi: [
+          {
+            indexName: "UserIDIndex",
+            partitionKey: { name: "user_id", type: AttributeType.STRING },
+          },
+        ],
+      },
+    );
+
+    this.events_table = new MSC_Table(this, `${id}-Events`, {
+      partitionKey: { club_account_id: "STRING" },
+      sortKey: { event_id: "STRING" },
     });
 
     this.email_rate_limiter_table = new MSC_Table(
