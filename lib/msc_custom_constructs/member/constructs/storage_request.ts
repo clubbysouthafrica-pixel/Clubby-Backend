@@ -34,13 +34,13 @@ export class MSC_StorageRequestConstruct extends Construct {
       this,
       `${id}-CreateStorageRequest`,
       {
-        code: "member/storage/list_storage",
+        code: "member/storage/create_storage_request",
         envVariables: {
           STORAGE_REQUEST_TABLE_NAME: props.storage_request_table.tableName,
           CLUB_TABLE_NAME: props.club_table.tableName,
         },
         permissions: {
-          [props.storage_request_table.tableArn]: ["dynamodb:Query"],
+          [props.storage_request_table.tableArn]: ["dynamodb:PutItem"],
           [props.club_table.tableArn]: ["dynamodb:GetItem"],
         },
         layers: [props.layers.jwt_layer],
