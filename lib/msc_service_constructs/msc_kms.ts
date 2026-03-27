@@ -12,19 +12,19 @@ export class MSC_Kms extends kms.Key {
     readonly alias: kms.Alias;
 
     constructor(scope: Construct, id: string, props?: MSC_KmsProps) {
-        const key = new kms.Key(scope, id, {
-            enableKeyRotation: props?.enableKeyRotation ?? true,
-            description: props?.description ?? 'KMS key for encrypting MyClubSoftware data',
-            removalPolicy: cdk.RemovalPolicy.RETAIN,
-        });
+        const isDevEnvironment = process.env.ENVIRONMENT === 'Dev';
+        const removalPolicy = isDevEnvironment
+            ? cdk.RemovalPolicy.DESTROY
+            : cdk.RemovalPolicy.RETAIN;
 
         super(scope, `${id}-Key`, {
             enableKeyRotation: props?.enableKeyRotation ?? true,
             description: props?.description ?? 'KMS key for encrypting MyClubSoftware data',
-            removalPolicy: cdk.RemovalPolicy.RETAIN,
+            removalPolicy,
+            pendingWindow: isDevEnvironment ? cdk.Duration.days(7) : undefined,
         });
 
-        this.key = key;
+        this.key = this;
 
         this.alias = new kms.Alias(scope, `${id}-Alias`, {
             aliasName: process.env.ENVIRONMENT !== 'Dev' 

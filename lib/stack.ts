@@ -73,6 +73,7 @@ export class MSC_Stack extends cdk.Stack {
         jwks_rsa_layer: all_layers.jwks_rsa_layer,
         axios_layer: all_layers.axios_layer,
       },
+      event_registrations_table: tables.event_registrations_table,
     });
 
     new MSC_AdminNestedStack(this, `AdminStack`, {
