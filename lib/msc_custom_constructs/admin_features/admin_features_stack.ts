@@ -1,6 +1,6 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_LambdaLayer } from '../../msc_service_constructs';
+import { MSC_APIGateway, MSC_Bucket, MSC_Cognito } from '../../msc_service_constructs';
 import {
     MSC_BookingsConstruct,
     MSC_VenuesConstruct,
@@ -10,6 +10,7 @@ import {
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
+import { MSC_Layers } from '../lambda_layers';
 
 export interface MSC_AdminFeaturesNestedStackProps extends StackProps {
     admin_user_pool: MSC_Cognito;
@@ -23,16 +24,13 @@ export interface MSC_AdminFeaturesNestedStackProps extends StackProps {
     events_table: MSC_Table;
     event_registrations_table: MSC_Table;
     shop_images_bucket: MSC_Bucket;
-    layers: {
-        jwt_layer: MSC_LambdaLayer;
-        jwks_rsa_layer: MSC_LambdaLayer;
-        axios_layer: MSC_LambdaLayer;
-    };
 }
 
 export class MSC_AdminFeaturesNestedStack extends Stack {
     constructor(scope: Construct, id: string, props: MSC_AdminFeaturesNestedStackProps) {
         super(scope, id, props);
+
+        const all_layers = new MSC_Layers(this, id, {});
 
         const api_gateway = new MSC_APIGateway(this, id, {
             domain: "admin-features",
@@ -43,7 +41,7 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
             api_gateway: api_gateway,
             user_pool: props.admin_user_pool,
             user_type: "admin",
-            layers: props.layers
+            layers: all_layers
         });
 
         new MSC_AdminShopConstruct(this, `${id}-Shop`, {
@@ -51,14 +49,14 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
             product_table: props.product_table,
             token_authorizer: jwt_construct.token_authorizer,
             shop_images_bucket: props.shop_images_bucket,
-            layers: props.layers
+            layers: all_layers
         });
 
         new MSC_VenuesConstruct(this, `${id}-BookingVenues`, {
             api_gateway: api_gateway,
             token_authorizer: jwt_construct.token_authorizer,
             venues_table: props.venues_table,
-            layers: props.layers,
+            layers: all_layers,
             club_table: props.club_table
         });
 
@@ -66,7 +64,7 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
             api_gateway: api_gateway,
             orders_table: props.orders_table,
             token_authorizer: jwt_construct.token_authorizer,
-            layers: props.layers,
+            layers: all_layers,
             club_table: props.club_table,
             transactions_table: props.transactions_table,
             product_table: props.product_table,
@@ -76,7 +74,7 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
         new MSC_EventsConstruct(this, `${id}-Events`, {
             api_gateway: api_gateway,
             token_authorizer: jwt_construct.token_authorizer,
-            layers: props.layers,
+            layers: all_layers,
             events_table: props.events_table,
             event_registrations_table: props.event_registrations_table,
             transactions_table: props.transactions_table
@@ -84,7 +82,7 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
 
         new MSC_BookingsConstruct(this, `${id}-Bookings`, {
             api_gateway: api_gateway,
-            layers: props.layers,
+            layers: all_layers,
             token_authorizer: jwt_construct.token_authorizer,
             venues_bookings_table: props.venues_bookings_table
         });
