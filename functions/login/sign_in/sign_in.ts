@@ -17,11 +17,14 @@ export const handler = async (event: any) => {
     if (body?.username == null || body?.password == null) {
       return createResponse(400, { message: 'Username and password required.' }, origin);
     }
+
+    const username = body.username.toLowerCase();
+
     const command = new InitiateAuthCommand({
       AuthFlow: 'USER_PASSWORD_AUTH',
       ClientId: process.env.USER_POOL_CLIENT_ID,
       AuthParameters: {
-        USERNAME: body.username,
+        USERNAME: username,
         PASSWORD: body.password
       }
     });

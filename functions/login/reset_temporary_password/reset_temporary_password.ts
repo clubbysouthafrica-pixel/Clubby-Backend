@@ -122,11 +122,13 @@ export const handler = async (event: any) => {
     if (body?.username == null) {
       return createResponse(401, { message: 'Username required.' }, origin);
     }
+
+    const username = body.username.toLowerCase();
     
     const item = await getItem(
       process.env.EMAIL_RATE_LIMITER_TABLE_NAME as string,
       {
-        user_id: body.username,
+        user_id: username,
         feature: "RESET_TEMPORARY_PASSWORD"
       }
     );
@@ -138,24 +140,24 @@ export const handler = async (event: any) => {
     
     await cognitoClient.send(new AdminSetUserPasswordCommand({
       UserPoolId: process.env.USER_POOL_ID as string,
-      Username: body.username,
+      Username: username,
       Password: temporaryPassword,
       Permanent: false
     }));
 
-    await sendTemporaryPasswordResetEmail(body.username, temporaryPassword);
+    await sendTemporaryPasswordResetEmail(username, temporaryPassword);
 
     await addItem(
         process.env.EMAIL_RATE_LIMITER_TABLE_NAME as string,
         {
-            user_id: body.username,
+            user_id: username,
             feature: "RESET_TEMPORARY_PASSWORD",
             timestamp: Date.now(),
             ttl: Math.floor(Date.now() / 1000) + 86400
         }       
     )
 
-    return createResponse(200, { message: `A temporary password has been sent to your email, ${body.username}. Please check your inbox for the message with subject 'Temporary password reset'.` }, origin);
+    return createResponse(200, { message: `A temporary password has been sent to your email, ${username}. Please check your inbox for the message with subject 'Temporary password reset'.` }, origin);
 
   } catch (error: any) {
     console.error('Sign-in error: ', error);

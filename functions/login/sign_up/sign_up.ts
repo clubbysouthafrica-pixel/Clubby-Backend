@@ -16,12 +16,14 @@ export const handler = async (event: any) => {
       return createResponse(400, { message: 'Username and password required.' }, origin);
     }
 
+    const username = body.username.trim().toLowerCase();
+
     const cognitoCommand = new SignUpCommand({
       ClientId: process.env.USER_POOL_CLIENT_ID,
-      Username: body.username,
+      Username: username,
       Password: body.password,
       UserAttributes: [
-        { Name: 'email', Value: body.username },
+        { Name: 'email', Value: username },
       ],
     });
 
@@ -33,7 +35,7 @@ export const handler = async (event: any) => {
       {
         "user_type": process.env.USER_TYPE as string,
         "user_id": cognitoResponse["UserSub"],
-        "email": body.username,
+        "email": username,
         "onboarded": false
       }
     )

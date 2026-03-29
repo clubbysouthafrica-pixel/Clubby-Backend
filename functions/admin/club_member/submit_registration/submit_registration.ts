@@ -479,13 +479,15 @@ export const handler = async (event: any) => {
             return createResponse(500, { message: "Club does not exist." }, origin);
         }
 
-        const member_user_id = await createClubbyUser(body.member_email, body.first_name, body.surname, club.club_name)
+        const memberEmail = body.member_email.trim().toLowerCase();
+
+        const member_user_id = await createClubbyUser(memberEmail, body.first_name, body.surname, club.club_name)
         if (member_user_id === "Issue registering user.") {
             return createResponse(500, { message: "Issue registering user" }, origin);
         }
 
         if (await alreadyAssociated(body.club_account_id, member_user_id as string)) {
-            return createResponse(500, { message: `A member with email ${body.member_email} is already associated with the club or was in the past. Please login as a member with this email to continue registration.` }, origin);
+            return createResponse(500, { message: `A member with email ${memberEmail} is already associated with the club or was in the past. Please login as a member with this email to continue registration.` }, origin);
         }
 
         const billingFields: BillingField[] = [];
@@ -541,7 +543,7 @@ export const handler = async (event: any) => {
             current_reg_id,
             user_id: member_user_id,
             current_reg_transaction_id: membership_amount > 0 ? current_reg_transaction_id : undefined,
-            member_email: body.member_email,
+            member_email: memberEmail,
             member_first_name: body.first_name,
             member_surname: body.surname,
             registered: false,
@@ -579,7 +581,7 @@ export const handler = async (event: any) => {
 
         if (club?.use_submission_email_template) {
 
-            const club_sending_limit = await getClubEmailSendingLimit(body.club_account_id, [body.member_email], club);
+            const club_sending_limit = await getClubEmailSendingLimit(body.club_account_id, [memberEmail], club);
             if (typeof club_sending_limit === 'string') {
                 return createResponse(200, { message: club_sending_limit }, origin);
             }
@@ -592,7 +594,7 @@ export const handler = async (event: any) => {
             await sendSqsMessage(
                 process.env.SEND_EMAIL_QUEUE_URL as string,
                 {
-                    emails: [body.member_email],
+                    emails: [memberEmail],
                     subject: club.registration_submission_email_subject,
                     email_body: finalBody,
                     club_account_id: body.club_account_id,

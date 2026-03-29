@@ -1,6 +1,5 @@
 import {
     CognitoIdentityProviderClient,
-    InitiateAuthCommand,
     RespondToAuthChallengeCommand,
     AdminUpdateUserAttributesCommand
 } from "@aws-sdk/client-cognito-identity-provider";
@@ -18,12 +17,14 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: 'Session, email and password required.' }, origin);
         }
 
+        const email = body.email.toLowerCase();
+
         const command = new RespondToAuthChallengeCommand({
             ChallengeName: "NEW_PASSWORD_REQUIRED",
             ClientId: process.env.USER_POOL_CLIENT_ID,
             Session: body.session,
             ChallengeResponses: {
-                USERNAME: body.email,
+                USERNAME: email,
                 NEW_PASSWORD: body.password,
             }
         });
@@ -31,7 +32,7 @@ export const handler = async (event: any) => {
         
         const verifyEmailCommand = new AdminUpdateUserAttributesCommand({
             UserPoolId: process.env.USER_POOL_ID,
-            Username: body.email,
+            Username: email,
             UserAttributes: [
                 {
                     Name: 'email_verified',

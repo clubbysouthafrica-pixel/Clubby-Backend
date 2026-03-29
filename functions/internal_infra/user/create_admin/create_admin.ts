@@ -203,11 +203,13 @@ export const handler = async (event: any) => {
       return createResponse(400, { message: 'Username required.' }, origin);
     }
 
+    const username = body.username.toLowerCase();
+
     return createResponse(
       200,
       {
         message: "Admin creation successful!",
-        user_id: await createClubbyUser(body.username),
+        user_id: await createClubbyUser(username),
       },
       origin
     );

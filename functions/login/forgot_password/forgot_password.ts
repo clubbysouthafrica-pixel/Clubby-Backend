@@ -16,9 +16,11 @@ export const handler = async (event: any) => {
       return createResponse(400, { message: 'Username required.' }, origin);
     }
 
+    const username = body.username.toLowerCase();
+
     const command = new ForgotPasswordCommand({
       ClientId: process.env.USER_POOL_CLIENT_ID,
-      Username: body.username,
+      Username: username,
     });
 
     const response = await cognitoClient.send(command);
@@ -27,7 +29,7 @@ export const handler = async (event: any) => {
     return createResponse(
       200,
       {
-        message: "Password reset code sent.",
+        message: `Password reset code sent to ${username}.`,
         deliveryMedium: response.CodeDeliveryDetails?.DeliveryMedium,
         destination: response.CodeDeliveryDetails?.Destination
       },
