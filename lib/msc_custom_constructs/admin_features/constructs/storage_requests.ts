@@ -58,7 +58,10 @@ export class MSC_StorageRequestConstruct extends Construct {
           CLUB_TABLE_NAME: props.club_table.tableName,
         },
         permissions: {
-          [props.storage_requests_table.tableArn]: ["dynamodb:Query"],
+          [props.storage_requests_table.tableArn]: [
+            "dynamodb:Query",
+            "dynamodb:Scan",
+          ],
           [props.club_table.tableArn]: ["dynamodb:GetItem"],
         },
         layers: [props.layers.jwt_layer],

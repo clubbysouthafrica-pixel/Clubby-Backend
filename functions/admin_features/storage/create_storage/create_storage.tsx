@@ -8,7 +8,9 @@ import { randomUUID } from "crypto";
 
 const validateStorageInput = (body: any) => {
   const storageName = body?.storage_name ?? body?.name;
-  const clubAccountId = body?.club_account_id ?? body?.clubId;
+  const clubAccountId = body?.storage_id
+    ? (body?.club_account_id ?? body?.clubId)
+    : (body?.club_account_id ?? body?.clubId);
 
   if (
     !clubAccountId ||
@@ -72,13 +74,42 @@ export const handler = async (event: any) => {
       return createResponse(400, { message: validationErrors }, origin);
     }
 
+    // Resolve table name from either env var name used across codebase.
+    const TABLE_NAME =
+      (process.env.STORAGE_TABLE_NAME as string) ??
+      (process.env.STORAGE_TABLE as string);
+    if (!TABLE_NAME) {
+      return createResponse(
+        500,
+        {
+          message:
+            "Server misconfigured: missing STORAGE_TABLE_NAME / STORAGE_TABLE env var",
+        },
+        origin,
+      );
+    }
+
     // Normalize incoming fields (support both camelCase and snake_case)
     const storage_name = body?.storage_name ?? body?.name;
     const club_account_id = body?.club_account_id ?? body?.clubId;
     const parent_id = body?.parent_id ?? body?.parentId ?? null;
     const price_cents = body?.price_cents ?? body?.priceCents ?? null;
 
+    // If storage_id provided, perform update.
     if (body?.storage_id) {
+      // Update requires both PK and SK for this table schema:
+      // partitionKey: club_account_id, sortKey: storage_id
+      if (!club_account_id || typeof club_account_id !== "string") {
+        return createResponse(
+          400,
+          {
+            message:
+              "To update a storage item you must provide club_account_id (or clubId) along with storage_id",
+          },
+          origin,
+        );
+      }
+
       // Build update expression dynamically so we only set provided fields.
       const updateParts: string[] = [];
       const expressionAttributeNames: Record<string, string> = {};
@@ -88,12 +119,6 @@ export const handler = async (event: any) => {
         updateParts.push("#storage_name = :storage_name");
         expressionAttributeNames["#storage_name"] = "storage_name";
         expressionAttributeValues[":storage_name"] = storage_name;
-      }
-
-      if (club_account_id !== undefined) {
-        updateParts.push("#club_account_id = :club_account_id");
-        expressionAttributeNames["#club_account_id"] = "club_account_id";
-        expressionAttributeValues[":club_account_id"] = club_account_id;
       }
 
       if (parent_id !== undefined) {
@@ -120,14 +145,13 @@ export const handler = async (event: any) => {
 
       const updateExpression = `SET ${updateParts.join(", ")}`;
 
-      // Key must be an object mapping the primary key attribute(s) to values.
-      const key = { storage_id: body.storage_id };
+      // Key must include both partition key and sort key
+      const key = { club_account_id, storage_id: body.storage_id };
 
-      // Call updateItem with proper parameters.
-      // The updateItem helper expects:
+      // Call updateItem helper:
       // (table_name, key, update_expression, expression_attribute_names, expression_attribute_values, condition_expression?, return_values?)
       await updateItem(
-        process.env.STORAGE_TABLE as string,
+        TABLE_NAME,
         key,
         updateExpression,
         expressionAttributeNames,
@@ -146,13 +170,13 @@ export const handler = async (event: any) => {
       );
     }
 
-    // Determine storage_id (supporting both id and storage_id from callers)
+    // Create path: determine storage_id (supporting both id and storage_id from callers)
     const storage_id = body?.storage_id ?? body?.id ?? randomUUID();
 
-    await addItem(process.env.STORAGE_TABLE as string, {
+    await addItem(TABLE_NAME, {
+      club_account_id,
       storage_id,
       storage_name,
-      club_account_id,
       parent_id,
       price_cents,
     });
