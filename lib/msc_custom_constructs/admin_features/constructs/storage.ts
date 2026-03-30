@@ -29,7 +29,7 @@ export class MSC_StorageConstruct extends Construct {
     const create_storage = new MSC_Lambda(this, `${id}-CreateStorage`, {
       code: "admin_features/storage/create_storage",
       envVariables: {
-        STORAGE_TABLE_NAME: props.storage_table.tableName,
+        STORAGE_TABLE: props.storage_table.tableName,
       },
       permissions: {
         [props.storage_table.tableArn]: ["dynamodb:PutItem"],
@@ -40,7 +40,7 @@ export class MSC_StorageConstruct extends Construct {
     const list_storage = new MSC_Lambda(this, `${id}-ListStorage`, {
       code: "admin_features/storage/list_storage",
       envVariables: {
-        STORAGE_TABLE_NAME: props.storage_table.tableName,
+        STORAGE_TABLE: props.storage_table.tableName,
         CLUB_TABLE_NAME: props.club_table.tableName,
       },
       permissions: {
@@ -53,7 +53,7 @@ export class MSC_StorageConstruct extends Construct {
     const remove_storage = new MSC_Lambda(this, `${id}-RemoveStorage`, {
       code: "admin_features/storage/remove_storage",
       envVariables: {
-        STORAGE_TABLE_NAME: props.storage_table.tableName,
+        STORAGE_TABLE: props.storage_table.tableName,
         CLUB_TABLE_NAME: props.club_table.tableName,
       },
       permissions: {

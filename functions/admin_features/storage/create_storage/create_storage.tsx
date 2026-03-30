@@ -127,7 +127,7 @@ export const handler = async (event: any) => {
       // The updateItem helper expects:
       // (table_name, key, update_expression, expression_attribute_names, expression_attribute_values, condition_expression?, return_values?)
       await updateItem(
-        process.env.STORAGE_TABLE_NAME as string,
+        process.env.STORAGE_TABLE as string,
         key,
         updateExpression,
         expressionAttributeNames,

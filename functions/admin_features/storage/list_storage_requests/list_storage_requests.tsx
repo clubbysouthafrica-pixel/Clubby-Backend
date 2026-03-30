@@ -58,12 +58,12 @@ export const handler = async (event: any) => {
       );
     }
 
-    const tableName = process.env.STORAGE_REQUESTS_TABLE_NAME as string;
+    const tableName = process.env.STORAGE_REQUESTS_TABLE as string;
     if (!tableName) {
       return createResponse(
         500,
         {
-          message: "Server misconfigured: missing STORAGE_REQUESTS_TABLE_NAME",
+          message: "Server misconfigured: missing STORAGE_REQUESTS_TABLE",
         },
         origin,
       );

@@ -15,7 +15,7 @@ import {
 interface MSC_StorageRequestConstructProps {
   api_gateway: MSC_APIGateway;
   token_authorizer: TokenAuthorizer;
-  storage_table: MSC_Table;
+  storage_requests_table: MSC_Table;
   club_table: MSC_Table;
   layers: {
     jwt_layer: MSC_LambdaLayer;
@@ -36,10 +36,10 @@ export class MSC_StorageRequestConstruct extends Construct {
       {
         code: "admin_features/storage/update_storage_request",
         envVariables: {
-          STORAGE_TABLE_NAME: props.storage_table.tableName,
+          STORAGE_REQUESTS_TABLE: props.storage_requests_table.tableName,
         },
         permissions: {
-          [props.storage_table.tableArn]: ["dynamodb:PutItem"],
+          [props.storage_requests_table.tableArn]: ["dynamodb:PutItem"],
         },
         layers: [props.layers.jwt_layer],
       },
@@ -51,11 +51,11 @@ export class MSC_StorageRequestConstruct extends Construct {
       {
         code: "admin_features/storage/list_storage_requests",
         envVariables: {
-          STORAGE_TABLE_NAME: props.storage_table.tableName,
+          STORAGE_REQUESTS_TABLE: props.storage_requests_table.tableName,
           CLUB_TABLE_NAME: props.club_table.tableName,
         },
         permissions: {
-          [props.storage_table.tableArn]: ["dynamodb:Query"],
+          [props.storage_requests_table.tableArn]: ["dynamodb:Query"],
           [props.club_table.tableArn]: ["dynamodb:GetItem"],
         },
         layers: [props.layers.jwt_layer],

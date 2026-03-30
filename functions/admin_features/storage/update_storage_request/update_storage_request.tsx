@@ -91,7 +91,7 @@ export const handler = async (event: any) => {
 
     const storage_request_id = body?.storage_request_id ?? body?.id;
 
-    const tableName = process.env.STORAGE_REQUESTS_TABLE_NAME as string;
+    const tableName = process.env.STORAGE_REQUESTS_TABLE as string;
     if (!tableName) {
       return createResponse(
         500,

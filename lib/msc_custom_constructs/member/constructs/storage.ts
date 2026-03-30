@@ -29,7 +29,7 @@ export class MSC_StorageConstruct extends Construct {
     const list_storages = new MSC_Lambda(this, `${id}-ListStorages`, {
       code: "member/storage/list_storage",
       envVariables: {
-        STORAGE_TABLE_NAME: props.storage_table.tableName,
+        STORAGE_TABLE: props.storage_table.tableName,
         CLUB_TABLE_NAME: props.club_table.tableName,
       },
       permissions: {
