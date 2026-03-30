@@ -84,12 +84,12 @@ export const handler = async (event: any) => {
       return createResponse(400, { message: validationErrors }, origin);
     }
 
-    const tableName = process.env.STORAGE_REQUESTS_TABLE_NAME as string;
+    const tableName = process.env.STORAGE_REQUESTS_TABLE as string;
     if (!tableName) {
       return createResponse(
         500,
         {
-          message: "Server misconfigured: missing STORAGE_REQUESTS_TABLE_NAME",
+          message: "Server misconfigured: missing STORAGE_REQUESTS_TABLE",
         },
         origin,
       );

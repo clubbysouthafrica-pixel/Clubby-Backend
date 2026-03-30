@@ -49,7 +49,7 @@ export const handler = async (event: any) => {
     if (!tableName) {
       return createResponse(
         500,
-        { message: "Server misconfigured: missing STORAGE_TABLE_NAME" },
+        { message: "Server misconfigured: missing STORAGE_TABLE" },
         origin,
       );
     }

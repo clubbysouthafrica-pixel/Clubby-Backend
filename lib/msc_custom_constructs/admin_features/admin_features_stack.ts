@@ -30,6 +30,8 @@ export interface MSC_AdminFeaturesNestedStackProps extends StackProps {
   events_table: MSC_Table;
   event_registrations_table: MSC_Table;
   shop_images_bucket: MSC_Bucket;
+  storage_table: MSC_Table;
+  storage_requests_table: MSC_Table;
 }
 
 export class MSC_AdminFeaturesNestedStack extends Stack {

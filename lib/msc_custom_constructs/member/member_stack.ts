@@ -49,6 +49,8 @@ export interface MSC_MemberNestedStackProps extends StackProps {
   product_table: MSC_Table;
   email_rate_limiter_table: MSC_Table;
   kms_key: MSC_Kms;
+  storage_table: MSC_Table;
+  storage_requests_table: MSC_Table;
 }
 
 export class MSC_MemberNestedStack extends Stack {
@@ -212,7 +214,7 @@ export class MSC_MemberNestedStack extends Stack {
 
     new MSC_StorageRequestConstruct(this, `${id}-StorageRequest`, {
       api_gateway: api_gateway,
-      storage_request_table: props.storage_request_table,
+      storage_request_table: props.storage_requests_table,
       club_table: props.club_table,
       token_authorizer: jwt_construct.token_authorizer,
       layers: all_layers,

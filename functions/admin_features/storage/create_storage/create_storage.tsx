@@ -149,7 +149,7 @@ export const handler = async (event: any) => {
     // Determine storage_id (supporting both id and storage_id from callers)
     const storage_id = body?.storage_id ?? body?.id ?? randomUUID();
 
-    await addItem(process.env.STORAGE_TABLE_NAME as string, {
+    await addItem(process.env.STORAGE_TABLE as string, {
       storage_id,
       storage_name,
       club_account_id,

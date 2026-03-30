@@ -115,7 +115,7 @@ export class MSC_Stack extends cdk.Stack {
       club_table: tables.club_table,
       club_member_table: tables.club_member_table,
       storage_table: tables.storage_table,
-      storage_request_table: tables.storage_request_table,
+      storage_requests_table: tables.storage_request_table,
       registration_form_table: tables.registration_form_table,
       event_registrations_table: tables.event_registrations_table,
       image_bucket: buckets.image_bucket,
