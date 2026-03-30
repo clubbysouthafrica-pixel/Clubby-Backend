@@ -43,15 +43,10 @@ export class MSC_Stack extends cdk.Stack {
     const tables = new MSC_TablesConstruct(this, stack_id, {});
     const buckets = new MSC_BucketsConstruct(this, stack_id, {});
 
-    const all_layers = new MSC_Layers(this, stack_id, {});
-
     new MSC_MailingStack(this, `MailerStack`, {
       env: props?.env,
       mail_queue: mail_queue,
       billing_table: tables.billing_table,
-      layers: {
-        jwt_layer: all_layers.jwt_layer,
-      },
     });
 
     new MSC_AdminFeaturesNestedStack(this, `AdminFeaturesStack`, {
@@ -68,11 +63,6 @@ export class MSC_Stack extends cdk.Stack {
       storage_table: tables.storage_table,
       storage_requests_table: tables.storage_request_table,
       events_table: tables.events_table,
-      layers: {
-        jwt_layer: all_layers.jwt_layer,
-        jwks_rsa_layer: all_layers.jwks_rsa_layer,
-        axios_layer: all_layers.axios_layer,
-      },
       event_registrations_table: tables.event_registrations_table,
     });
 
@@ -97,20 +87,12 @@ export class MSC_Stack extends cdk.Stack {
       club_history_bucket: buckets.club_history_bucket,
       email_rate_limiter_table: tables.email_rate_limiter_table,
       mail_queue: mail_queue,
-      layers: {
-        jwt_layer: all_layers.jwt_layer,
-        jwks_rsa_layer: all_layers.jwks_rsa_layer,
-        axios_layer: all_layers.axios_layer,
-      },
       kms_key: kmsKey,
     });
 
     new MSC_InternalInfraStack(this, `InternalInfra`, {
       env: props?.env,
       admin_pool: admin_user_pool,
-      layers: {
-        jwt_layer: all_layers.jwt_layer,
-      },
       club_admin_table: tables.club_admin_table,
       users_table: tables.users_table,
       club_table: tables.club_table,
@@ -139,11 +121,6 @@ export class MSC_Stack extends cdk.Stack {
       image_bucket: buckets.image_bucket,
       mail_queue: mail_queue,
       shop_images_bucket: buckets.shop_images_bucket,
-      layers: {
-        jwt_layer: all_layers.jwt_layer,
-        jwks_rsa_layer: all_layers.jwks_rsa_layer,
-        axios_layer: all_layers.axios_layer,
-      },
       kms_key: kmsKey,
     });
   }

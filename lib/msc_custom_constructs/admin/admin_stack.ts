@@ -1,6 +1,6 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_Queue, MSC_LambdaLayer, MSC_Kms } from '../../msc_service_constructs';
+import { MSC_APIGateway, MSC_Bucket, MSC_Cognito, MSC_Queue, MSC_Kms } from '../../msc_service_constructs';
 import {
     MSC_AdminLoginConstruct,
     MSC_AdminUserConstruct,
@@ -17,6 +17,7 @@ import {
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
 import { MSC_MemberUserConstruct } from './constructs/member_user';
+import { MSC_Layers } from '../lambda_layers';
 
 export interface MSC_AdminNestedStackProps extends StackProps {
     users_table: MSC_Table;
@@ -38,17 +39,14 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     club_history_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
     mail_queue: MSC_Queue;
-    layers: {
-        jwt_layer: MSC_LambdaLayer;
-        jwks_rsa_layer: MSC_LambdaLayer;
-        axios_layer: MSC_LambdaLayer;
-    };
     kms_key: MSC_Kms;
 }
 
 export class MSC_AdminNestedStack extends Stack {
     constructor(scope: Construct, id: string, props: MSC_AdminNestedStackProps) {
         super(scope, id, props);
+
+        const all_layers = new MSC_Layers(this, id, {});
 
         const api_gateway = new MSC_APIGateway(this, id, {
             domain: "admin",
@@ -58,7 +56,7 @@ export class MSC_AdminNestedStack extends Stack {
         new MSC_AdminLoginConstruct(this, `${id}-Login`, {
             api_gateway: api_gateway,
             admin_user_pool: props.admin_user_pool,
-            layers: props.layers,
+            layers: all_layers,
             users_table: props.users_table,
             email_rate_limiter_table: props.email_rate_limiter_table
         });
@@ -67,20 +65,20 @@ export class MSC_AdminNestedStack extends Stack {
             api_gateway: api_gateway,
             user_pool: props.admin_user_pool,
             user_type: "admin",
-            layers: props.layers
+            layers: all_layers
         });
 
         new MSC_PayFastConstruct(this, `${id}-PayFast`, {
             api_gateway: api_gateway,
             token_authorizer: jwt_construct.token_authorizer,
             club_table: props.club_table,
-            layers: props.layers,
+            layers: all_layers,
             kms_key: props.kms_key
         });
 
         new MSC_TransactionsConstruct(this, `${id}-Transactions`, {
             api_gateway: api_gateway,
-            layers: props.layers,
+            layers: all_layers,
             token_authorizer: jwt_construct.token_authorizer,
             transactions_table: props.transactions_table
         });
@@ -89,7 +87,7 @@ export class MSC_AdminNestedStack extends Stack {
             api_gateway: api_gateway,
             club_table: props.club_table,
             billing_table: props.billing_table,
-            layers: props.layers,
+            layers: all_layers,
             token_authorizer: jwt_construct.token_authorizer,
             registrations_table: props.registrations_table,
             registration_form_table: props.registration_form_table,
@@ -105,7 +103,7 @@ export class MSC_AdminNestedStack extends Stack {
             club_deregistration_queue: props.club_deregistration_queue,
             club_member_table: props.club_member_table,
             club_history_bucket: props.club_history_bucket,
-            layers: props.layers,
+            layers: all_layers,
             registration_form_table: props.registration_form_table,
             registrations_table: props.registrations_table,
             token_authorizer: jwt_construct.token_authorizer,
@@ -117,7 +115,7 @@ export class MSC_AdminNestedStack extends Stack {
             api_gateway: api_gateway,
             users_table: props.users_table,
             club_table: props.club_table,
-            layers: props.layers,
+            layers: all_layers,
             billing_table: props.billing_table,
             token_authorizer: jwt_construct.token_authorizer,
             mail_queue: props.mail_queue
@@ -127,7 +125,7 @@ export class MSC_AdminNestedStack extends Stack {
             api_gateway: api_gateway,
             users_table: props.users_table,
             token_authorizer: jwt_construct.token_authorizer,
-            layers: props.layers,
+            layers: all_layers,
             kms_key: props.kms_key
         });
 
@@ -135,7 +133,7 @@ export class MSC_AdminNestedStack extends Stack {
             api_gateway: api_gateway,
             club_table: props.club_table,
             token_authorizer: jwt_construct.token_authorizer,
-            layers: props.layers,
+            layers: all_layers,
             image_bucket: props.image_bucket,
             registration_form_table: props.registration_form_table
         });
@@ -146,12 +144,12 @@ export class MSC_AdminNestedStack extends Stack {
             token_authorizer: jwt_construct.token_authorizer,
             club_admin_table: props.club_admin_table,
             club_table: props.club_table,
-            layers: props.layers
+            layers: all_layers
         });
 
         new MSC_MemberUserConstruct(this, `${id}-MemberUser`, {
             api_gateway: api_gateway,
-            layers: props.layers,
+            layers: all_layers,
             token_authorizer: jwt_construct.token_authorizer,
             users_table: props.users_table,
             kms_key: props.kms_key
@@ -166,7 +164,7 @@ export class MSC_AdminNestedStack extends Stack {
             registrations_table: props.registrations_table,
             club_admin_table: props.club_admin_table,
             token_authorizer: jwt_construct.token_authorizer,
-            layers: props.layers,
+            layers: all_layers,
             transactions_table: props.transactions_table,
             kms_key: props.kms_key
         });
@@ -183,7 +181,7 @@ export class MSC_AdminNestedStack extends Stack {
             registration_form_table: props.registration_form_table,
             billing_table: props.billing_table,
             registrations_table: props.registrations_table,
-            layers: props.layers,
+            layers: all_layers,
             mail_queue: props.mail_queue,
             kms_key: props.kms_key
         });
