@@ -39,7 +39,10 @@ export class MSC_StorageRequestConstruct extends Construct {
           STORAGE_REQUESTS_TABLE: props.storage_requests_table.tableName,
         },
         permissions: {
-          [props.storage_requests_table.tableArn]: ["dynamodb:PutItem"],
+          [props.storage_requests_table.tableArn]: [
+            "dynamodb:PutItem",
+            "dynamodb:UpdateItem",
+          ],
         },
         layers: [props.layers.jwt_layer],
       },
