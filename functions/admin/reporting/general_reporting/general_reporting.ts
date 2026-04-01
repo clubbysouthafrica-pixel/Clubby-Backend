@@ -206,7 +206,7 @@ export const handler = async (event: any) => {
             order_data: []
         };
 
-        if (query_string_params?.season_cycle && query_string_params?.season_cycle !== "1") {
+        if (query_string_params?.season_cycle) {
             if (!query_string_params.club_account_id) {
                 return createResponse(400, { message: "club_account_id is required." }, origin);
             }
