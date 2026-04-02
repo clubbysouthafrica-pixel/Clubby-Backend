@@ -10,4 +10,6 @@ export { MSC_MemberShopConstruct } from "./shop";
 export { MSC_MemberOrdersConstruct } from "./orders";
 export { MSC_VenuesConstruct } from "./venues";
 export { MSC_BookingsConstruct } from "./bookings";
+export { MSC_StorageRequestConstruct } from "./storage_request";
+export { MSC_StorageConstruct } from "./storage";
 export { MSC_EventsConstruct } from "./events";
