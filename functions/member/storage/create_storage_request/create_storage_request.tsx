@@ -31,6 +31,93 @@ import { randomUUID } from "crypto";
  * }
  */
 
+interface OrderRequest {
+  items: any[];
+  user_first_name: string;
+  user_surname: string;
+  club_account_id: string;
+  user_id: string;
+  total_amount: number;
+  total_items: number;
+  storage_request_id: string;
+}
+
+async function addToTransactionsTable(
+  club_account_id: string,
+  first_name: string,
+  surname: string,
+  transaction_id: string,
+  user_id: string,
+  order_amount: number,
+  order_id: string,
+  storage_request_id: string,
+) {
+  await addItem(process.env.TRANSACTIONS_TABLE_NAME as string, {
+    club_account_id: club_account_id,
+    name: `${first_name} ${surname}`,
+    transaction_id: transaction_id,
+    order_id: order_id,
+    user_id: user_id as string,
+    amount_paid: 0,
+    club_income: true,
+    amount: order_amount,
+    creation_date: Date.now(),
+    storage_request_id: storage_request_id,
+    lifecycle: {
+      [Date.now()]: {
+        description: "Order submission",
+        amount: order_amount,
+        type: "SUBMISSION",
+      },
+    },
+    type: "ORDER",
+    status: "PENDING",
+  });
+}
+
+const createOrder = async (orderRequest: OrderRequest): Promise<string> => {
+  const order_id = randomUUID();
+  const created_date = Math.floor(Date.now() / 1000);
+
+  const transaction_id = randomUUID();
+
+  for (const item of orderRequest.items) {
+    item["fulfillment_status"] = "NOT_PROCESSED";
+    item["fulfillment_quantity"] = 0;
+  }
+
+  const orderItem = {
+    order_id,
+    transaction_id,
+    first_name: orderRequest.user_first_name,
+    surname: orderRequest.user_surname,
+    club_account_id: orderRequest.club_account_id,
+    user_id: orderRequest.user_id as string,
+    items: orderRequest.items,
+    total_amount: orderRequest.total_amount,
+    total_items: orderRequest.total_items,
+    payment_status: "PENDING",
+    fulfillment_status: "NOT_PROCESSED",
+    order_confirmed_by_admin: false,
+    created_date,
+    amount_paid: 0,
+  };
+
+  await addItem(process.env.ORDER_TABLE_NAME!, orderItem);
+  await addToTransactionsTable(
+    orderRequest.club_account_id,
+    orderRequest.user_first_name,
+    orderRequest.user_surname,
+    transaction_id,
+    orderRequest.user_id as string,
+    orderRequest.total_amount,
+    order_id,
+    orderRequest.storage_request_id,
+  );
+
+  return transaction_id;
+};
+
 const validateInput = (body: any) => {
   const storage_id = body?.storage_id ?? body?.storageId;
   const date = body?.date;
@@ -238,9 +325,28 @@ export const handler = async (event: any) => {
       notes,
       createdAt: now,
       updatedAt: now,
+      transaction_id: "",
     };
 
     try {
+      const transaction_id = await createOrder({
+        items: [
+          {
+            type: "STORAGE",
+            storage_id: item.storage_id,
+            storage_request_id: item.storage_request_id,
+          },
+        ],
+        user_first_name: "",
+        user_surname: "",
+        club_account_id: item.club_account_id,
+        user_id: item.userId,
+        total_amount: item.costCents,
+        total_items: 1,
+        storage_request_id: item.storage_request_id,
+      });
+
+      item.transaction_id = transaction_id;
       // create-only to avoid accidental overwrite if id collision (very unlikely with UUID)
       await addItem(
         tableName,

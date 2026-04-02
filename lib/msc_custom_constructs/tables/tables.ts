@@ -164,13 +164,17 @@ export class MSC_TablesConstruct extends Construct {
     this.storage_table = new MSC_Table(this, `${id}-Storage`, {
       partitionKey: { club_account_id: "STRING" },
       sortKey: { storage_id: "STRING" },
-      gsi: [],
     });
 
     this.storage_request_table = new MSC_Table(this, `${id}-StorageRequest`, {
-      partitionKey: { storage_id: "STRING" },
+      partitionKey: { club_account_id: "STRING" },
       sortKey: { storage_request_id: "STRING" },
-      gsi: [],
+      gsi: [
+        {
+          indexName: "UserIDIndex",
+          partitionKey: { name: "user_id", type: AttributeType.STRING },
+        },
+      ],
     });
   }
 }

@@ -16,6 +16,8 @@ interface MSC_StorageRequestConstructProps {
   api_gateway: MSC_APIGateway;
   token_authorizer: TokenAuthorizer;
   storage_request_table: MSC_Table;
+  orders_table: MSC_Table;
+  transactions_table: MSC_Table;
   club_table: MSC_Table;
   layers: {
     jwt_layer: MSC_LambdaLayer;
@@ -41,6 +43,8 @@ export class MSC_StorageRequestConstruct extends Construct {
         },
         permissions: {
           [props.storage_request_table.tableArn]: ["dynamodb:PutItem"],
+          [props.orders_table.tableArn]: ["dynamodb:PutItem"],
+          [props.transactions_table.tableArn]: ["dynamodb:PutItem"],
           [props.club_table.tableArn]: ["dynamodb:GetItem"],
         },
         layers: [props.layers.jwt_layer],
