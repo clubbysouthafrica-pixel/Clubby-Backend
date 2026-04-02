@@ -127,10 +127,13 @@ export class MSC_MemberLoginConstruct extends Construct {
             code: "login/forgot_password",
             envVariables: {
                 USER_POOL_CLIENT_ID: props.user_pool.userPoolClient.userPoolClientId,
+                USER_POOL_ID: props.user_pool.userPoolId,
+                USER: "MEMBER"
             },
             permissions: {
                 [props.user_pool.userPoolArn]: [
-                    "cognito-idp:AdminConfirmForgotPassword"
+                    "cognito-idp:AdminGetUser",
+                    "cognito-idp:ForgotPassword"
                 ]
             },
             layers: [props.layers.jwt_layer]

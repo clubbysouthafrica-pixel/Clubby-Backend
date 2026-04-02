@@ -24,8 +24,8 @@ export async function sendTemporaryPasswordResetEmail(
               <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
                 <tr>
                   <td style="padding:24px 24px 0 24px;">
-                    <h1 style="margin:0 0 12px 0;font-size:20px;line-height:28px;color:#111827;">Your Activation Credentials Have Expired</h1>
-                    <p style="margin:0 0 16px 0;line-height:1.6;">Your original temporary password has expired. We've generated new activation credentials for you. Click the button below to activate your account and create your permanent password.</p>
+                    <h1 style="margin:0 0 12px 0;font-size:20px;line-height:28px;color:#111827;">Your Activation Credentials Have Reset</h1>
+                    <p style="margin:0 0 16px 0;line-height:1.6;">We've generated new activation credentials for you. Click the button below to activate your account and create your permanent password.</p>
                   </td>
                 </tr>
                 <tr>
@@ -133,7 +133,7 @@ export const handler = async (event: any) => {
       }
     );
     if (item) {
-        return createResponse(429, { message: "A credential reset request has been submitted for this account in the last 24 hours. Please check your email for the message with subject 'Temporary password reset' before requesting another reset." }, origin);
+        return createResponse(429, { message: "A credential reset request has been submitted for this account in the last 24 hours. Please check your email for the message with subject 'Your New Clubby Activation Credentials' before requesting another reset." }, origin);
     }
 
     const temporaryPassword = generateCognitoPassword();
@@ -157,7 +157,7 @@ export const handler = async (event: any) => {
         }       
     )
 
-    return createResponse(200, { message: `A temporary password has been sent to your email, ${username}. Please check your inbox for the message with subject 'Temporary password reset'.` }, origin);
+    return createResponse(200, { message: `New temporary credentials have been sent to, ${username}. Please check your inbox for the message with subject 'Your New Clubby Activation Credentials'.` }, origin);
 
   } catch (error: any) {
     console.error('Sign-in error: ', error);
