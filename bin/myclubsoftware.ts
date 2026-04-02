@@ -6,7 +6,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const app = new cdk.App();
-new MSC_Stack(app, "MCS", {
+new MSC_Stack(app, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-MCS` : "MCS"}`, {
     env: {
         account: process.env.ACCOUNT,
         region: process.env.REGION,

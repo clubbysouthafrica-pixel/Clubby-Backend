@@ -20,19 +20,19 @@ export class MSC_Stack extends cdk.Stack {
       this.terminationProtection = true;
     }
 
-    const kmsKey = new MSC_Kms(this, "DataEncryption", {
+    const kmsKey = new MSC_Kms(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}DataEncryption`, {
       enableKeyRotation: true,
       description: "KMS key for encrypting MyClubSoftware data",
     });
 
-    const mail_queue = new MSC_Queue(this, `SendMail`, {
-      queue_name: "SendMail",
+    const mail_queue = new MSC_Queue(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}SendMail`, {
+      queue_name: `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}SendMail`,
     });
     const club_deregistration_queue = new MSC_Queue(
       this,
-      `ClubDeregistration`,
+      `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}ClubDeregistration`,
       {
-        queue_name: "ClubDeregistration",
+        queue_name: `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}ClubDeregistration`,
         timeout: 900,
       },
     );
@@ -43,13 +43,13 @@ export class MSC_Stack extends cdk.Stack {
     const tables = new MSC_TablesConstruct(this, stack_id, {});
     const buckets = new MSC_BucketsConstruct(this, stack_id, {});
 
-    new MSC_MailingStack(this, `MailerStack`, {
+    new MSC_MailingStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}MailerStack`, {
       env: props?.env,
       mail_queue: mail_queue,
       billing_table: tables.billing_table,
     });
 
-    new MSC_AdminFeaturesNestedStack(this, `AdminFeaturesStack`, {
+    new MSC_AdminFeaturesNestedStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}AdminFeaturesStack`, {
       env: props?.env,
       admin_user_pool: admin_user_pool,
       venues_bookings_table: tables.venues_bookings_table,
@@ -66,7 +66,7 @@ export class MSC_Stack extends cdk.Stack {
       event_registrations_table: tables.event_registrations_table,
     });
 
-    new MSC_AdminNestedStack(this, `AdminStack`, {
+    new MSC_AdminNestedStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}AdminStack`, {
       env: props?.env,
       signatures_bucket: buckets.signatures_bucket,
       shop_images_bucket: buckets.shop_images_bucket,
@@ -90,7 +90,7 @@ export class MSC_Stack extends cdk.Stack {
       kms_key: kmsKey,
     });
 
-    new MSC_InternalInfraStack(this, `InternalInfra`, {
+    new MSC_InternalInfraStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}InternalInfra`, {
       env: props?.env,
       admin_pool: admin_user_pool,
       club_admin_table: tables.club_admin_table,
@@ -98,7 +98,7 @@ export class MSC_Stack extends cdk.Stack {
       club_table: tables.club_table,
     });
 
-    new MSC_MemberNestedStack(this, `MemberStack`, {
+    new MSC_MemberNestedStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}MemberStack`, {
       env: props?.env,
       events_table: tables.events_table,
       venues_table: tables.venues_table,

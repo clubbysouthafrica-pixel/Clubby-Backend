@@ -10,7 +10,7 @@ interface MSC_BucketProps {
 export class MSC_Bucket extends Bucket {
   constructor(scope: Construct, id: string, props: MSC_BucketProps) {
     super(scope, `${id}-Bucket`, {
-      ...(process.env.ENVIRONMENT !== 'Dev' && { bucketName: props.bucket_name }),
+      bucketName: props.bucket_name,
       encryption: BucketEncryption.S3_MANAGED,
       removalPolicy: RemovalPolicy.DESTROY,
       cors: props.enableCors ? [

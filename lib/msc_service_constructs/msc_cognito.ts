@@ -1,4 +1,4 @@
-import { CfnOutput } from 'aws-cdk-lib';
+import { CfnOutput, RemovalPolicy } from 'aws-cdk-lib';
 import { 
   UserPool, 
   UserPoolClient, 
@@ -18,7 +18,7 @@ export class MSC_Cognito extends UserPool {
 
   constructor(scope: Construct, id: string, props?: MSC_CognitoProps) {
     super(scope, `${id}-UserPool`, {
-      ...(process.env.ENVIRONMENT !== 'Dev' && { userPoolName: `${id}-UserPool` }),
+      userPoolName: `${id}-UserPool`,
       selfSignUpEnabled: true,
       userVerification: {
         emailSubject: "Verify your email for Clubby",
@@ -41,7 +41,7 @@ export class MSC_Cognito extends UserPool {
 
     this.userPoolClient = new UserPoolClient(this, `${id}-UserPoolClient`, {
       userPool: this,
-      ...(process.env.ENVIRONMENT !== 'Dev' && { userPoolClientName: `${id}-UserPoolClient` }),
+      userPoolClientName: `${id}-UserPoolClient`,
       generateSecret: false,
       authFlows: {
         userPassword: true,
@@ -52,6 +52,10 @@ export class MSC_Cognito extends UserPool {
     });
 
     const cfnUserPool = this.node.defaultChild as CfnUserPool;
+    if (process.env.ENVIRONMENT === "Dev") {
+      cfnUserPool.applyRemovalPolicy(RemovalPolicy.DESTROY);
+    }
+
     cfnUserPool.emailConfiguration = {
       emailSendingAccount: "DEVELOPER",
       from: `clubby-no-reply@${domain}`,

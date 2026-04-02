@@ -12,13 +12,13 @@ interface MSC_APIGatewayProps {
 export class MSC_APIGateway extends RestApi {
     constructor(scope: Construct, id: string, props: MSC_APIGatewayProps) {
         super(scope, `${id}-APIGateway`, {
-            ...(process.env.ENVIRONMENT !== 'Dev' && { restApiName: `${id}-APIGateway` }),
+            restApiName: `${id}-APIGateway`,
             endpointConfiguration: {
                 types: [EndpointType.REGIONAL]
             }
         });
         
-        const domain_name = `${props.domain}.${(process.env.DOMAIN as string)}`;
+        const domain_name = process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-${props.domain}.${(process.env.DOMAIN as string)}` : `${props.domain}.${(process.env.DOMAIN as string)}`;
         const hosted_zone_domain = process.env.DOMAIN as string;
         const certificate_arn = props.cert_arn;
 

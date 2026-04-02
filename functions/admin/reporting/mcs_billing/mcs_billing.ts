@@ -27,8 +27,9 @@ const processBillingData = (monthly_billing: Record<string, any>[], club: Record
         Orders: {
             month_data: [],
             "Total sales": 0,
-            "Charge per order": `5%`
+            "Charge per order": `2%`
         },
+        Payments: [],
         total_outstanding_amount: 0,
         total_email_amount: 0,
         total_registration_amount: 0,
@@ -42,6 +43,12 @@ const processBillingData = (monthly_billing: Record<string, any>[], club: Record
         report.total_registration_amount += month?.registration_amount ?? 0
         report.total_charge += month.total_amount
         report.total_order_amount += month?.order_amount ?? 0
+
+        report.Payments.push({
+            month: month.year_month,
+            month_paid: month?.month_paid ?? false,
+            payment_date: month?.payment_date ?? undefined,
+        });
 
         report.Orders["Total sales"] += month?.total_sales ?? 0
 

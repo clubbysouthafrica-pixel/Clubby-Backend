@@ -35,9 +35,9 @@ export class MSC_PayfastConstruct extends Construct {
             code: "member/payfast/get_checkout_url",
             envVariables: {
                 DOMAIN: process.env.ENVIRONMENT === "Dev" ? "http://localhost:5173" : `https://${process.env.DOMAIN}` as string,
-                NOTIFY_REGISTRATION_URL: `https://member.${process.env.DOMAIN}/payfast/handleRegistrationPayment`,
-                NOTIFY_ORDER_URL: `https://member.${process.env.DOMAIN}/payfast/handleOrderPayment`,
-                NOTIFY_EVENT_URL: `https://member.${process.env.DOMAIN}/payfast/handleEventRegistrationPayment`,
+                NOTIFY_REGISTRATION_URL: `https://${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}member.${process.env.DOMAIN}/payfast/handleRegistrationPayment`,
+                NOTIFY_ORDER_URL: `https://${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}member.${process.env.DOMAIN}/payfast/handleOrderPayment`,
+                NOTIFY_EVENT_URL: `https://${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}member.${process.env.DOMAIN}/payfast/handleEventRegistrationPayment`,
                 USERS_TABLE_NAME: props.users_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,

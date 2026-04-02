@@ -8,11 +8,13 @@ interface MSC_PayFastConstructProps {
     api_gateway: MSC_APIGateway;
     token_authorizer: TokenAuthorizer;
     club_table: MSC_Table;
+    billing_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
         axios_layer: MSC_LambdaLayer;
     };
     kms_key: MSC_Kms;
+    transactions_table: MSC_Table;
 }
 
 export class MSC_PayFastConstruct extends Construct {
@@ -61,10 +63,52 @@ export class MSC_PayFastConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const get_clubby_checkout_url = new MSC_Lambda(this, `${id}-GetClubbyCheckoutUrl`, {
+            code: "admin/payfast/get_clubby_checkout_url",
+            envVariables: {
+                CLUB_TABLE_NAME: props.club_table.tableName,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
+                ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
+                MERCHANT_ID: process.env.MERCHANT_ID as string,
+                MERCHANT_KEY: process.env.MERCHANT_KEY as string,
+                DOMAIN: process.env.ENVIRONMENT === "Dev" ? "http://localhost:5173" : `https://${process.env.DOMAIN}` as string,
+                NOTIFY_URL: `https://${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}admin.${process.env.DOMAIN}/payfast/handleClubbyPayment`,
+            },
+            permissions: {
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.billing_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer, props.layers.axios_layer]
+        });
+
+        const handle_clubby_payment = new MSC_Lambda(this, `${id}-HandleClubbyPayment`, {
+            code: "admin/payfast/handle_clubby_payment",
+            envVariables: {
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+            },
+            permissions: {
+                [props.billing_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem"
+                ],
+                [props.transactions_table.tableArn]: [
+                    "dynamodb:PutItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer, props.layers.axios_layer]
+        });
+
         const pay_fast_resource = props.api_gateway.root.addResource("payfast");
 
         const update_details_resource = pay_fast_resource.addResource("updateDetails");
         const reset_details_resource = pay_fast_resource.addResource("resetDetails");
+        const get_clubby_checkout_url_resource = pay_fast_resource.addResource("getClubbyCheckoutUrl");
+        const handle_clubby_payment_resource = pay_fast_resource.addResource("handleClubbyPayment");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -74,5 +118,7 @@ export class MSC_PayFastConstruct extends Construct {
 
         addCorsEnabledMethod(update_details_resource, update_details, methodOptions, undefined, "POST");
         addCorsEnabledMethod(reset_details_resource, reset_details, methodOptions, undefined, "POST");
+        addCorsEnabledMethod(get_clubby_checkout_url_resource, get_clubby_checkout_url, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(handle_clubby_payment_resource, handle_clubby_payment, { methodResponses: [] }, undefined, "POST");
     }
 }

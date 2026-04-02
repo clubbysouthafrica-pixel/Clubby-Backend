@@ -10,7 +10,7 @@ interface MSC_QueueProps {
 export class MSC_Queue extends Queue {
     constructor(scope: Construct, id: string, props: MSC_QueueProps) {
         super(scope, `${id}-FifoQueue`, {
-            ...(process.env.ENVIRONMENT !== 'Dev' && { queueName: `${process.env.ENVIRONMENT}-${props.queue_name}.fifo`.toLowerCase() }),
+            queueName: `${process.env.ENVIRONMENT}-${props.queue_name}.fifo`.toLowerCase(),
             visibilityTimeout: Duration.seconds(props.timeout ?? 30),
             fifo: true,
             contentBasedDeduplication: true,

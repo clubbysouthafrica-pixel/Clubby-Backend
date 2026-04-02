@@ -73,7 +73,9 @@ export class MSC_AdminNestedStack extends Stack {
             token_authorizer: jwt_construct.token_authorizer,
             club_table: props.club_table,
             layers: all_layers,
-            kms_key: props.kms_key
+            kms_key: props.kms_key,
+            billing_table: props.billing_table,
+            transactions_table: props.transactions_table
         });
 
         new MSC_TransactionsConstruct(this, `${id}-Transactions`, {
