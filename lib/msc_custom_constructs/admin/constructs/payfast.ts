@@ -79,7 +79,8 @@ export class MSC_PayFastConstruct extends Construct {
                     "dynamodb:GetItem"
                 ],
                 [props.billing_table.tableArn]: [
-                    "dynamodb:GetItem"
+                    "dynamodb:GetItem",
+                    "dynamodb:Query"
                 ]
             },
             layers: [props.layers.jwt_layer, props.layers.axios_layer]
@@ -90,14 +91,23 @@ export class MSC_PayFastConstruct extends Construct {
             envVariables: {
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+                CLUB_TABLE_NAME: props.club_table.tableName,
+                DOMAIN: process.env.DOMAIN as string
             },
             permissions: {
                 [props.billing_table.tableArn]: [
                     "dynamodb:GetItem",
-                    "dynamodb:UpdateItem"
+                    "dynamodb:UpdateItem",
+                    "dynamodb:Query"
                 ],
                 [props.transactions_table.tableArn]: [
                     "dynamodb:PutItem"
+                ],
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                    "ses:SendEmail"
                 ]
             },
             layers: [props.layers.jwt_layer, props.layers.axios_layer]
