@@ -29,7 +29,7 @@ export class MSC_StorageConstruct extends Construct {
     const create_storage = new MSC_Lambda(this, `${id}-CreateStorage`, {
       code: "admin_features/storage/create_storage",
       envVariables: {
-        STORAGE_TABLE: props.storage_table.tableName,
+        STORAGE_TABLE: props.storage_table.tableName
       },
       permissions: {
         [props.storage_table.tableArn]: [

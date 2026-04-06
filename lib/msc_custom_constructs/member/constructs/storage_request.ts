@@ -39,7 +39,8 @@ export class MSC_StorageRequestConstruct extends Construct {
         code: "member/storage/create_storage_request",
         envVariables: {
           STORAGE_REQUESTS_TABLE: props.storage_request_table.tableName,
-          CLUB_TABLE_NAME: props.club_table.tableName,
+          TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+          ORDER_TABLE_NAME: props.orders_table.tableName,
         },
         permissions: {
           [props.storage_request_table.tableArn]: ["dynamodb:PutItem"],

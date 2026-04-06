@@ -92,14 +92,14 @@ export class MSC_StorageRequestConstruct extends Construct {
       update_storage_request,
       methodOptions,
       undefined,
-      "GET",
+      "PUT",
     );
     addCorsEnabledMethod(
       list_storage_requests_resource,
       list_storage_requests,
       methodOptions,
       undefined,
-      "PUT",
+      "GET",
     );
   }
 }
