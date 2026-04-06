@@ -4,7 +4,7 @@ import { MSC_APIGateway, MSC_Cognito, MSC_LambdaLayer } from '../../msc_service_
 import {
     MSC_InternalInfraClubConstruct,
     MSC_InternalInfraClubAdminConstruct,
-    MSC_InternalInfraUserConstruct
+    MSC_InternalInfraUserConstruct,
 } from "./constructs";
 import { MSC_Table } from "../../msc_service_constructs";
 

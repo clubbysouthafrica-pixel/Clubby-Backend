@@ -1,0 +1,1 @@
+export { MSC_InternalInfraAssetsManagementConstruct } from "./assets_management";

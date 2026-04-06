@@ -11,6 +11,7 @@ import {
 } from "./msc_custom_constructs";
 import { MSC_BucketsConstruct } from "./msc_custom_constructs/buckets/buckets";
 import { MSC_Cognito, MSC_Queue, MSC_Kms } from "./msc_service_constructs";
+import { MSC_InfraStack } from "./mcs_infrastructure";
 
 export class MSC_Stack extends cdk.Stack {
   constructor(scope: Construct, stack_id: string, props?: cdk.StackProps) {
@@ -122,6 +123,11 @@ export class MSC_Stack extends cdk.Stack {
       mail_queue: mail_queue,
       shop_images_bucket: buckets.shop_images_bucket,
       kms_key: kmsKey,
+    });
+
+    new MSC_InfraStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}InfraStack`, {
+      env: props?.env,
+      assets_bucket_name: buckets.image_bucket.bucketName,
     });
   }
 }
