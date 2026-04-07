@@ -15,6 +15,7 @@ import {
 interface MSC_StorageRequestConstructProps {
   api_gateway: MSC_APIGateway;
   token_authorizer: TokenAuthorizer;
+  storage_table: MSC_Table;
   storage_request_table: MSC_Table;
   orders_table: MSC_Table;
   transactions_table: MSC_Table;
@@ -38,6 +39,7 @@ export class MSC_StorageRequestConstruct extends Construct {
       {
         code: "member/storage/create_storage_request",
         envVariables: {
+          STORAGE_TABLE_NAME: props.storage_table.tableName,
           STORAGE_REQUESTS_TABLE: props.storage_request_table.tableName,
           TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
           ORDER_TABLE_NAME: props.orders_table.tableName,
