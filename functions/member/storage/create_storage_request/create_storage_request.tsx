@@ -162,7 +162,7 @@ const validateInput = (body: any) => {
 };
 
 
-const setStorageToBooked = async (storage_request_id: string) => {
+const setStorageToBooked = async (storage_id: string) => {
   const tableName = process.env.STORAGE_TABLE_NAME as string;
   if (!tableName) {
     throw new Error("Server misconfigured: missing STORAGE_TABLE_NAME");
@@ -171,7 +171,7 @@ const setStorageToBooked = async (storage_request_id: string) => {
   try {
     await updateItem(
       tableName,
-      { storage_id: storage_request_id },
+      { storage_id: storage_id },
       "SET #isBooked = :booked",
       { "#isBooked": "isBooked" },
       { ":booked": true },
