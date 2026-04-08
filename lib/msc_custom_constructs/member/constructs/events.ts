@@ -83,7 +83,7 @@ export class MSC_EventsConstruct extends Construct {
             authorizer: props.token_authorizer
         }
 
-        addCorsEnabledMethod(get_events_resource, get_events, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(get_events_resource, get_events, { methodResponses: [] }, undefined, "GET");
         addCorsEnabledMethod(register_resource, register, methodOptions, undefined, "POST");
         addCorsEnabledMethod(get_event_registrations_resource, get_event_registrations, methodOptions, undefined, "GET");
     }

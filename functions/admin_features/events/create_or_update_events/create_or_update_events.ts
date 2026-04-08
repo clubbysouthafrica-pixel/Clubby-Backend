@@ -3,18 +3,19 @@ import {
 	createResponse,
 	deconstructEvent,
 } from "./function_helpers";
+import { randomUUID } from "crypto";
 
 type FormInputType = "TEXT" | "DROPDOWN" | "CHECKBOX";
 type PricingType = "FREE" | "SINGLE" | "MULTIPLE" | "ADDITIONAL";
 type PricingTypeInput = PricingType | "ADDITIVE";
 
 interface EventFormFieldInput {
-	id: string;
-	label: string;
-	inputType: FormInputType;
-	required: boolean;
-	placeholder: string;
-	options: string[];
+	id?: string;
+	label?: string;
+	inputType?: FormInputType;
+	required?: boolean;
+	placeholder?: string;
+	options?: string[];
 }
 
 interface PricingOptionInput {
@@ -29,6 +30,16 @@ interface PricingInput {
 	options?: PricingOptionInput[];
 }
 
+interface RegistrationTagInput {
+	id?: string;
+	label?: string;
+}
+
+interface EventRegistrationInput {
+	autoConfirmIfPaid?: boolean;
+	registrationTags?: RegistrationTagInput[];
+}
+
 interface EventRequestBody {
 	id?: string;
 	club_account_id?: string;
@@ -40,6 +51,7 @@ interface EventRequestBody {
 	registrationCloseDate: number;
 	formFields: EventFormFieldInput[];
 	pricing: PricingInput;
+	eventRegistration?: EventRegistrationInput;
 	previewFieldOrder?: string[];
 }
 
@@ -64,6 +76,11 @@ interface NormalizedEventField {
 	options: string[];
 }
 
+interface NormalizedRegistrationTag {
+	id: string;
+	label: string;
+}
+
 interface NormalizedEventPayload {
 	club_account_id?: string;
 	title: string;
@@ -74,6 +91,8 @@ interface NormalizedEventPayload {
 	registrationCloseDate: number;
 	formFields: NormalizedEventField[];
 	pricing: NormalizedPricing;
+	autoConfirmIfPaid: boolean;
+	registrationTags?: NormalizedRegistrationTag[];
 	previewFieldOrder: string[];
 	createdAt: string;
 	updatedAt: string;
@@ -156,6 +175,83 @@ function sanitizePreviewFieldOrder(
 	return sanitized;
 }
 
+function getNormalizedFieldOptions(options: unknown): string[] {
+	if (!Array.isArray(options)) {
+		return [];
+	}
+
+	return options
+		.filter((option): option is string => typeof option === "string")
+		.map(option => option.trim())
+		.filter(option => option.length > 0);
+}
+
+function hasConfigurableFieldContent(field: EventFormFieldInput | undefined): boolean {
+	const id = typeof field?.id === "string" ? field.id.trim() : "";
+	const label = typeof field?.label === "string" ? field.label.trim() : "";
+	const placeholder = typeof field?.placeholder === "string" ? field.placeholder.trim() : "";
+	const options = getNormalizedFieldOptions(field?.options);
+
+	return Boolean(id || label || placeholder || options.length > 0);
+}
+
+function buildFieldId(field: EventFormFieldInput | undefined, index: number, label: string): string {
+	const providedId = typeof field?.id === "string" ? field.id.trim() : "";
+	if (providedId) {
+		return providedId;
+	}
+
+	const slugifiedLabel = slugify(label);
+	if (slugifiedLabel) {
+		return slugifiedLabel;
+	}
+
+	return `field-${index + 1}`;
+}
+
+function normalizeRegistrationTags(
+	registrationTags: unknown,
+	autoConfirmIfPaid: boolean,
+	errors: string[],
+): NormalizedRegistrationTag[] | undefined {
+	if (registrationTags === undefined) {
+		return undefined;
+	}
+
+	if (autoConfirmIfPaid) {
+		errors.push("registrationTags can only be provided when autoConfirmIfPaid is false.");
+		return undefined;
+	}
+
+	if (!Array.isArray(registrationTags)) {
+		errors.push("registrationTags must be an array when provided.");
+		return undefined;
+	}
+
+	const normalizedRegistrationTags: NormalizedRegistrationTag[] = [];
+
+	registrationTags.forEach((tag, index) => {
+		const prefix = `registrationTags[${index}]`;
+		const label = typeof tag?.label === "string" ? tag.label.trim() : "";
+
+		if (typeof tag?.id === "string" && tag.id.trim()) {
+			errors.push(`${prefix}.id must not be provided.`);
+		}
+
+		if (!label) {
+			errors.push(`${prefix}.label is required.`);
+			return;
+		}
+
+		normalizedRegistrationTags.push({
+			id: randomUUID(),
+			label,
+		});
+	});
+
+	return normalizedRegistrationTags;
+}
+
 function validateAndNormalizeBody(body: EventRequestBody, userId?: string, clubAccountIdFromQuery?: string | null): { value?: NormalizedEventPayload; errors?: string[] } {
 	const errors: string[] = [];
 
@@ -167,6 +263,12 @@ function validateAndNormalizeBody(body: EventRequestBody, userId?: string, clubA
 	if (!title) {
 		errors.push("title is required.");
 	}
+
+	if (typeof body.eventRegistration?.autoConfirmIfPaid !== "boolean") {
+		errors.push("autoConfirmIfPaid must be provided as a boolean.");
+	}
+
+	const autoConfirmIfPaid = body.eventRegistration?.autoConfirmIfPaid === true;
 
 	const startDate = body.startDate;
 	const endDate = body.endDate;
@@ -205,8 +307,8 @@ function validateAndNormalizeBody(body: EventRequestBody, userId?: string, clubA
 		}
 	}
 
-	if (!Array.isArray(body.formFields) || body.formFields.length === 0) {
-		errors.push("formFields is required and must be a non-empty array.");
+	if (body.formFields !== undefined && !Array.isArray(body.formFields)) {
+		errors.push("formFields must be an array when provided.");
 	}
 
 	const normalizedFormFields: NormalizedEventField[] = [];
@@ -215,43 +317,35 @@ function validateAndNormalizeBody(body: EventRequestBody, userId?: string, clubA
 	if (Array.isArray(body.formFields)) {
 		body.formFields.forEach((field, index) => {
 			const prefix = `formFields[${index}]`;
-			const id = typeof field?.id === "string" ? field.id.trim() : "";
 			const label = typeof field?.label === "string" ? field.label.trim() : "";
 			const inputType = field?.inputType;
 			const placeholder = typeof field?.placeholder === "string" ? field.placeholder.trim() : "";
-			const required = field?.required;
-			const options = Array.isArray(field?.options)
-				? field.options
-					.filter((option): option is string => typeof option === "string")
-					.map(option => option.trim())
-				: [];
+			const required = typeof field?.required === "boolean" ? field.required : false;
+			const options = getNormalizedFieldOptions(field?.options);
 
-			if (!id) {
-				errors.push(`${prefix}.id is required.`);
-			} else if (seenFieldIds.has(id)) {
-				errors.push(`${prefix}.id must be unique.`);
-			} else {
-				seenFieldIds.add(id);
-			}
-
-			if (!label) {
-				errors.push(`${prefix}.label is required.`);
+			if (!hasConfigurableFieldContent(field)) {
+				return;
 			}
 
 			if (inputType !== "TEXT" && inputType !== "DROPDOWN" && inputType !== "CHECKBOX") {
 				errors.push(`${prefix}.inputType must be one of TEXT, DROPDOWN, CHECKBOX.`);
+				return;
 			}
 
-			if (typeof required !== "boolean") {
-				errors.push(`${prefix}.required must be a boolean.`);
+			if (!label) {
+				return;
 			}
 
-			if (!placeholder) {
-				errors.push(`${prefix}.placeholder is required.`);
+			if (inputType === "DROPDOWN" && options.length === 0) {
+				return;
 			}
 
-			if (!Array.isArray(field?.options)) {
-				errors.push(`${prefix}.options must be an array.`);
+			const id = buildFieldId(field, index, label);
+
+			if (seenFieldIds.has(id)) {
+				errors.push(`${prefix}.id must be unique.`);
+			} else {
+				seenFieldIds.add(id);
 			}
 
 			if (inputType === "TEXT" || inputType === "CHECKBOX") {
@@ -263,22 +357,18 @@ function validateAndNormalizeBody(body: EventRequestBody, userId?: string, clubA
 			if (inputType === "DROPDOWN") {
 				const validOptions = options.filter(option => option.length > 0);
 				if (validOptions.length === 0) {
-					errors.push(`${prefix}.options must contain at least one non-empty value for DROPDOWN.`);
+					return;
 				}
 			}
 
-			if (id && label && placeholder && (inputType === "TEXT" || inputType === "DROPDOWN" || inputType === "CHECKBOX") && typeof required === "boolean") {
-				normalizedFormFields.push({
-					id,
-					label,
-					inputType,
-					required,
-					placeholder,
-					options: inputType === "DROPDOWN"
-						? options.filter(option => option.length > 0)
-						: [],
-				});
-			}
+			normalizedFormFields.push({
+				id,
+				label,
+				inputType,
+				required,
+				placeholder,
+				options: inputType === "DROPDOWN" ? options : [],
+			});
 		});
 	}
 
@@ -354,6 +444,7 @@ function validateAndNormalizeBody(body: EventRequestBody, userId?: string, clubA
 	}
 
 	const includePricingField = normalizedPricing.type === "MULTIPLE" || normalizedPricing.type === "ADDITIONAL";
+	const registrationTags = normalizeRegistrationTags(body.eventRegistration?.registrationTags, autoConfirmIfPaid, errors);
 	const previewFieldOrder = sanitizePreviewFieldOrder(body.previewFieldOrder, normalizedFormFields, includePricingField);
 
 	if (errors.length > 0) {
@@ -379,6 +470,8 @@ function validateAndNormalizeBody(body: EventRequestBody, userId?: string, clubA
 			registrationCloseDate,
 			formFields: normalizedFormFields,
 			pricing: normalizedPricing,
+			autoConfirmIfPaid,
+			registrationTags,
 			previewFieldOrder,
 			createdAt: timestamp,
 			updatedAt: timestamp,
@@ -407,12 +500,13 @@ export const handler = async (event: any) => {
 			return createResponse(500, { message: "EVENTS_TABLE_NAME is not configured." }, origin);
 		}
 
+		const event_id = body?.id ? String(body.id).trim() : `${normalizedEvent.club_account_id}-${Date.now()}`;
 		await addItem(process.env.EVENTS_TABLE_NAME, {
-			event_id: body?.event_id ?? `${normalizedEvent.club_account_id}-${Date.now()}`,
+			event_id,
 			...normalizedEvent,
 		});
 
-		return createResponse(200, { message: "Event created/updated successfully." }, origin);
+		return createResponse(200, { message: "Event created/updated successfully.", event_id }, origin);
 	} catch (error: any) {
 		console.error("create_or_update_events error:", error);
 		const message = error?.message || "Internal Server Error";
