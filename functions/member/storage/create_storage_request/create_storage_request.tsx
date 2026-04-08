@@ -162,16 +162,18 @@ const validateInput = (body: any) => {
 };
 
 
-const setStorageToBooked = async (storage_id: string) => {
+const setStorageToBooked = async (club_account_id: string, storage_id: string) => {
   const tableName = process.env.STORAGE_TABLE_NAME as string;
   if (!tableName) {
     throw new Error("Server misconfigured: missing STORAGE_TABLE_NAME");
   }
 
+  const key = { club_account_id, storage_id: storage_id };
+
   try {
     await updateItem(
       tableName,
-      { storage_id: storage_id },
+      key,
       "SET #isBooked = :booked",
       { "#isBooked": "isBooked" },
       { ":booked": true },
@@ -376,7 +378,7 @@ export const handler = async (event: any) => {
       );
 
       // Set storage to booked (isBooked = true) so it no longer appears available in list_storage function or disabled for purchasing
-      await setStorageToBooked(storage_id);
+      await setStorageToBooked(club_account_id, storage_id);
 
       return createResponse(
         200,

@@ -80,17 +80,19 @@ const validateUpdatableFields = (body: any) => {
   return undefined;
 };
 
-const setStorageToBooked = async (storage_id: string, isBooked: boolean) => {
+const setStorageToBooked = async (club_account_id: string, storage_id: string, isBooked: boolean) => {
   const tableName = process.env.STORAGE_TABLE_NAME as string;
   if (!tableName) {
     throw new Error("Server misconfigured: missing STORAGE_TABLE_NAME");
   }
 
+  const key = { club_account_id, storage_id };
+
   // updateItem signature:
   // (table_name, key, update_expression, expression_attribute_names, expression_attribute_values, condition_expression?, return_values?)
   await updateItem(
     tableName,
-    { storage_id },
+    key,
     "SET #isBooked = :isBooked",
     { "#isBooked": "isBooked" },
     { ":isBooked": isBooked },
@@ -179,9 +181,9 @@ export const handler = async (event: any) => {
 
       if (body.status === "approved" && body.storage_id) {
         // Set storage to booked (isBooked = true) so it no longer appears available in list_storage function or disabled for purchasing
-        await setStorageToBooked(body.storage_id, true);
+        await setStorageToBooked(body.club_account_id, body.storage_id, true);
       } else if (body.status === "cancelled" || body.status === "rejected") {
-         await setStorageToBooked(body.storage_id, false);
+         await setStorageToBooked(body.club_account_id, body.storage_id, false);
       }
 
       return createResponse(
