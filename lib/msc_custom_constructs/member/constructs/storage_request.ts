@@ -46,6 +46,7 @@ export class MSC_StorageRequestConstruct extends Construct {
         },
         permissions: {
           [props.storage_request_table.tableArn]: ["dynamodb:PutItem"],
+          [props.storage_table.tableArn]: ["dynamodb:PutItem", "dynamodb:UpdateItem"],
           [props.orders_table.tableArn]: ["dynamodb:PutItem"],
           [props.transactions_table.tableArn]: ["dynamodb:PutItem"],
           [props.club_table.tableArn]: ["dynamodb:GetItem"],
