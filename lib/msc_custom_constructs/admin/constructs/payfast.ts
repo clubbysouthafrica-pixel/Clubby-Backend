@@ -30,7 +30,7 @@ export class MSC_PayFastConstruct extends Construct {
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
-                KMS_KEY_ID: props.kms_key.keyId
+                KMS_KEY_ID: props.kms_key.keyId,
             },
             permissions: {
                 [props.club_table.tableArn]: [
@@ -44,7 +44,8 @@ export class MSC_PayFastConstruct extends Construct {
                     "kms:GenerateDataKey"
                 ]
             },
-            layers: [props.layers.jwt_layer, props.layers.axios_layer]
+            layers: [props.layers.jwt_layer, props.layers.axios_layer],
+            timeout: 29
         });
 
         const reset_details = new MSC_Lambda(this, `${id}-ResetDetails`, {
