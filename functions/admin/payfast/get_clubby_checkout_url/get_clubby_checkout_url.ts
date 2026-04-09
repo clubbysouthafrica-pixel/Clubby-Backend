@@ -5,6 +5,11 @@ function roundDownToSecondDecimalPlace(amount: number): number {
     return Math.floor(amount * 100) / 100;
 }
 
+function getCurrentYearMonth(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
 async function generateSinglePaymentUrl(amount: number, year_month: string, club_account_id: string) {
 
     const club = await getItem(
@@ -98,6 +103,7 @@ async function generateAllPaymentsUrl(amount: number, club_account_id: string) {
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
+    const currentYearMonth = getCurrentYearMonth();
 
     try {
 
@@ -123,7 +129,7 @@ export const handler = async (event: any) => {
 
             let amount = 0;
             for (const month of months) {
-                if (month.month_paid === true) {
+                if (month.month_paid === true || month.year_month === currentYearMonth) {
                     continue;
                 }
                 amount += month.total_amount / 100;
@@ -138,6 +144,10 @@ export const handler = async (event: any) => {
             return createResponse(200, { payment_url: await generateAllPaymentsUrl(amount, query_string_params.club_account_id) }, origin);
 
         } else {
+
+            if (query_string_params.year_month === currentYearMonth) {
+                return createResponse(500, { message: "The current month cannot be paid as it is not complete." }, origin);
+            }
 
             const month = await getItem(
                 process.env.MONTHLY_BILLING_TABLE_NAME as string,

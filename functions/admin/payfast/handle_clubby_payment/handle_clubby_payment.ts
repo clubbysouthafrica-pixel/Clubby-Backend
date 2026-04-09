@@ -26,6 +26,11 @@ function roundDownToSecondDecimalPlace(amount: number): number {
     return Math.floor(amount * 100) / 100;
 }
 
+function getCurrentYearMonth(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function getNumberValue(value: unknown): number {
     if (typeof value === "number" && Number.isFinite(value)) {
         return value;
@@ -268,6 +273,7 @@ async function updateMonthlyBillingTable(
 export const handler = async (event: any) => {
     console.log('Received event:', JSON.stringify(event));
     const passPhrase = process.env.PAYFAST_PASSPHRASE;
+    const currentYearMonth = getCurrentYearMonth();
 
     const bodyString = event.body || "";
     console.log('Event Body:', bodyString);
@@ -307,7 +313,7 @@ export const handler = async (event: any) => {
         }
 
         for (const month of allMonths) {
-            if (month.month_paid === true) {
+            if (month.month_paid === true || month.year_month === currentYearMonth) {
                 continue;
             }
             months.push(month);
@@ -325,7 +331,7 @@ export const handler = async (event: any) => {
             }
         ) as MonthlyBillingRecord;
 
-        if (month == null || month.month_paid === true) {
+        if (month == null || month.month_paid === true || month.year_month === currentYearMonth) {
             return { statusCode: 200, body: "Invalid payment" };
         }
 
