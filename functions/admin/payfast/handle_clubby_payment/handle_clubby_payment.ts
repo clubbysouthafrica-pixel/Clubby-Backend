@@ -385,6 +385,9 @@ export const handler = async (event: any) => {
                 console.error("Failed to send Clubby invoice email:", error);
             }
         }
+    } else {
+        console.log("❌ Payment verification failed");
+        return { statusCode: 400, body: "Invalid payment" };
     }
 
     return { statusCode: 200, body: "OK" };

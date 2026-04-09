@@ -78,7 +78,7 @@ export class MSC_PayfastConstruct extends Construct {
         const handle_registration_payment = new MSC_Lambda(this, `${id}-HandleRegistrationPayment`, {
             code: "member/payfast/handle_registration_payment",
             envVariables: {
-                ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
+                ENVIRONMENT: process.env.ENVIRONMENT || "Dev",
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
@@ -115,7 +115,7 @@ export class MSC_PayfastConstruct extends Construct {
         const handle_event_registration_payment = new MSC_Lambda(this, `${id}-HandleEventRegistrationPayment`, {
             code: "member/payfast/handle_event_registration_payment",
             envVariables: {
-                ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
+                ENVIRONMENT: process.env.ENVIRONMENT || "Dev",
                 EVENT_REGISTRATIONS_TABLE_NAME: props.event_registrations_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
@@ -142,7 +142,7 @@ export class MSC_PayfastConstruct extends Construct {
         const handle_order_payment = new MSC_Lambda(this, `${id}-HandleOrderPayment`, {
             code: "member/payfast/handle_order_payment",
             envVariables: {
-                ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
+                ENVIRONMENT: process.env.ENVIRONMENT || "Dev",
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 ORDERS_TABLE_NAME: props.orders_table.tableName,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,

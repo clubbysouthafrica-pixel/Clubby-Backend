@@ -91,6 +91,7 @@ export class MSC_PayFastConstruct extends Construct {
             envVariables: {
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+                ENVIRONMENT: process.env.ENVIRONMENT || "Dev",
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 DOMAIN: process.env.DOMAIN as string
             },
