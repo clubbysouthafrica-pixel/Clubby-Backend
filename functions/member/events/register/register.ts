@@ -3,7 +3,8 @@ import {
 	createResponse,
 	deconstructEvent,
 	getItem,
-	addItem
+	addItem,
+	queryItems
 } from "./function_helpers";
 
 type PricingType = "FREE" | "SINGLE" | "MULTIPLE" | "ADDITIONAL";
@@ -34,7 +35,9 @@ interface StoredEvent {
 	club_account_id: string;
 	event_id: string;
 	title: string;
+	autoConfirmIfPaid: boolean;
 	description?: string;
+	allowMemberRegistrationOnce: boolean;
 	registrationOpenDate: number;
 	registrationCloseDate: number;
 	pricing: EventPricing;
@@ -56,6 +59,11 @@ interface RegisterEventRequest {
 	pricing_type: PricingType;
 	selected_pricing_option_ids: string[];
 	registration_fields?: RegistrationFieldInput[];
+}
+
+interface ExistingEventRegistration {
+	club_account_id?: string;
+	event_id?: string;
 }
 
 function toEpochMs(value: unknown): number | null {
@@ -378,6 +386,29 @@ export const handler = async (event: any) => {
 			return createResponse(400, { message: "User is not a member of the club." }, origin);
 		}
 
+		if (storedEvent?.allowMemberRegistrationOnce) {
+			const event_registrations_response = await queryItems(
+				process.env.EVENT_REGISTRATIONS_TABLE_NAME!,
+				"user_id = :user_id",
+				{
+					":user_id": user_id as string
+				},
+				process.env.EVENT_REGISTRATIONS_USER_ID_INDEX!
+			);
+			const event_registrations = (event_registrations_response as ExistingEventRegistration[] | undefined)
+				?.filter(registration => registration.club_account_id === body.club_account_id);
+
+			const hasExistingRegistration = event_registrations?.some(
+				registration => registration.event_id === body.event_id
+			);
+
+			if (hasExistingRegistration) {
+				return createResponse(400, {
+					message: "This user has already registered.",
+				}, origin);
+			}
+		}
+
 		const event_registration_id = randomUUID();
 		const isFreeEvent = normalizePricingType(storedEvent.pricing?.type) === "FREE";
 		const transaction_id = isFreeEvent ? undefined : randomUUID();
@@ -385,6 +416,7 @@ export const handler = async (event: any) => {
 		await addItem(process.env.EVENT_REGISTRATIONS_TABLE_NAME as string, {
 			...body,
 			registration_fields,
+			confirmed_status: storedEvent?.autoConfirmIfPaid ? isFreeEvent : false,
 			event_registration_id: event_registration_id,
 			transaction_id: transaction_id,
 			is_free_event: isFreeEvent,
