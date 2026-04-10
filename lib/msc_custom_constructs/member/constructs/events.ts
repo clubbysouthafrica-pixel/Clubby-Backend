@@ -20,7 +20,7 @@ export class MSC_EventsConstruct extends Construct {
         super(scope, id);
 
         const get_events = new MSC_Lambda(this, `${id}-GetEvents`, {
-            code: "admin_features/events/get_events",
+            code: "member/events/get_events",
             envVariables: {
                 EVENTS_TABLE_NAME: props.events_table.tableName
             },
@@ -38,7 +38,8 @@ export class MSC_EventsConstruct extends Construct {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 EVENT_REGISTRATIONS_TABLE_NAME: props.event_registrations_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
-                EVENT_TABLE_NAME: props.events_table.tableName
+                EVENT_TABLE_NAME: props.events_table.tableName,
+                EVENT_REGISTRATIONS_USER_ID_INDEX: "UserIDIndex"
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
@@ -52,6 +53,9 @@ export class MSC_EventsConstruct extends Construct {
                 ],
                 [props.transactions_table.tableArn]: [
                     "dynamodb:PutItem"
+                ],
+                [`${props.event_registrations_table.tableArn}/index/UserIDIndex`]: [
+                    "dynamodb:Query"
                 ]
             },
             layers: [props.layers.jwt_layer]

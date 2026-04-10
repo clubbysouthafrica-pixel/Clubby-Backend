@@ -12,6 +12,18 @@ function toEpochMs(value: unknown): number | null {
     return value < 1_000_000_000_000 ? value * 1000 : value;
 }
 
+function toUtcDayStartMs(value: unknown): number | null {
+    const epochMs = toEpochMs(value);
+
+    if (!epochMs) {
+        return null;
+    }
+
+    const date = new Date(epochMs);
+    date.setUTCHours(0, 0, 0, 0);
+    return date.getTime();
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -33,21 +45,20 @@ export const handler = async (event: any) => {
         }
 
         const eventResponse: any[] = []
-        const now = Date.now();
-        for (const event of events) {
-            const registrationOpenDate = toEpochMs(event?.registrationOpenDate);
+        const now = new Date();
+        now.setUTCHours(0, 0, 0, 0);
+        const today = now.getTime();
 
-            if (registrationOpenDate && registrationOpenDate > now) {
-                eventResponse.push({
-                    event_id: event.event_id,
-                    description: event.description,
-                    endDate: event.endDate,
-                    registrationCloseDate: event.registrationCloseDate,
-                    registrationOpenDate: event.registrationOpenDate,
-                    startDate: event.startDate,
-                    title: event.title
-                });
-            } else {
+        for (const event of events) {
+            const registrationOpenDate = toUtcDayStartMs(event?.registrationOpenDate);
+            const registrationCloseDate = toUtcDayStartMs(event?.registrationCloseDate);
+
+            if (
+                registrationOpenDate !== null
+                && registrationCloseDate !== null
+                && today >= registrationOpenDate
+                && today <= registrationCloseDate
+            ) {
                 eventResponse.push(event);
             }
         }

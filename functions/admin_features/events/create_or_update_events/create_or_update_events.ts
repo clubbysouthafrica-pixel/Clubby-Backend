@@ -37,11 +37,13 @@ interface RegistrationTagInput {
 
 interface EventRegistrationInput {
 	autoConfirmIfPaid?: boolean;
+	allowMemberRegistrationOnce?: boolean;
 	registrationTags?: RegistrationTagInput[];
 }
 
 interface EventRequestBody {
 	id?: string;
+	event_id?: string;
 	club_account_id?: string;
 	title: string;
 	description?: string;
@@ -92,6 +94,7 @@ interface NormalizedEventPayload {
 	formFields: NormalizedEventField[];
 	pricing: NormalizedPricing;
 	autoConfirmIfPaid: boolean;
+	allowMemberRegistrationOnce: boolean;
 	registrationTags?: NormalizedRegistrationTag[];
 	previewFieldOrder: string[];
 	createdAt: string;
@@ -269,6 +272,7 @@ function validateAndNormalizeBody(body: EventRequestBody, userId?: string, clubA
 	}
 
 	const autoConfirmIfPaid = body.eventRegistration?.autoConfirmIfPaid === true;
+	const allowMemberRegistrationOnce = body.eventRegistration?.allowMemberRegistrationOnce === true;
 
 	const startDate = body.startDate;
 	const endDate = body.endDate;
@@ -471,6 +475,7 @@ function validateAndNormalizeBody(body: EventRequestBody, userId?: string, clubA
 			formFields: normalizedFormFields,
 			pricing: normalizedPricing,
 			autoConfirmIfPaid,
+			allowMemberRegistrationOnce,
 			registrationTags,
 			previewFieldOrder,
 			createdAt: timestamp,
@@ -480,11 +485,78 @@ function validateAndNormalizeBody(body: EventRequestBody, userId?: string, clubA
 	};
 }
 
+function buildEventId(body: EventRequestBody, normalizedEvent: NormalizedEventPayload, forceNew: boolean): string {
+	if (!forceNew && body?.id && String(body.id).trim()) {
+		return String(body.id).trim();
+	}
+
+	return `${normalizedEvent.club_account_id}-${Date.now()}-${randomUUID()}`;
+}
+
 export const handler = async (event: any) => {
 
 	const { origin, body, query_string_params, user_id } = deconstructEvent(event);
 
 	try {
+		if (!process.env.EVENTS_TABLE_NAME) {
+			return createResponse(500, { message: "EVENTS_TABLE_NAME is not configured." }, origin);
+		}
+
+		if (Array.isArray(body)) {
+			if (body.length === 0) {
+				return createResponse(400, {
+					message: "Validation failed.",
+					errors: ["Request body array must contain at least one event."],
+				}, origin);
+			}
+
+			if (body.length > 20) {
+				return createResponse(400, {
+					message: "No more than 20 events can be created at a time.",
+				}, origin);
+			}
+
+			const validationErrors: string[] = [];
+			const normalizedEvents: Array<{ body: EventRequestBody; normalizedEvent: NormalizedEventPayload }> = [];
+
+			body.forEach((rawEvent, index) => {
+				const validationResult = validateAndNormalizeBody(rawEvent as EventRequestBody, user_id, query_string_params?.club_account_id ?? null);
+
+				if (validationResult.errors) {
+					validationErrors.push(...validationResult.errors.map(validationError => `events[${index}]: ${validationError}`));
+					return;
+				}
+
+				normalizedEvents.push({
+					body: rawEvent as EventRequestBody,
+					normalizedEvent: validationResult.value as NormalizedEventPayload,
+				});
+			});
+
+			if (validationErrors.length > 0) {
+				return createResponse(400, {
+					message: "Validation failed.",
+					errors: validationErrors,
+				}, origin);
+			}
+
+			const event_ids: string[] = [];
+
+			for (const item of normalizedEvents) {
+				const event_id = buildEventId(item.body, item.normalizedEvent, true);
+				event_ids.push(event_id);
+				await addItem(process.env.EVENTS_TABLE_NAME, {
+					event_id,
+					...item.normalizedEvent,
+				});
+			}
+
+			return createResponse(200, {
+				message: "Events created successfully.",
+				event_ids,
+			}, origin);
+		}
+
 		const validationResult = validateAndNormalizeBody(body, user_id, query_string_params?.club_account_id ?? null);
 
 		if (validationResult.errors) {
@@ -495,12 +567,7 @@ export const handler = async (event: any) => {
 		}
 
 		const normalizedEvent = validationResult.value as NormalizedEventPayload;
-
-		if (!process.env.EVENTS_TABLE_NAME) {
-			return createResponse(500, { message: "EVENTS_TABLE_NAME is not configured." }, origin);
-		}
-
-		const event_id = body?.id ? String(body.id).trim() : `${normalizedEvent.club_account_id}-${Date.now()}`;
+		const event_id = buildEventId(body, normalizedEvent, false);
 		await addItem(process.env.EVENTS_TABLE_NAME, {
 			event_id,
 			...normalizedEvent,

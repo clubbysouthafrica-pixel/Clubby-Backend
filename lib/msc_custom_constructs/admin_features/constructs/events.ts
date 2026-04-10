@@ -115,6 +115,20 @@ export class MSC_EventsConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const delete_event = new MSC_Lambda(this, `${id}-DeleteEvent`, {
+            code: "admin_features/events/delete_event",
+            envVariables: {
+                EVENTS_TABLE_NAME: props.events_table.tableName,
+            },
+            permissions: {
+                [props.events_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:DeleteItem",
+                ],
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const events_resource = props.api_gateway.root.addResource("events");
 
         const create_or_update_events_resource = events_resource.addResource("createOrUpdateEvents");
@@ -123,6 +137,7 @@ export class MSC_EventsConstruct extends Construct {
         const get_event_registration_resource = events_resource.addResource("getEventRegistration");
         const confirm_payment_resource = events_resource.addResource("confirmPayment");
         const confirm_registration_resource = events_resource.addResource("confirmRegistration");
+        const delete_event_resource = events_resource.addResource("deleteEvent");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -136,5 +151,6 @@ export class MSC_EventsConstruct extends Construct {
         addCorsEnabledMethod(get_event_registration_resource, get_event_registration, methodOptions, undefined, "GET");
         addCorsEnabledMethod(confirm_payment_resource, confirm_payment, methodOptions, undefined, "POST");
         addCorsEnabledMethod(confirm_registration_resource, confirm_registration, methodOptions, undefined, "POST");
+        addCorsEnabledMethod(delete_event_resource, delete_event, methodOptions, undefined, "POST");
     }
 }
