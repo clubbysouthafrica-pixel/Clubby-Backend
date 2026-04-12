@@ -24,6 +24,27 @@ function toUtcDayStartMs(value: unknown): number | null {
     return date.getTime();
 }
 
+function toUtcDayEndMs(value: unknown): number | null {
+    const epochMs = toEpochMs(value);
+
+    if (!epochMs) {
+        return null;
+    }
+
+    const date = new Date(epochMs);
+    date.setUTCHours(23, 59, 59, 999);
+    return date.getTime();
+}
+
+function isTruthyQueryParam(value: unknown): boolean {
+    if (typeof value !== "string") {
+        return false;
+    }
+
+    const normalizedValue = value.trim().toLowerCase();
+    return normalizedValue === "true" || normalizedValue === "1" || normalizedValue === "yes";
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -44,6 +65,10 @@ export const handler = async (event: any) => {
             return createResponse(200, { events: [] }, origin);
         }
 
+        if (isTruthyQueryParam(query_string_params?.include_all)) {
+            return createResponse(200, { events }, origin);
+        }
+
         const eventResponse: any[] = []
         const now = new Date();
         now.setUTCHours(0, 0, 0, 0);
@@ -51,7 +76,7 @@ export const handler = async (event: any) => {
 
         for (const event of events) {
             const registrationOpenDate = toUtcDayStartMs(event?.registrationOpenDate);
-            const registrationCloseDate = toUtcDayStartMs(event?.registrationCloseDate);
+            const registrationCloseDate = toUtcDayEndMs(event?.registrationCloseDate);
 
             if (
                 registrationOpenDate !== null
