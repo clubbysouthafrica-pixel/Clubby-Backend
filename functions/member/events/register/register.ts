@@ -3,7 +3,8 @@ import {
 	createResponse,
 	deconstructEvent,
 	getItem,
-	addItem
+	addItem,
+	queryItems
 } from "./function_helpers";
 
 type PricingType = "FREE" | "SINGLE" | "MULTIPLE" | "ADDITIONAL";
@@ -34,7 +35,9 @@ interface StoredEvent {
 	club_account_id: string;
 	event_id: string;
 	title: string;
+	autoConfirmIfPaid: boolean;
 	description?: string;
+	allowMemberRegistrationOnce: boolean;
 	registrationOpenDate: number;
 	registrationCloseDate: number;
 	pricing: EventPricing;
@@ -55,7 +58,12 @@ interface RegisterEventRequest {
 	entry_fee_amount: number;
 	pricing_type: PricingType;
 	selected_pricing_option_ids: string[];
-	registration_fields: RegistrationFieldInput[];
+	registration_fields?: RegistrationFieldInput[];
+}
+
+interface ExistingEventRegistration {
+	club_account_id?: string;
+	event_id?: string;
 }
 
 function toEpochMs(value: unknown): number | null {
@@ -123,9 +131,9 @@ function validateRequestShape(body: any): string[] {
 		});
 	}
 
-	if (!Array.isArray(body.registration_fields) || body.registration_fields.length === 0) {
-		errors.push("registration_fields is required and must be a non-empty array.");
-	} else {
+	if (body.registration_fields !== undefined && !Array.isArray(body.registration_fields)) {
+		errors.push("registration_fields must be an array when provided.");
+	} else if (Array.isArray(body.registration_fields)) {
 		body.registration_fields.forEach((field: any, index: number) => {
 			const prefix = `registration_fields[${index}]`;
 
@@ -242,8 +250,9 @@ function validateAgainstEvent(body: RegisterEventRequest, storedEvent: StoredEve
 	const eventFields = Array.isArray(storedEvent.formFields) ? storedEvent.formFields : [];
 	const eventFieldMap = new Map(eventFields.map((field) => [field.id, field]));
 	const seenFieldIds = new Set<string>();
+	const submittedRegistrationFields = Array.isArray(body.registration_fields) ? body.registration_fields : [];
 
-	body.registration_fields.forEach((field, index) => {
+	submittedRegistrationFields.forEach((field, index) => {
 		const prefix = `registration_fields[${index}]`;
 		const fieldId = field.field_id.trim();
 
@@ -377,31 +386,62 @@ export const handler = async (event: any) => {
 			return createResponse(400, { message: "User is not a member of the club." }, origin);
 		}
 
+		if (storedEvent?.allowMemberRegistrationOnce) {
+			const event_registrations_response = await queryItems(
+				process.env.EVENT_REGISTRATIONS_TABLE_NAME!,
+				"user_id = :user_id",
+				{
+					":user_id": user_id as string
+				},
+				process.env.EVENT_REGISTRATIONS_USER_ID_INDEX!
+			);
+			const event_registrations = (event_registrations_response as ExistingEventRegistration[] | undefined)
+				?.filter(registration => registration.club_account_id === body.club_account_id);
+
+			const hasExistingRegistration = event_registrations?.some(
+				registration => registration.event_id === body.event_id
+			);
+
+			if (hasExistingRegistration) {
+				return createResponse(400, {
+					message: "This user has already registered.",
+				}, origin);
+			}
+		}
+
 		const event_registration_id = randomUUID();
-		const transaction_id = randomUUID();
+		const isFreeEvent = normalizePricingType(storedEvent.pricing?.type) === "FREE";
+		const transaction_id = isFreeEvent ? undefined : randomUUID();
+		const registration_fields = Array.isArray(body.registration_fields) ? body.registration_fields : [];
 		await addItem(process.env.EVENT_REGISTRATIONS_TABLE_NAME as string, {
 			...body,
+			registration_fields,
+			confirmed_status: storedEvent?.autoConfirmIfPaid ? isFreeEvent : false,
 			event_registration_id: event_registration_id,
 			transaction_id: transaction_id,
+			is_free_event: isFreeEvent,
 			amount_paid: 0,
 			submitted_on: Date.now(),
 			member_first_name: club_member.member_first_name,
 			member_surname: club_member.member_surname,
+			event_name: storedEvent.title
 		});
 
-		await addToTransactionsTable(
-			body.club_account_id,
-			club_member.member_first_name,
-			club_member.member_surname,
-			transaction_id,
-			user_id as string,
-			body.entry_fee_amount,
-			event_registration_id,
-			body.event_id
-		);
+		if (!isFreeEvent && transaction_id) {
+			await addToTransactionsTable(
+				body.club_account_id,
+				club_member.member_first_name,
+				club_member.member_surname,
+				transaction_id,
+				user_id as string,
+				body.entry_fee_amount,
+				event_registration_id,
+				body.event_id
+			);
+		}
 
 		return createResponse(200, {
-			message: "Event registration payload is valid.",
+			message: "Event registration completed.",
 			event_id: body.event_id,
 			event_registration_id: event_registration_id
 		}, origin);

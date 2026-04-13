@@ -12,6 +12,39 @@ function toEpochMs(value: unknown): number | null {
     return value < 1_000_000_000_000 ? value * 1000 : value;
 }
 
+function toUtcDayStartMs(value: unknown): number | null {
+    const epochMs = toEpochMs(value);
+
+    if (!epochMs) {
+        return null;
+    }
+
+    const date = new Date(epochMs);
+    date.setUTCHours(0, 0, 0, 0);
+    return date.getTime();
+}
+
+function toUtcDayEndMs(value: unknown): number | null {
+    const epochMs = toEpochMs(value);
+
+    if (!epochMs) {
+        return null;
+    }
+
+    const date = new Date(epochMs);
+    date.setUTCHours(23, 59, 59, 999);
+    return date.getTime();
+}
+
+function isTruthyQueryParam(value: unknown): boolean {
+    if (typeof value !== "string") {
+        return false;
+    }
+
+    const normalizedValue = value.trim().toLowerCase();
+    return normalizedValue === "true" || normalizedValue === "1" || normalizedValue === "yes";
+}
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -32,22 +65,25 @@ export const handler = async (event: any) => {
             return createResponse(200, { events: [] }, origin);
         }
 
-        const eventResponse: any[] = []
-        const now = Date.now();
-        for (const event of events) {
-            const registrationOpenDate = toEpochMs(event?.registrationOpenDate);
+        if (isTruthyQueryParam(query_string_params?.include_all)) {
+            return createResponse(200, { events }, origin);
+        }
 
-            if (registrationOpenDate && registrationOpenDate > now) {
-                eventResponse.push({
-                    event_id: event.event_id,
-                    description: event.description,
-                    endDate: event.endDate,
-                    registrationCloseDate: event.registrationCloseDate,
-                    registrationOpenDate: event.registrationOpenDate,
-                    startDate: event.startDate,
-                    title: event.title
-                });
-            } else {
+        const eventResponse: any[] = []
+        const now = new Date();
+        now.setUTCHours(0, 0, 0, 0);
+        const today = now.getTime();
+
+        for (const event of events) {
+            const registrationOpenDate = toUtcDayStartMs(event?.registrationOpenDate);
+            const registrationCloseDate = toUtcDayEndMs(event?.registrationCloseDate);
+
+            if (
+                registrationOpenDate !== null
+                && registrationCloseDate !== null
+                && today >= registrationOpenDate
+                && today <= registrationCloseDate
+            ) {
                 eventResponse.push(event);
             }
         }

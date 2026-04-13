@@ -35,7 +35,8 @@ async function updateTransactionsTable(
 async function updateEventRegistrationsTable(
     event_id: string,
     event_registration_id: string,
-    payment_amount: number
+    payment_amount: number,
+    auto_confirm: boolean
 ) {
 
     await updateItem(
@@ -44,14 +45,16 @@ async function updateEventRegistrationsTable(
             event_id: event_id,
             event_registration_id: event_registration_id
         },
-        "SET #amount_paid = #amount_paid + :amount_paid, #payment_status = :payment_status",
+        "SET #confirmed_status = :confirmed_status, #amount_paid = #amount_paid + :amount_paid, #payment_status = :payment_status",
         {
+            "#confirmed_status": "confirmed_status",
             "#amount_paid": "amount_paid",
             "#payment_status": "payment_status"
         },
         {
             ":amount_paid": payment_amount,
-            ":payment_status": "PAID"
+            ":payment_status": "PAID",
+            ":confirmed_status": auto_confirm
         }
     );
 }
@@ -119,10 +122,21 @@ export const handler = async (event: any) => {
             event_registration_id: event_registration_id
         }
     );
-
     if (event_registration == null) {
         return { statusCode: 400, body: "Invalid payment" };
     }
+
+    const selected_event = await getItem(
+        process.env.EVENTS_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            event_id: event_id
+        }
+    );
+    if (selected_event == null) {
+        return { statusCode: 400, body: "Invalid payment" };
+    }
+
     const amount_paid = event_registration.entry_fee_amount - event_registration.amount_paid;
 
     const isValid = await validatePayFastPayment(
@@ -147,7 +161,8 @@ export const handler = async (event: any) => {
         await updateEventRegistrationsTable(
             event_id,
             event_registration_id,
-            amount_paid
+            amount_paid,
+            selected_event?.autoConfirmIfPaid ?? true
         );
 
         await updateClubsOrderBilling(club_account_id, event_registration.entry_fee_amount * 0.02);

@@ -79,6 +79,7 @@ export class MSC_EventsConstruct extends Construct {
             envVariables: {
                 EVENT_REGISTRATIONS_TABLE_NAME: props.event_registrations_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+                EVENTS_TABLE_NAME: props.events_table.tableName,
             },
             permissions: {
                 [props.event_registrations_table.tableArn]: [
@@ -88,6 +89,41 @@ export class MSC_EventsConstruct extends Construct {
                 [props.transactions_table.tableArn]: [
                     "dynamodb:GetItem",
                     "dynamodb:UpdateItem",
+                ],
+                [props.events_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
+        const confirm_registration = new MSC_Lambda(this, `${id}-ConfirmRegistration`, {
+            code: "admin_features/events/confirm_registration",
+            envVariables: {
+                EVENTS_TABLE_NAME: props.events_table.tableName,
+                EVENT_REGISTRATIONS_TABLE_NAME: props.event_registrations_table.tableName,
+            },
+            permissions: {
+                [props.events_table.tableArn]: [
+                    "dynamodb:GetItem",
+                ],
+                [props.event_registrations_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem",
+                ],
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
+        const delete_event = new MSC_Lambda(this, `${id}-DeleteEvent`, {
+            code: "admin_features/events/delete_event",
+            envVariables: {
+                EVENTS_TABLE_NAME: props.events_table.tableName,
+            },
+            permissions: {
+                [props.events_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:DeleteItem",
                 ],
             },
             layers: [props.layers.jwt_layer]
@@ -100,6 +136,8 @@ export class MSC_EventsConstruct extends Construct {
         const get_event_registrations_resource = events_resource.addResource("getEventRegistrations");
         const get_event_registration_resource = events_resource.addResource("getEventRegistration");
         const confirm_payment_resource = events_resource.addResource("confirmPayment");
+        const confirm_registration_resource = events_resource.addResource("confirmRegistration");
+        const delete_event_resource = events_resource.addResource("deleteEvent");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -109,8 +147,10 @@ export class MSC_EventsConstruct extends Construct {
 
         addCorsEnabledMethod(create_or_update_events_resource, create_or_update_events, methodOptions, undefined, "POST");
         addCorsEnabledMethod(get_events_resource, get_events, methodOptions, undefined, "GET");
-        addCorsEnabledMethod(get_event_registrations_resource, get_event_registrations, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(get_event_registrations_resource, get_event_registrations, methodOptions, undefined, "POST");
         addCorsEnabledMethod(get_event_registration_resource, get_event_registration, methodOptions, undefined, "GET");
         addCorsEnabledMethod(confirm_payment_resource, confirm_payment, methodOptions, undefined, "POST");
+        addCorsEnabledMethod(confirm_registration_resource, confirm_registration, methodOptions, undefined, "POST");
+        addCorsEnabledMethod(delete_event_resource, delete_event, methodOptions, undefined, "POST");
     }
 }

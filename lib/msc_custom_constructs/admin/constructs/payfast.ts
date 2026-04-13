@@ -30,7 +30,7 @@ export class MSC_PayFastConstruct extends Construct {
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
-                KMS_KEY_ID: props.kms_key.keyId
+                KMS_KEY_ID: props.kms_key.keyId,
             },
             permissions: {
                 [props.club_table.tableArn]: [
@@ -44,7 +44,8 @@ export class MSC_PayFastConstruct extends Construct {
                     "kms:GenerateDataKey"
                 ]
             },
-            layers: [props.layers.jwt_layer, props.layers.axios_layer]
+            layers: [props.layers.jwt_layer, props.layers.axios_layer],
+            timeout: 29
         });
 
         const reset_details = new MSC_Lambda(this, `${id}-ResetDetails`, {
@@ -79,7 +80,8 @@ export class MSC_PayFastConstruct extends Construct {
                     "dynamodb:GetItem"
                 ],
                 [props.billing_table.tableArn]: [
-                    "dynamodb:GetItem"
+                    "dynamodb:GetItem",
+                    "dynamodb:Query"
                 ]
             },
             layers: [props.layers.jwt_layer, props.layers.axios_layer]
@@ -90,14 +92,24 @@ export class MSC_PayFastConstruct extends Construct {
             envVariables: {
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+                ENVIRONMENT: process.env.ENVIRONMENT || "Dev",
+                CLUB_TABLE_NAME: props.club_table.tableName,
+                DOMAIN: process.env.DOMAIN as string
             },
             permissions: {
                 [props.billing_table.tableArn]: [
                     "dynamodb:GetItem",
-                    "dynamodb:UpdateItem"
+                    "dynamodb:UpdateItem",
+                    "dynamodb:Query"
                 ],
                 [props.transactions_table.tableArn]: [
                     "dynamodb:PutItem"
+                ],
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                    "ses:SendEmail"
                 ]
             },
             layers: [props.layers.jwt_layer, props.layers.axios_layer]

@@ -42,6 +42,7 @@ async function updateEventRegistration(
 	event_registration_id: string,
 	amount_paid: number,
 	payment_status: "PAID" | "PARTIALLY PAID",
+	auto_confirm: boolean
 ) {
 	await updateItem(
 		process.env.EVENT_REGISTRATIONS_TABLE_NAME as string,
@@ -49,14 +50,16 @@ async function updateEventRegistration(
 			event_id,
 			event_registration_id,
 		},
-		"SET #amount_paid = #amount_paid + :amount_paid, #payment_status = :payment_status",
+		"SET #amount_paid = #amount_paid + :amount_paid, #payment_status = :payment_status, #confirmed_status = :confirmed_status",
 		{
 			"#amount_paid": "amount_paid",
 			"#payment_status": "payment_status",
+			"#confirmed_status": "confirmed_status",
 		},
 		{
 			":amount_paid": amount_paid,
 			":payment_status": payment_status,
+			":confirmed_status": auto_confirm
 		},
 	);
 }
@@ -93,6 +96,17 @@ export const handler = async (event: any) => {
 				event_registration_id,
 			},
 		);
+
+		const selected_event = await getItem(
+			process.env.EVENTS_TABLE_NAME as string,
+			{
+				club_account_id: club_account_id,
+				event_id: event_id
+			}
+		);
+		if (selected_event == null) {
+			return { statusCode: 404, body: "Event not found." };
+		}
 
 		if (!event_registration) {
 			return createResponse(404, { message: "Event registration not found." }, origin);
@@ -173,6 +187,7 @@ export const handler = async (event: any) => {
 			event_registration_id,
 			amount_paid,
 			payment_status,
+			selected_event?.autoConfirmIfPaid ?? true
 		);
 
 		return createResponse(200, {

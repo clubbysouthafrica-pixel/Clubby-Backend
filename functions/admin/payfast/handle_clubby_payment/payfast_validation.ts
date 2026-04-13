@@ -3,7 +3,7 @@ import crypto from "crypto";
 import dns from "dns";
 import { IncomingHttpHeaders } from "http";
 
-const pfHost = process.env.ENVIRONMENT === "Prod" ? "www.payfast.co.za" : "sandbox.payfast.co.za";
+const pfHost = process.env.ENVIRONMENT === "Dev" ? "sandbox.payfast.co.za" : "www.payfast.co.za";
 export interface PayFastData {
   [key: string]: string;
   signature: string;

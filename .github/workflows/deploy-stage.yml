@@ -21,6 +21,8 @@ jobs:
       INTERNAL_INFRA_CERT_ARN: ${{ vars.INTERNAL_INFRA_CERT_ARN }}
       EMAIL_SENDING_LIMIT: ${{ vars.EMAIL_SENDING_LIMIT }}
       ALLOWED_ORIGIN: ${{ vars.ALLOWED_ORIGIN }}
+      MERCHANT_ID: ${{ secrets.MERCHANT_ID }}
+      MERCHANT_KEY: ${{ secrets.MERCHANT_KEY }}
 
     steps:
       - name: Checkout code

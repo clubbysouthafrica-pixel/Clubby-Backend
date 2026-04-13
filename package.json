@@ -1,6 +1,9 @@
 {
   "name": "myclubsoftware",
   "version": "0.1.0",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "bin": {
     "myclubsoftware": "bin/myclubsoftware.js"
   },
@@ -9,9 +12,9 @@
     "build": "npx tsc --build",
     "create-layers": "bash scripts/build-layers.sh",
     "create-layers-windows": "powershell -ExecutionPolicy ByPass -File ./scripts/build-layers.ps1",
-    "update-helpers": "node scripts/copy-helpers.js",
-    "predeploy": "node scripts/copy-helpers.js && npm run build",
-    "deploy": "npm run predeploy && cdk deploy --all --require-approval never",
+    "update-helpers": "npm run build && node scripts/copy-helpers.js",
+    "predeploy": "npm run build && node scripts/copy-helpers.js",
+    "deploy": "cdk deploy --all --require-approval never",
     "destroy": "bash scripts/destroy-all.sh"
   },
   "devDependencies": {

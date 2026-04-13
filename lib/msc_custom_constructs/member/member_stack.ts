@@ -126,6 +126,7 @@ export class MSC_MemberNestedStack extends Stack {
       orders_table: props.orders_table,
       kms_key: props.kms_key,
       event_registrations_table: props.event_registrations_table,
+      events_table: props.events_table,
     });
 
     new MSC_EventsConstruct(this, `${id}-Events`, {

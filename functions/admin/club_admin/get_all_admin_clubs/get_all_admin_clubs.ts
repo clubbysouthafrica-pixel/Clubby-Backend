@@ -47,6 +47,7 @@ export const handler = async (event: any) => {
             item.deregistration_in_progress = club?.deregistration_in_progress ?? false
             item.enable_shop = club?.enable_shop === true ? true : false
             item.enable_events = club?.enable_events === true ? true : false
+            item.venues_enabled = club?.venues_enabled === true ? true : false
         
             return item;
         }));
