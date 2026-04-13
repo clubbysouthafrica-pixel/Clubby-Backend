@@ -424,6 +424,7 @@ export const handler = async (event: any) => {
 			submitted_on: Date.now(),
 			member_first_name: club_member.member_first_name,
 			member_surname: club_member.member_surname,
+			event_name: storedEvent.title
 		});
 
 		if (!isFreeEvent && transaction_id) {
