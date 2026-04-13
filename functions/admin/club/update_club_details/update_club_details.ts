@@ -196,6 +196,16 @@ export const handler = async (event: any) => {
         body.enable_events;
     }
 
+    if (typeof body?.time_zone === "string") {
+      updateParts.push(
+        "#time_zone = :time_zone",
+      );
+      expressionAttributeNames["#time_zone"] =
+        "time_zone";
+      expressionAttributeValues[":time_zone"] =
+        body.time_zone;
+    }
+
     if (typeof body?.venues_enabled === "boolean") {
       updateParts.push(
         "#venues_enabled = :venues_enabled",

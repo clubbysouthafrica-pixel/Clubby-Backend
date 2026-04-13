@@ -19,6 +19,8 @@
         - MERCHANT_KEY=5uv9um9zkr99m
 
 2. Run:
+    - Use Node 22 before installing or deploying
+        - Example with nvm: `nvm use` or `nvm install 22 && nvm use 22`
     - cli configure
         - Get the necessary access AWS keys for the Development environment from a team member
     - npm run create-layers

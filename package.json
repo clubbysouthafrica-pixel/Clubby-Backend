@@ -1,6 +1,9 @@
 {
   "name": "myclubsoftware",
   "version": "0.1.0",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "bin": {
     "myclubsoftware": "bin/myclubsoftware.js"
   },
@@ -11,7 +14,7 @@
     "create-layers-windows": "powershell -ExecutionPolicy ByPass -File ./scripts/build-layers.ps1",
     "update-helpers": "npm run build && node scripts/copy-helpers.js",
     "predeploy": "npm run build && node scripts/copy-helpers.js",
-    "deploy": "npm run predeploy && cdk deploy --all --require-approval never",
+    "deploy": "cdk deploy --all --require-approval never",
     "destroy": "bash scripts/destroy-all.sh"
   },
   "devDependencies": {
