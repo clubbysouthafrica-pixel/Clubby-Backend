@@ -161,6 +161,29 @@ const validateInput = (body: any) => {
   return undefined;
 };
 
+
+const setStorageToBooked = async (club_account_id: string, storage_id: string) => {
+  const tableName = process.env.STORAGE_TABLE_NAME as string;
+  if (!tableName) {
+    throw new Error("Server misconfigured: missing STORAGE_TABLE_NAME");
+  }
+
+  const key = { club_account_id, storage_id: storage_id };
+
+  try {
+    await updateItem(
+      tableName,
+      key,
+      "SET #isBooked = :booked",
+      { "#isBooked": "isBooked" },
+      { ":booked": true },
+    );
+  } catch (err: any) {
+    console.error("Error setting storage to booked:", err);
+    throw new Error(err.message ?? String(err));
+  }
+};
+
 export const handler = async (event: any) => {
   const { origin, body, query_string_params, user_id } =
     deconstructEvent(event);
@@ -353,6 +376,10 @@ export const handler = async (event: any) => {
         item,
         "attribute_not_exists(storage_request_id)",
       );
+
+      // Set storage to booked (isBooked = true) so it no longer appears available in list_storage function or disabled for purchasing
+      await setStorageToBooked(club_account_id, storage_id);
+
       return createResponse(
         200,
         {

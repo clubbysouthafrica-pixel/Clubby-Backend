@@ -215,6 +215,7 @@ export class MSC_MemberNestedStack extends Stack {
 
     new MSC_StorageRequestConstruct(this, `${id}-StorageRequest`, {
       api_gateway: api_gateway,
+      storage_table: props.storage_table,
       storage_request_table: props.storage_requests_table,
       club_table: props.club_table,
       orders_table: props.orders_table,

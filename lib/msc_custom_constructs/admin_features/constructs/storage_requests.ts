@@ -16,6 +16,7 @@ interface MSC_StorageRequestConstructProps {
   api_gateway: MSC_APIGateway;
   token_authorizer: TokenAuthorizer;
   storage_requests_table: MSC_Table;
+  storage_table: MSC_Table;
   club_table: MSC_Table;
   layers: {
     jwt_layer: MSC_LambdaLayer;
@@ -36,10 +37,15 @@ export class MSC_StorageRequestConstruct extends Construct {
       {
         code: "admin_features/storage/update_storage_request",
         envVariables: {
+          STORAGE_TABLE_NAME: props.storage_table.tableName,
           STORAGE_REQUESTS_TABLE: props.storage_requests_table.tableName,
         },
         permissions: {
           [props.storage_requests_table.tableArn]: [
+            "dynamodb:PutItem",
+            "dynamodb:UpdateItem",
+          ],
+          [props.storage_table.tableArn]: [
             "dynamodb:PutItem",
             "dynamodb:UpdateItem",
           ],
@@ -92,14 +98,14 @@ export class MSC_StorageRequestConstruct extends Construct {
       update_storage_request,
       methodOptions,
       undefined,
-      "GET",
+      "PUT",
     );
     addCorsEnabledMethod(
       list_storage_requests_resource,
       list_storage_requests,
       methodOptions,
       undefined,
-      "PUT",
+      "GET",
     );
   }
 }

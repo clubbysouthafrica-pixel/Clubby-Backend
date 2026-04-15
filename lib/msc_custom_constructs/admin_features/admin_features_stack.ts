@@ -109,6 +109,7 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
 
     new MSC_StorageRequestConstruct(this, `${id}-StorageRequests`, {
       api_gateway: api_gateway,
+      storage_table: props.storage_table,
       token_authorizer: jwt_construct.token_authorizer,
       storage_requests_table: props.storage_requests_table,
       club_table: props.club_table,
