@@ -70,7 +70,7 @@ async function addToTransactionsTable(
         type: "SUBMISSION",
       },
     },
-    type: "ORDER",
+    type: "STORAGE",
     status: "PENDING",
   });
 }

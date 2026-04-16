@@ -92,6 +92,7 @@ export class MSC_AdminNestedStack extends Stack {
             layers: all_layers,
             token_authorizer: jwt_construct.token_authorizer,
             registrations_table: props.registrations_table,
+            transactions_table: props.transactions_table,
             registration_form_table: props.registration_form_table,
             club_history_bucket: props.club_history_bucket,
             orders_table: props.orders_table
@@ -137,7 +138,8 @@ export class MSC_AdminNestedStack extends Stack {
             token_authorizer: jwt_construct.token_authorizer,
             layers: all_layers,
             image_bucket: props.image_bucket,
-            registration_form_table: props.registration_form_table
+            registration_form_table: props.registration_form_table,
+            registrations_table: props.registrations_table
         });
 
         new MSC_ClubAdminClubConstruct(this, `${id}-ClubAdmin`, {

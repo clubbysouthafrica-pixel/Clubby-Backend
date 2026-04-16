@@ -8,6 +8,7 @@ interface MSC_AdminClubConstructProps {
     club_table: MSC_Table;
     image_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
+    registrations_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -23,13 +24,18 @@ export class MSC_AdminClubConstruct extends Construct {
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
-                REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName
+                REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
             },
             permissions: {
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
                 [props.registration_form_table.tableArn]: [
+                    "dynamodb:Query"
+                ],
+                [`${props.registrations_table.tableArn}/index/ClubAccountIDIndex`]: [
                     "dynamodb:Query"
                 ]
             },
