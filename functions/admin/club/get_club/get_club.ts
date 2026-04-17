@@ -4,6 +4,25 @@ import { createResponse, deconstructEvent, getItem, queryItems } from "./functio
 
 const s3_client = new S3Client({ region: process.env.REGION });
 
+const getCurrentSeasonMemberCounts = (registrations: Record<string, any>[] | null | undefined) => {
+    return (registrations ?? []).reduce((counts, registration) => {
+        if (registration?.last_season_registration === true || registration?.deregistered === true) {
+            return counts;
+        }
+
+        if (registration?.registered_on) {
+            counts.total_active_members += 1;
+        } else {
+            counts.total_pending_members += 1;
+        }
+
+        return counts;
+    }, {
+        total_active_members: 0,
+        total_pending_members: 0,
+    });
+};
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -66,14 +85,33 @@ export const handler = async (event: any) => {
             }
         }
 
-        const registration_form_exists = await queryItems(
-            process.env.REGISTRATION_FORM_TABLE_NAME as string,
-            "club_account_id = :clubId",
-            { ":clubId": query_string_params.club_account_id }
-        );
+        const [registration_form_exists, registrations] = await Promise.all([
+            queryItems(
+                process.env.REGISTRATION_FORM_TABLE_NAME as string,
+                "club_account_id = :clubId",
+                { ":clubId": query_string_params.club_account_id }
+            ),
+            queryItems(
+                process.env.REGISTRATIONS_TABLE_NAME as string,
+                "club_account_id = :clubId",
+                { ":clubId": query_string_params.club_account_id },
+                process.env.REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX
+            )
+        ]);
 
+        let total_active_members: number | undefined = undefined;
+        let total_pending_members: number | undefined = undefined;
+
+        if (query_string_params?.stats === "true") {
+            const counts = getCurrentSeasonMemberCounts(registrations);
+            total_active_members = counts.total_active_members;
+            total_pending_members = counts.total_pending_members;
+        }
+        
         return createResponse(200, {
             club_account_id: item["club_account_id"],
+            total_active_members,
+            total_pending_members,
             registration_form_exists: registration_form_exists ? true : false,
             currency_exists: item?.currency ? true : false,
             enable_events: item?.enable_events ?? false,

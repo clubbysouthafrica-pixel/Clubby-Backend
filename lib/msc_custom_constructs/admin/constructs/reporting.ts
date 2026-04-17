@@ -8,6 +8,7 @@ interface MSC_ReportingConstructProps {
     club_table: MSC_Table;
     registration_form_table: MSC_Table;
     registrations_table: MSC_Table;
+    transactions_table: MSC_Table;
     billing_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     club_history_bucket: MSC_Bucket;
@@ -24,19 +25,10 @@ export class MSC_ReportingConstruct extends Construct {
         const general_reporting = new MSC_Lambda(this, `${id}-GeneralReporting`, {
             code: "admin/reporting/general_reporting",
             envVariables: {
-                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName,
-                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                ORDERS_TABLE_NAME: props.orders_table.tableName,
-                REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex",
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
             },
             permissions: {
-                [`${props.club_history_bucket.bucketArn}/*`]: [
-                    "s3:GetObject"
-                ],
-                [`${props.registrations_table.tableArn}/index/ClubAccountIDIndex`]: [
-                    "dynamodb:Query"
-                ],
-                [props.orders_table.tableArn]: [
+                [props.transactions_table.tableArn]: [
                     "dynamodb:Query"
                 ]
             },

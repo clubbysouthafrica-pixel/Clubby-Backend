@@ -3,300 +3,397 @@ import {
     deconstructEvent,
     queryItems
 } from "./function_helpers";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
-const s3_client = new S3Client({ region: process.env.REGION });
+type IncomeType = "registration" | "event_registration" | "shop" | "storage";
+
+type MonthlyEntry = {
+    date: string;
+    total_revenue: number;
+    total_pending_revenue: number;
+};
+
+type LifecycleEntry = {
+    amount?: number;
+    type?: string;
+};
+
+type PendingBucket = {
+    timestamp: number;
+    amount: number;
+};
+
+type TransactionItem = {
+    creation_date?: number;
+    club_income?: boolean;
+    status?: string;
+    type?: string;
+    lifecycle?: Record<string, LifecycleEntry>;
+};
+
+type Report = {
+    total_revenue: number;
+    total_pending_revenue: number;
+    total_expense: number;
+    total_registration_revenue: number;
+    total_registration_pending_revenue: number;
+    total_event_registration_revenue: number;
+    total_event_registration_pending_revenue: number;
+    total_shop_revenue: number;
+    total_shop_pending_revenue: number;
+    total_storage_revenue: number;
+    total_storage_pending_revenue: number;
+    data: MonthlyEntry[];
+    registration_data: MonthlyEntry[];
+    event_registration_data: MonthlyEntry[];
+    shop_data: MonthlyEntry[];
+    storage_data: MonthlyEntry[];
+    expense_data: ExpenseMonthlyEntry[];
+    expense_type_data: ExpenseTypeReport[];
+};
+
+type ExpenseMonthlyEntry = {
+    date: string;
+    total_expense: number;
+};
+
+type ExpenseTypeReport = {
+    type: string;
+    total_expense: number;
+    data: ExpenseMonthlyEntry[];
+};
+
+const INCOME_TYPE_MAP: Record<string, IncomeType | undefined> = {
+    "REGISTRATION": "registration",
+    "EVENT REGISTRATION": "event_registration",
+    "ORDER": "shop",
+    "STORAGE": "storage",
+};
 
 function formatToYearMonth(timestamp: number): string {
     const date = new Date(timestamp);
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     return `${date.getFullYear()} ${monthNames[date.getMonth()]}`;
 }
 
-const processOrders = (report: Record<string, any>, orders: Record<string, any>[]) => {
-    if (!Array.isArray(report.order_data)) {
-        report.order_data = [];
-    }
+function createMonthlyEntry(date: string): MonthlyEntry {
+    return {
+        date,
+        total_revenue: 0,
+        total_pending_revenue: 0,
+    };
+}
 
-    if (!Array.isArray(report.data)) {
-        report.data = [];
-    }
+function createExpenseMonthlyEntry(date: string): ExpenseMonthlyEntry {
+    return {
+        date,
+        total_expense: 0,
+    };
+}
 
-    orders.forEach(order => {
-        if (order?.payment_status === "REFUND") return;
-        
-        report.total_shop_revenue += order.amount_paid;
-        report.total_revenue += order.amount_paid;
+function createReport(): Report {
+    return {
+        total_revenue: 0,
+        total_pending_revenue: 0,
+        total_expense: 0,
+        total_registration_revenue: 0,
+        total_registration_pending_revenue: 0,
+        total_event_registration_revenue: 0,
+        total_event_registration_pending_revenue: 0,
+        total_shop_revenue: 0,
+        total_shop_pending_revenue: 0,
+        total_storage_revenue: 0,
+        total_storage_pending_revenue: 0,
+        data: [],
+        registration_data: [],
+        event_registration_data: [],
+        shop_data: [],
+        storage_data: [],
+        expense_data: [],
+        expense_type_data: [],
+    };
+}
 
-        if (!order.order_confirmed_by_admin) {
-            report.total_shop_pending_revenue += order.total_amount - order.amount_paid;
-            report.total_pending_revenue += order.total_amount - order.amount_paid;
-        }
-
-        report.total_shop_sold_items += order.order_confirmed_by_admin ? 1 : 0;
-        report.total_shop_pending_sold_items += order.order_confirmed_by_admin ? 0 : 1;
-
-        const order_created_date = formatToYearMonth(order.created_date);
-        const order_confirmed_date = formatToYearMonth(order.order_confirmed_by_admin_timestamp);
-
-        let existingCreatedEntry = report.order_data.find((entry: Record<string, any>) => entry.date === order_created_date);
-        let existingConfirmedEntry = report.order_data.find((entry: Record<string, any>) => entry.date === order_confirmed_date);
-
-        let existingDataCreatedEntry = report.data.find((entry: Record<string, any>) => entry.date === order_created_date);
-        let existingDataConfirmedEntry = report.data.find((entry: Record<string, any>) => entry.date === order_confirmed_date);
-
-        if (order.order_confirmed_by_admin) {
-            if (existingConfirmedEntry) {
-                existingConfirmedEntry.total_revenue = (existingConfirmedEntry.total_revenue || 0) + order.amount_paid;
-                existingConfirmedEntry.total_shop_sold_items = (existingConfirmedEntry.total_shop_sold_items || 0) + 1;
-            } else {
-                const newConfirmedEntry: Record<string, any> = {
-                    date: order_confirmed_date,
-                    total_revenue: order.amount_paid,
-                    total_pending_revenue: 0,
-                    total_shop_sold_items: 1,
-                    total_shop_pending_sold_items: 0
-                };
-                report.order_data.push(newConfirmedEntry);
-            }
-
-            if (existingDataConfirmedEntry) {
-                existingDataConfirmedEntry.total_revenue = (existingDataConfirmedEntry.total_revenue || 0) + order.amount_paid;
-            } else {
-                const newDataConfirmedEntry: Record<string, any> = {
-                    date: order_confirmed_date,
-                    total_revenue: order.amount_paid,
-                    total_pending_revenue: 0
-                };
-                report.data.push(newDataConfirmedEntry);
-            }
-        } else {
-            if (existingCreatedEntry) {
-                existingCreatedEntry.total_pending_revenue = (existingCreatedEntry.total_pending_revenue || 0) + (order.total_amount - order.amount_paid);
-                existingCreatedEntry.total_shop_pending_sold_items = (existingCreatedEntry.total_shop_pending_sold_items || 0) + 1;
-            } else {
-                const newCreatedEntry: Record<string, any> = {
-                    date: order_created_date,
-                    total_pending_revenue: order.total_amount - order.amount_paid,
-                    total_shop_pending_sold_items: 1,
-                    total_shop_sold_items: 0,
-                    total_revenue: 0
-                };
-                report.order_data.push(newCreatedEntry);
-            }
-
-            if (existingDataCreatedEntry) {
-                existingDataCreatedEntry.total_pending_revenue = (existingDataCreatedEntry.total_pending_revenue || 0) + (order.total_amount - order.amount_paid);
-            } else {
-                const newDataCreatedEntry: Record<string, any> = {
-                    date: order_created_date,
-                    total_revenue: 0,
-                    total_pending_revenue: order.total_amount - order.amount_paid
-                };
-                report.data.push(newDataCreatedEntry);
-            }
-        }
-
+function sortMonthlyEntries(entries: MonthlyEntry[]): MonthlyEntry[] {
+    return entries.sort((left, right) => {
+        const leftDate = new Date(`${left.date} 01`);
+        const rightDate = new Date(`${right.date} 01`);
+        return leftDate.getTime() - rightDate.getTime();
     });
+}
+
+function getTypeKey(type: IncomeType): keyof Report {
+    switch (type) {
+        case "registration":
+            return "registration_data";
+        case "event_registration":
+            return "event_registration_data";
+        case "shop":
+            return "shop_data";
+        case "storage":
+            return "storage_data";
+    }
+}
+
+function getOrCreateMonthlyEntry(entries: MonthlyEntry[], date: string): MonthlyEntry {
+    let entry = entries.find(item => item.date === date);
+    if (!entry) {
+        entry = createMonthlyEntry(date);
+        entries.push(entry);
+    }
+    return entry;
+}
+
+function getOrCreateExpenseMonthlyEntry(entries: ExpenseMonthlyEntry[], date: string): ExpenseMonthlyEntry {
+    let entry = entries.find(item => item.date === date);
+    if (!entry) {
+        entry = createExpenseMonthlyEntry(date);
+        entries.push(entry);
+    }
+    return entry;
+}
+
+function getOrCreateExpenseTypeReport(report: Report, type: string): ExpenseTypeReport {
+    let entry = report.expense_type_data.find(item => item.type === type);
+    if (!entry) {
+        entry = {
+            type,
+            total_expense: 0,
+            data: [],
+        };
+        report.expense_type_data.push(entry);
+    }
+    return entry;
+}
+
+function applyDelta(report: Report, incomeType: IncomeType, timestamp: number, revenueDelta: number, pendingDelta: number) {
+    const date = formatToYearMonth(timestamp);
+    const overallEntry = getOrCreateMonthlyEntry(report.data, date);
+    const typeEntry = getOrCreateMonthlyEntry(report[getTypeKey(incomeType)] as MonthlyEntry[], date);
+
+    overallEntry.total_revenue += revenueDelta;
+    overallEntry.total_pending_revenue += pendingDelta;
+
+    typeEntry.total_revenue += revenueDelta;
+    typeEntry.total_pending_revenue += pendingDelta;
+
+    report.total_revenue += revenueDelta;
+    report.total_pending_revenue += pendingDelta;
+
+    switch (incomeType) {
+        case "registration":
+            report.total_registration_revenue += revenueDelta;
+            report.total_registration_pending_revenue += pendingDelta;
+            break;
+        case "event_registration":
+            report.total_event_registration_revenue += revenueDelta;
+            report.total_event_registration_pending_revenue += pendingDelta;
+            break;
+        case "shop":
+            report.total_shop_revenue += revenueDelta;
+            report.total_shop_pending_revenue += pendingDelta;
+            break;
+        case "storage":
+            report.total_storage_revenue += revenueDelta;
+            report.total_storage_pending_revenue += pendingDelta;
+            break;
+    }
+}
+
+function applyExpenseDelta(report: Report, type: string, timestamp: number, expenseDelta: number) {
+    const date = formatToYearMonth(timestamp);
+    const overallEntry = getOrCreateExpenseMonthlyEntry(report.expense_data, date);
+    const typeReport = getOrCreateExpenseTypeReport(report, type);
+    const typeEntry = getOrCreateExpenseMonthlyEntry(typeReport.data, date);
+
+    overallEntry.total_expense += expenseDelta;
+
+    typeEntry.total_expense += expenseDelta;
+
+    report.total_expense += expenseDelta;
+
+    typeReport.total_expense += expenseDelta;
+}
+
+function consumePendingBuckets(report: Report, incomeType: IncomeType, pendingBuckets: PendingBucket[], amountToConsume: number) {
+    let remainingAmount = amountToConsume;
+
+    for (const bucket of pendingBuckets) {
+        if (remainingAmount <= 0) {
+            break;
+        }
+
+        const consumedAmount = Math.min(bucket.amount, remainingAmount);
+        if (consumedAmount <= 0) {
+            continue;
+        }
+
+        applyDelta(report, incomeType, bucket.timestamp, 0, -consumedAmount);
+        bucket.amount -= consumedAmount;
+        remainingAmount -= consumedAmount;
+    }
+
+    return amountToConsume - remainingAmount;
+}
+
+function processLifecycleEntry(report: Report, incomeType: IncomeType, timestamp: number, lifecycleEntry: LifecycleEntry, pendingBuckets: PendingBucket[], currentPending: number) {
+    const parsedAmount = Number(lifecycleEntry?.amount ?? 0);
+    const hasValidAmount = Number.isFinite(parsedAmount) && parsedAmount > 0;
+
+    switch (lifecycleEntry?.type) {
+        case "SUBMISSION": {
+            if (!hasValidAmount) {
+                return currentPending;
+            }
+            applyDelta(report, incomeType, timestamp, 0, parsedAmount);
+            pendingBuckets.push({ timestamp, amount: parsedAmount });
+            return currentPending + parsedAmount;
+        }
+        case "CONFIRMATION": {
+            if (!hasValidAmount) {
+                return currentPending;
+            }
+            const settledAmount = Math.min(parsedAmount, currentPending);
+            applyDelta(report, incomeType, timestamp, parsedAmount, 0);
+            consumePendingBuckets(report, incomeType, pendingBuckets, settledAmount);
+            return currentPending - settledAmount;
+        }
+        case "REFUND": {
+            if (!hasValidAmount) {
+                return currentPending;
+            }
+            const pendingReduction = Math.min(parsedAmount, currentPending);
+            applyDelta(report, incomeType, timestamp, -parsedAmount, 0);
+            consumePendingBuckets(report, incomeType, pendingBuckets, pendingReduction);
+            return currentPending - pendingReduction;
+        }
+        case "CANCELLATION": {
+            const cancellationAmount = hasValidAmount ? Math.min(parsedAmount, currentPending) : currentPending;
+            if (cancellationAmount === 0) {
+                return currentPending;
+            }
+            consumePendingBuckets(report, incomeType, pendingBuckets, cancellationAmount);
+            return currentPending - cancellationAmount;
+        }
+        default:
+            return currentPending;
+    }
+}
+
+function processExpenseLifecycleEntry(report: Report, type: string, timestamp: number, lifecycleEntry: LifecycleEntry) {
+    const parsedAmount = Number(lifecycleEntry?.amount ?? 0);
+    const hasValidAmount = Number.isFinite(parsedAmount) && parsedAmount > 0;
+
+    if (!hasValidAmount) {
+        return;
+    }
+
+    switch (lifecycleEntry?.type) {
+        case "SUBMISSION":
+        case "CANCELLATION":
+            return;
+        case "CONFIRMATION": {
+            applyExpenseDelta(report, type, timestamp, parsedAmount);
+            return;
+        }
+        case "REFUND": {
+            applyExpenseDelta(report, type, timestamp, -parsedAmount);
+            return;
+        }
+        default:
+            return;
+    }
+}
+
+function processTransactions(report: Report, transactions: TransactionItem[]) {
+    transactions.forEach(transaction => {
+        if (transaction?.club_income !== true) {
+            return;
+        }
+
+        const incomeType = INCOME_TYPE_MAP[transaction?.type ?? ""];
+        if (!incomeType) {
+            return;
+        }
+
+        const lifecycleEntries = Object.entries(transaction?.lifecycle ?? {})
+            .map(([timestamp, entry]) => ({
+                timestamp: Number(timestamp),
+                entry,
+            }))
+            .filter(item => Number.isFinite(item.timestamp))
+            .sort((left, right) => left.timestamp - right.timestamp);
+
+        const pendingBuckets: PendingBucket[] = [];
+        let currentPending = 0;
+        lifecycleEntries.forEach(item => {
+            currentPending = processLifecycleEntry(report, incomeType, item.timestamp, item.entry, pendingBuckets, currentPending);
+        });
+
+        if (transaction?.status === "CANCELLED" && currentPending > 0) {
+            consumePendingBuckets(report, incomeType, pendingBuckets, currentPending);
+        }
+    });
+
+    sortMonthlyEntries(report.data);
+    sortMonthlyEntries(report.registration_data);
+    sortMonthlyEntries(report.event_registration_data);
+    sortMonthlyEntries(report.shop_data);
+    sortMonthlyEntries(report.storage_data);
 
     return report;
 }
 
-const processRegistrations = (report: Record<string, any>, registrations: Record<string, any>[]) => {
-    if (!Array.isArray(report.registration_data)) {
-        report.registration_data = [];
-    }
-
-    if (!Array.isArray(report.data)) {
-        report.data = [];
-    }
-
-    registrations.forEach(registration => {
-        if (registration?.last_season_registration === true) {
+function processExpenseTransactions(report: Report, transactions: TransactionItem[]) {
+    transactions.forEach(transaction => {
+        if (transaction?.club_income !== false) {
             return;
         }
 
-        if (registration.deregistered === true) {
-            report.total_deregistered_members += 1;
-        } else if (registration?.registered_on) {
-            report.total_active_members += 1;
-            report.total_registered_members += 1;
-        } else {
-            report.total_pending_members += 1;
-        }
+        const expenseType = transaction?.type ?? "UNKNOWN";
+        const lifecycleEntries = Object.entries(transaction?.lifecycle ?? {})
+            .map(([timestamp, entry]) => ({
+                timestamp: Number(timestamp),
+                entry,
+            }))
+            .filter(item => Number.isFinite(item.timestamp))
+            .sort((left, right) => left.timestamp - right.timestamp);
 
-        const registration_submission_date = registration?.registration_submitted_on ? formatToYearMonth(registration.registration_submitted_on) : undefined;
-        const registered_on_date = registration?.registered_on ? formatToYearMonth(registration.registered_on) : undefined;
-        const deregistered_on = registration?.deregistered_on ? formatToYearMonth(registration.deregistered_on) : undefined;
-
-        if (registration_submission_date) {
-            let existingEntry = report.registration_data.find((entry: Record<string, any>) => entry.date === registration_submission_date);
-            let existingDataEntry = report.data.find((entry: Record<string, any>) => entry.date === registration_submission_date);
-
-            if (existingEntry) {
-                existingEntry.total_pending_revenue = (existingEntry.total_pending_revenue || 0) + (registration?.deregistered === false ? registration.total_outstanding_amount : 0);
-                existingEntry.total_pending_members = (existingEntry.total_pending_members || 0) + (registration?.deregistered === false && registration.total_outstanding_amount > 0 ? 1 : 0);
-                existingEntry.total_registration_pending_revenue = (existingEntry.total_registration_pending_revenue || 0) + (registration?.deregistered === false ? registration.total_outstanding_amount : 0);
-                existingEntry.total_revenue = (existingEntry.total_revenue || 0) + (registration.total_fee - registration.total_outstanding_amount);
-                existingEntry.total_registration_revenue = (existingEntry.total_registration_revenue || 0) + (registration.total_fee - registration.total_outstanding_amount);
-
-                if (registered_on_date) {
-                    existingEntry.total_registered_members = (existingEntry.total_registered_members || 0) + 1;
-                }
-                if (deregistered_on) {
-                    existingEntry.total_deregistered_members = (existingEntry.total_deregistered_members || 0) + 1;
-                }
-            } else {
-                const newEntry: Record<string, any> = {
-                    date: registration_submission_date,
-                    total_registered_members: registered_on_date ? 1 : 0,
-                    total_pending_members: registration.deregistered === false && registration.total_outstanding_amount > 0 ? 1 : 0,
-                    total_pending_revenue: registration?.deregistered === false ? registration.total_outstanding_amount : 0,
-                    total_revenue: registration.total_fee - registration.total_outstanding_amount,
-                    total_deregistered_members: deregistered_on ? 1 : 0,
-                    total_registration_pending_revenue: registration?.deregistered === false ? registration.total_outstanding_amount : 0,
-                    total_registration_revenue: registration.total_fee - registration.total_outstanding_amount
-                };
-                report.registration_data.push(newEntry);
-            }
-
-            if (existingDataEntry) {
-                existingDataEntry.total_revenue = (existingDataEntry.total_revenue || 0) + (registration.total_fee - registration.total_outstanding_amount);
-                existingDataEntry.total_pending_revenue = (existingDataEntry.total_pending_revenue || 0) + (registration?.deregistered === false ? registration.total_outstanding_amount : 0);
-            } else {
-                const newDataEntry: Record<string, any> = {
-                    date: registration_submission_date,
-                    total_revenue: registration.total_fee - registration.total_outstanding_amount,
-                    total_pending_revenue: registration?.deregistered === false ? registration.total_outstanding_amount : 0
-                };
-                report.data.push(newDataEntry);
-            }
-        }
-
-        report.total_revenue += registration.total_fee - registration.total_outstanding_amount;
-        report.total_registration_revenue += registration.total_fee - registration.total_outstanding_amount;
-
-        report.total_pending_revenue += registration?.deregistered === false ? registration.total_outstanding_amount : 0;
-        report.total_registration_pending_revenue += registration?.deregistered === false ? registration.total_outstanding_amount : 0;
+        lifecycleEntries.forEach(item => {
+            processExpenseLifecycleEntry(report, expenseType, item.timestamp, item.entry);
+        });
     });
+
+    sortMonthlyEntries(report.expense_data as unknown as MonthlyEntry[]);
+    report.expense_type_data.forEach(entry => {
+        sortMonthlyEntries(entry.data as unknown as MonthlyEntry[]);
+    });
+    report.expense_type_data.sort((left, right) => left.type.localeCompare(right.type));
 
     return report;
 }
 
 export const handler = async (event: any) => {
-
-    const { origin, body, query_string_params, user_id } = deconstructEvent(event);
+    const { origin, query_string_params } = deconstructEvent(event);
 
     try {
-        let report: Record<string, any> = {
-            total_active_members: 0,
-            total_registered_members: 0,
-            total_pending_members: 0,
-            total_pending_revenue: 0,
-            total_revenue: 0,
-            total_deregistered_members: 0,
-            total_registration_pending_revenue: 0,
-            total_registration_revenue: 0,
-            total_shop_revenue: 0,
-            total_shop_pending_revenue: 0,
-            total_shop_sold_items: 0,
-            total_shop_pending_sold_items: 0,
-            data: [],
-            registration_data: [],
-            order_data: []
-        };
-
-        if (query_string_params?.season_cycle) {
-            if (!query_string_params.club_account_id) {
-                return createResponse(400, { message: "club_account_id is required." }, origin);
-            }
-
-            const s3Key = `${query_string_params.club_account_id}/Season_${query_string_params.season_cycle}/Registrations.json`;
-
-            try {
-                console.log(`@@@ getObject request (Bucket_Name: ${process.env.HISTORICAL_REPORTING_BUCKET_NAME}, Key: ${s3Key}): `, s3Key);
-                const s3Object = await s3_client.send(
-                    new GetObjectCommand({
-                        Bucket: process.env.CLUB_HISTORY_BUCKET_NAME as string,
-                        Key: s3Key,
-                    })
-                );
-                console.log(`@@@ getObject response (Bucket_Name: ${process.env.HISTORICAL_REPORTING_BUCKET_NAME}, Key: ${s3Key}): `, s3Object);
-
-                const bodyContents = await s3Object.Body?.transformToString();
-                const s3Data = JSON.parse(bodyContents || '[]');
-                const registrations = Array.isArray(s3Data) ? s3Data : [];
-                report = processRegistrations(report, registrations);
-            } catch (err: any) {
-                const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
-                if (status === 404) {
-                    return createResponse(404, { message: "Reporting data not found for the specified season." }, origin);
-                }
-                console.error(`Error fetching S3 object ${s3Key}:`, err);
-                throw err;
-            }
-        } else {
-            const registrations = await queryItems(
-                process.env.REGISTRATIONS_TABLE_NAME as string,
-                "club_account_id = :clubId",
-                { ":clubId": query_string_params.club_account_id },
-                process.env.REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX
-            );
-            report = processRegistrations(report, registrations ?? []);
-
+        if (!query_string_params?.club_account_id) {
+            return createResponse(400, { message: "club_account_id is required." }, origin);
         }
 
-        if (query_string_params?.season_cycle) {
-            if (!query_string_params.club_account_id) {
-                return createResponse(400, { message: "club_account_id is required." }, origin);
-            }
+        const transactions = await queryItems(
+            process.env.TRANSACTIONS_TABLE_NAME as string,
+            "club_account_id = :clubId",
+            { ":clubId": query_string_params.club_account_id }
+        );
 
-            const s3Key = `${query_string_params.club_account_id}/Season_${query_string_params.season_cycle}/Orders.json`;
+        const report = createReport();
+        processTransactions(report, transactions ?? []);
+        processExpenseTransactions(report, transactions ?? []);
 
-            try {
-                console.log(`@@@ getObject request (Bucket_Name: ${process.env.HISTORICAL_REPORTING_BUCKET_NAME}, Key: ${s3Key}): `, s3Key);
-                const s3Object = await s3_client.send(
-                    new GetObjectCommand({
-                        Bucket: process.env.CLUB_HISTORY_BUCKET_NAME as string,
-                        Key: s3Key,
-                    })
-                );
-                console.log(`@@@ getObject response (Bucket_Name: ${process.env.HISTORICAL_REPORTING_BUCKET_NAME}, Key: ${s3Key}): `, s3Object);
-
-                const bodyContents = await s3Object.Body?.transformToString();
-                const s3Data = JSON.parse(bodyContents || '[]');
-                const orders = Array.isArray(s3Data) ? s3Data : [];
-                report = processOrders(report, orders);
-            } catch (err: any) {
-                const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
-                if (status === 404) {
-                    return createResponse(404, { message: "Reporting data not found for the specified season." }, origin);
-                }
-                console.error(`Error fetching S3 object ${s3Key}:`, err);
-                throw err;
-            }
-        } else {
-            const orders = await queryItems(
-                process.env.ORDERS_TABLE_NAME as string,
-                "club_account_id = :clubId",
-                { ":clubId": query_string_params.club_account_id }
-            );
-            report = processOrders(report, orders ?? []);
-
-        }
-
-        if (report.registration_data && Array.isArray(report.registration_data)) {
-            report.registration_data.sort((a: Record<string, any>, b: Record<string, any>) => {
-                const dateA = new Date(a.date);
-                const dateB = new Date(b.date);
-                return dateA.getTime() - dateB.getTime();
-            });
-        }
-
-        return createResponse(200, report ?? {}, origin);
+        return createResponse(200, report, origin);
 
     } catch (error: any) {
-        console.error('General reporting error:', error);
+        console.error("General reporting error:", error);
         const message = error?.message || "Internal Server Error";
         const statusCode = error?.$metadata?.httpStatusCode || 500;
         return createResponse(statusCode, { message }, origin);
