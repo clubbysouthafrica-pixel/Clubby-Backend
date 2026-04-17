@@ -64,7 +64,7 @@ export class MSC_StorageRequestConstruct extends Construct {
       {
         code: "member/storage/list_storage_requests",
         envVariables: {
-          STORAGE_REQUESTS_TABLE: props.storage_table.tableName,
+          STORAGE_REQUESTS_TABLE: props.storage_request_table.tableName,
           CLUB_TABLE_NAME: props.club_table.tableName,
         },
         permissions: {
