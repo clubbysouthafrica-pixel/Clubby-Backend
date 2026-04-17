@@ -17,6 +17,11 @@ type LifecycleEntry = {
     type?: string;
 };
 
+type PendingBucket = {
+    timestamp: number;
+    amount: number;
+};
+
 type TransactionItem = {
     creation_date?: number;
     club_income?: boolean;
@@ -209,7 +214,28 @@ function applyExpenseDelta(report: Report, type: string, timestamp: number, expe
     typeReport.total_expense += expenseDelta;
 }
 
-function processLifecycleEntry(report: Report, incomeType: IncomeType, timestamp: number, lifecycleEntry: LifecycleEntry, currentPending: number) {
+function consumePendingBuckets(report: Report, incomeType: IncomeType, pendingBuckets: PendingBucket[], amountToConsume: number) {
+    let remainingAmount = amountToConsume;
+
+    for (const bucket of pendingBuckets) {
+        if (remainingAmount <= 0) {
+            break;
+        }
+
+        const consumedAmount = Math.min(bucket.amount, remainingAmount);
+        if (consumedAmount <= 0) {
+            continue;
+        }
+
+        applyDelta(report, incomeType, bucket.timestamp, 0, -consumedAmount);
+        bucket.amount -= consumedAmount;
+        remainingAmount -= consumedAmount;
+    }
+
+    return amountToConsume - remainingAmount;
+}
+
+function processLifecycleEntry(report: Report, incomeType: IncomeType, timestamp: number, lifecycleEntry: LifecycleEntry, pendingBuckets: PendingBucket[], currentPending: number) {
     const parsedAmount = Number(lifecycleEntry?.amount ?? 0);
     const hasValidAmount = Number.isFinite(parsedAmount) && parsedAmount > 0;
 
@@ -219,6 +245,7 @@ function processLifecycleEntry(report: Report, incomeType: IncomeType, timestamp
                 return currentPending;
             }
             applyDelta(report, incomeType, timestamp, 0, parsedAmount);
+            pendingBuckets.push({ timestamp, amount: parsedAmount });
             return currentPending + parsedAmount;
         }
         case "CONFIRMATION": {
@@ -226,7 +253,8 @@ function processLifecycleEntry(report: Report, incomeType: IncomeType, timestamp
                 return currentPending;
             }
             const settledAmount = Math.min(parsedAmount, currentPending);
-            applyDelta(report, incomeType, timestamp, parsedAmount, -settledAmount);
+            applyDelta(report, incomeType, timestamp, parsedAmount, 0);
+            consumePendingBuckets(report, incomeType, pendingBuckets, settledAmount);
             return currentPending - settledAmount;
         }
         case "REFUND": {
@@ -234,7 +262,8 @@ function processLifecycleEntry(report: Report, incomeType: IncomeType, timestamp
                 return currentPending;
             }
             const pendingReduction = Math.min(parsedAmount, currentPending);
-            applyDelta(report, incomeType, timestamp, -parsedAmount, -pendingReduction);
+            applyDelta(report, incomeType, timestamp, -parsedAmount, 0);
+            consumePendingBuckets(report, incomeType, pendingBuckets, pendingReduction);
             return currentPending - pendingReduction;
         }
         case "CANCELLATION": {
@@ -242,7 +271,7 @@ function processLifecycleEntry(report: Report, incomeType: IncomeType, timestamp
             if (cancellationAmount === 0) {
                 return currentPending;
             }
-            applyDelta(report, incomeType, timestamp, 0, -cancellationAmount);
+            consumePendingBuckets(report, incomeType, pendingBuckets, cancellationAmount);
             return currentPending - cancellationAmount;
         }
         default:
@@ -294,16 +323,14 @@ function processTransactions(report: Report, transactions: TransactionItem[]) {
             .filter(item => Number.isFinite(item.timestamp))
             .sort((left, right) => left.timestamp - right.timestamp);
 
+        const pendingBuckets: PendingBucket[] = [];
         let currentPending = 0;
         lifecycleEntries.forEach(item => {
-            currentPending = processLifecycleEntry(report, incomeType, item.timestamp, item.entry, currentPending);
+            currentPending = processLifecycleEntry(report, incomeType, item.timestamp, item.entry, pendingBuckets, currentPending);
         });
 
         if (transaction?.status === "CANCELLED" && currentPending > 0) {
-            const fallbackTimestamp = lifecycleEntries[lifecycleEntries.length - 1]?.timestamp ?? transaction?.creation_date;
-            if (fallbackTimestamp && Number.isFinite(fallbackTimestamp)) {
-                applyDelta(report, incomeType, fallbackTimestamp, 0, -currentPending);
-            }
+            consumePendingBuckets(report, incomeType, pendingBuckets, currentPending);
         }
     });
 
