@@ -59,6 +59,9 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 [props.users_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
+                [props.kms_key.keyArn]: [
+                    "kms:Decrypt"
+                ]
             },
             layers: [props.layers.jwt_layer]
         });

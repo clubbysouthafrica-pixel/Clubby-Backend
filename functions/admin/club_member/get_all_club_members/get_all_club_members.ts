@@ -1,12 +1,100 @@
 import {
     createResponse,
     deconstructEvent,
+    decryptData,
     getItem,
     queryItemsWithPagination,
     extractTemplateVariables,
     queryItems
 } from "./function_helpers";
 import { RegistrationFieldFilter, applyFiltersToRegistration } from "./registration_field_filters";
+
+const USER_ENCRYPTED_FIELDS = new Set([
+    "address_line_1",
+    "address_line_2",
+    "phone_number",
+    "date_of_birth"
+]);
+
+const MEMBER_PROFILE_FIELDS = new Set([
+    "address_line_1",
+    "address_line_2",
+    "date_of_birth",
+    "phone_number",
+    "suburb",
+    "postal_code",
+    "city",
+    "country"
+]);
+
+const normalizeDateValue = (value: string) => {
+    return value.trim().replace(/[-.]/g, "/").replace(/\/+$/g, "");
+};
+
+const applyMemberProfileFilters = (
+    userData: Record<string, any>,
+    filters: RegistrationFieldFilter[]
+) => {
+    for (const filter of filters) {
+        if (!MEMBER_PROFILE_FIELDS.has(filter.field_id)) {
+            return false;
+        }
+
+        const fieldValue = userData?.[filter.field_id];
+        if (fieldValue == null || fieldValue === "") {
+            return false;
+        }
+
+        if (filter.input_type === "date") {
+            const normalizedFieldValue = normalizeDateValue(String(fieldValue));
+            const normalizedFilterValue = normalizeDateValue(String(filter.value));
+            if (normalizedFieldValue !== normalizedFilterValue) {
+                return false;
+            }
+            continue;
+        }
+
+        const normalizedFieldValue = String(fieldValue).toLowerCase();
+        const normalizedFilterValue = String(filter.value).toLowerCase();
+        if (!normalizedFieldValue.includes(normalizedFilterValue)) {
+            return false;
+        }
+    }
+
+    return true;
+};
+
+const getUserActiveKeyData = async (userId: string, activeKeys: string[]) => {
+    if (activeKeys.length === 0) {
+        return {};
+    }
+
+    const user = await getItem(
+        process.env.USERS_TABLE_NAME as string,
+        {
+            user_type: "MEMBER",
+            user_id: userId
+        }
+    );
+
+    if (!user) {
+        return {};
+    }
+
+    const userData: Record<string, any> = {};
+    for (const activeKey of activeKeys) {
+        if (!(activeKey in user)) {
+            userData[activeKey] = undefined;
+            continue;
+        }
+
+        userData[activeKey] = USER_ENCRYPTED_FIELDS.has(activeKey)
+            ? await decryptData(user[activeKey])
+            : user[activeKey];
+    }
+
+    return userData;
+};
 
 const getMembersPageData = async (
     query_string_params: any,
@@ -16,6 +104,16 @@ const getMembersPageData = async (
     const limit = query_string_params?.limit ? parseInt(query_string_params.limit) : undefined;
     const previousToken = query_string_params?.pageToken ? JSON.parse(query_string_params.pageToken) : undefined;
     const memberType = query_string_params?.memberType;
+    const activeKeys = query_string_params?.activeKeys
+        ? query_string_params.activeKeys.split(",").map((key: string) => key.trim()).filter(Boolean)
+        : [];
+    const customFilters: RegistrationFieldFilter[] = body?.custom_filters ?? [];
+    const memberProfileFilters = customFilters.filter(filter => filter.type === "member_profile");
+    const registrationFilters = customFilters.filter(filter => filter.type !== "member_profile");
+    const requestedUserKeys = Array.from(new Set([
+        ...activeKeys,
+        ...memberProfileFilters.map(filter => filter.field_id)
+    ]));
 
     let filterExpression: string | undefined;
     let expressionAttributeNames: Record<string, string> | undefined;
@@ -39,6 +137,7 @@ const getMembersPageData = async (
     }
 
     const members: any[] = [];
+    const userDataCache = new Map<string, Record<string, any>>();
     let currentToken = previousToken;
     let lastEvaluatedKey: any = undefined;
 
@@ -81,6 +180,16 @@ const getMembersPageData = async (
         }
 
         for (const item of filteredItems) {
+            let activeUserData = userDataCache.get(item.user_id);
+            if (!activeUserData) {
+                activeUserData = await getUserActiveKeyData(item.user_id, requestedUserKeys);
+                userDataCache.set(item.user_id, activeUserData);
+            }
+
+            if (memberProfileFilters.length > 0 && !applyMemberProfileFilters(activeUserData, memberProfileFilters)) {
+                continue;
+            }
+
             const allRegistrations = await queryItems(
                 process.env.REGISTRATIONS_TABLE_NAME as string,
                 "user_id = :userId",
@@ -95,13 +204,14 @@ const getMembersPageData = async (
                     member_email: item.member_email,
                     registered: item.registered,
                     resubmission_required: item.resubmission_required,
+                    ...activeUserData,
                     registrations: []
                 });
                 continue;
             }
 
             for (const registration of allRegistrations || []) {
-                if (body?.custom_filters && !registration) {
+                if (registrationFilters.length > 0 && !registration) {
                     continue;
                 }
 
@@ -110,9 +220,8 @@ const getMembersPageData = async (
                 }
 
                 let registrationMatchesFilters = true;
-                if (body?.custom_filters && registration) {
-                    const filters: RegistrationFieldFilter[] = body.custom_filters;
-                    const filterResult = applyFiltersToRegistration(registration, filters);
+                if (registrationFilters.length > 0 && registration) {
+                    const filterResult = applyFiltersToRegistration(registration, registrationFilters);
                     registrationMatchesFilters = filterResult.matches;
                 }
 
@@ -138,6 +247,7 @@ const getMembersPageData = async (
                         member_email: item.member_email,
                         registered: item.registered,
                         resubmission_required: item.resubmission_required,
+                        ...activeUserData,
                         registrations: [{
                             registration_id: registration.registration_id,
                             latest_registration: registration.latest_registration,
