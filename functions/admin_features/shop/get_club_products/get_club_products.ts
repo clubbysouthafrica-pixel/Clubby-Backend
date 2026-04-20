@@ -3,6 +3,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
     createResponse,
     deconstructEvent,
+    getItem,
     queryItems
 } from "./function_helpers";
 
@@ -13,9 +14,18 @@ export const handler = async (event: any) => {
 
     try {
         const club_account_id = query_string_params?.club_account_id;
-
         if (!club_account_id || typeof club_account_id !== "string") {
             return createResponse(400, { message: "Invalid or missing club_account_id parameter." }, origin);
+        }
+
+        const club = await getItem(
+            process.env.CLUB_TABLE_NAME!,
+            {
+                "club_account_id": club_account_id
+            }
+        );
+        if (!club) {
+            return createResponse(404, { message: "Club not found." }, origin);
         }
 
         const products = await queryItems(
@@ -53,7 +63,7 @@ export const handler = async (event: any) => {
             })
         );
 
-        return createResponse(200, { products: productsWithImages || [] }, origin);
+        return createResponse(200, { products: productsWithImages || [], shop_enabled: club?.enable_shop ?? false }, origin);
 
     } catch (error: any) {
         console.error('Get club products error:', error);

@@ -128,7 +128,8 @@ export const handler = async (event: any) => {
 
         const response: any = {
             orders: orders,
-            payment_methods: payment_methods
+            payment_methods: payment_methods,
+            shop_enabled: club?.enable_shop ?? false
         };
 
         if (lastEvaluatedKey) {

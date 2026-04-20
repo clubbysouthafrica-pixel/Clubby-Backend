@@ -8,6 +8,7 @@ interface MSC_AdminShopConstructProps {
     product_table: MSC_Table;
     token_authorizer: TokenAuthorizer;
     shop_images_bucket: MSC_Bucket;
+    club_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -41,11 +42,15 @@ export class MSC_AdminShopConstruct extends Construct {
             code: "admin_features/shop/get_club_products",
             envVariables: {
                 PRODUCT_TABLE_NAME: props.product_table.tableName,
-                SHOP_IMAGES_BUCKET_NAME: props.shop_images_bucket.bucketName
+                SHOP_IMAGES_BUCKET_NAME: props.shop_images_bucket.bucketName,
+                CLUB_TABLE_NAME: props.club_table.tableName
             },
             permissions: {
                 [props.product_table.tableArn]: [
                     "dynamodb:Query"
+                ],
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ],
                 [props.shop_images_bucket.bucketArn]: [
                     "s3:GetObject",
