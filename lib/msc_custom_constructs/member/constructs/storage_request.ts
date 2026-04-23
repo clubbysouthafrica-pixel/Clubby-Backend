@@ -46,9 +46,29 @@ export class MSC_StorageRequestConstruct extends Construct {
         },
         permissions: {
           [props.storage_request_table.tableArn]: ["dynamodb:PutItem"],
-          [props.storage_table.tableArn]: ["dynamodb:PutItem", "dynamodb:UpdateItem"],
+          [props.storage_table.tableArn]: [
+            "dynamodb:PutItem",
+            "dynamodb:UpdateItem",
+          ],
           [props.orders_table.tableArn]: ["dynamodb:PutItem"],
           [props.transactions_table.tableArn]: ["dynamodb:PutItem"],
+          [props.club_table.tableArn]: ["dynamodb:GetItem"],
+        },
+        layers: [props.layers.jwt_layer],
+      },
+    );
+
+    const list_storage_requests = new MSC_Lambda(
+      this,
+      `${id}-ListStorageRequests`,
+      {
+        code: "member/storage/list_storage_requests",
+        envVariables: {
+          STORAGE_REQUESTS_TABLE: props.storage_request_table.tableName,
+          CLUB_TABLE_NAME: props.club_table.tableName,
+        },
+        permissions: {
+          [props.storage_request_table.tableArn]: ["dynamodb:Query"],
           [props.club_table.tableArn]: ["dynamodb:GetItem"],
         },
         layers: [props.layers.jwt_layer],
@@ -65,6 +85,10 @@ export class MSC_StorageRequestConstruct extends Construct {
       "createStorageRequest",
     );
 
+    const listStorageRequestsResource = storage_resource.addResource(
+      "listStorageRequests",
+    );
+
     const methodOptions: MethodOptions = {
       methodResponses: [],
       authorizationType: AuthorizationType.CUSTOM,
@@ -77,6 +101,14 @@ export class MSC_StorageRequestConstruct extends Construct {
       methodOptions,
       undefined,
       "POST",
+    );
+
+    addCorsEnabledMethod(
+      listStorageRequestsResource,
+      list_storage_requests,
+      methodOptions,
+      undefined,
+      "GET",
     );
   }
 }

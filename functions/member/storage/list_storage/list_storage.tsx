@@ -1,7 +1,7 @@
 import {
   createResponse,
   deconstructEvent,
-  scanItems,
+  queryItems,
 } from "./function_helpers";
 
 export const handler = async (event: any) => {
@@ -55,16 +55,22 @@ export const handler = async (event: any) => {
     }
 
     // Scan table and filter in memory (keeps the helper usage simple). If you have an index on club_account_id, replace with a Query.
-    const items = await scanItems(tableName);
+    const items = await queryItems(
+      tableName,
+      "club_account_id = :club_account_id",
+      { ":club_account_id": club_account_id },
+    );
+
+    if (items == null) {
+      return createResponse(
+        200,
+        { items: [], total: 0, limit: limit ?? null, offset: offset ?? 0 },
+        origin,
+      );
+    }
 
     // items may be [] if none
     let filtered = items;
-
-    if (club_account_id) {
-      filtered = filtered.filter(
-        (it: any) => it.club_account_id === club_account_id,
-      );
-    }
 
     if (parent_id !== undefined) {
       // If parent_id is null, we match items where parent_id is null/undefined
