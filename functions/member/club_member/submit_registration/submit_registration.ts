@@ -101,7 +101,7 @@ async function addToRegistrationsTable(
 
 
     let new_registration_index = 1
-    if (member_registrations !== null) {
+    if (member_registrations !== null && member_registrations.length > 0) {
 
         if (member_registrations.length == 1 && member_registrations[0]?.last_season_registration) {
             new_registration_index = 1
