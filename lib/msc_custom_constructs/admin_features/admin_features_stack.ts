@@ -62,6 +62,7 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
       token_authorizer: jwt_construct.token_authorizer,
       shop_images_bucket: props.shop_images_bucket,
       layers: all_layers,
+      club_table: props.club_table,
     });
 
     new MSC_VenuesConstruct(this, `${id}-BookingVenues`, {
