@@ -198,6 +198,7 @@ export const handler = async (event: any) => {
                             type: "STANDARD_OTHER",
                             label: field.field_name,
                             position: field.field_order_id,
+                            editable_by_member: field?.editable_by_member ?? false,
                             visible: field?.visible ?? true
                         });
                     } else {
