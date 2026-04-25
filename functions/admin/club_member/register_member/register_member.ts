@@ -4,7 +4,8 @@ import {
     updateItem,
     getItem,
     sendSqsMessage,
-    getClubEmailSendingLimit
+    getClubEmailSendingLimit,
+    buildFinalTemplateVariables
 } from "./function_helpers";
 
 function convertTitleToVariableName(title: string): string {
@@ -227,10 +228,10 @@ export const handler = async (event: any) => {
                 return createResponse(400, { message: "template_variables must be an array." }, origin);
             }
             for (const variable of body.template_variables) {
-                if (typeof variable !== 'object' || !variable.name || !variable.value) {
+                if (typeof variable !== 'object' || !variable.name || (!variable.value && !variable.auto_generated)) {
                     return createResponse(400, { message: "Each template_variable must have 'name' and 'value' properties." }, origin);
                 }
-                if (typeof variable.name !== 'string' || typeof variable.value !== 'string') {
+                if (typeof variable.name !== 'string' || (typeof variable.value !== 'string' && !variable.auto_generated)) {
                     return createResponse(400, { message: "template_variable 'name' and 'value' must be strings." }, origin);
                 }
             }
@@ -271,10 +272,6 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Registration fee does not exist." }, origin);
         }
 
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-
         if (registration.total_outstanding_amount > body.payment_amount) {
 
             await partialRegistrationUpdateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, body.payment_amount)
@@ -285,13 +282,20 @@ export const handler = async (event: any) => {
 
         const registered_on = Date.now()
 
+        const final_template_variables = await buildFinalTemplateVariables(
+            body.club_account_id,
+            registration,
+            club.club_variables,
+            body?.template_variables,
+        );
+
         await updateClubsRegistrationBilling(
             body.club_account_id,
             registration.total_fee * (club.member_registration_fee_to_club / 100)
         );
 
         if (body.payment_amount > 0) await updateTransactionsTable(body.club_account_id, club_member.current_reg_transaction_id, registered_on, body.payment_amount, body.payment_method)
-        await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on, body.payment_amount, body?.template_variables)
+        await updateRegistrationsTable(body.member_id, club_member.current_reg_id, registered_on, body.payment_amount, final_template_variables)
         await updateClubMember(body.club_account_id, body.member_id)
 
         if (club?.use_success_email_template) {
@@ -302,8 +306,8 @@ export const handler = async (event: any) => {
             }
 
             let finalBody = club.registration_success_email_template_body
-            if (body?.template_variables && Array.isArray(body.template_variables)) {
-                for (const variable of body.template_variables) {
+            if (final_template_variables.length > 0) {
+                for (const variable of final_template_variables) {
                     if (variable?.name && variable?.value) {
                         const variableName = convertTitleToVariableName(variable.name);
                         const regex = new RegExp(`{{${variableName}}}`, 'g');
@@ -327,8 +331,13 @@ export const handler = async (event: any) => {
 
         return createResponse(200, { registered: true, message: "Member outstanding balance updated." }, origin);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error:", error);
+
+        if (error?.name === "RuleEngineError") {
+            return createResponse(400, { message: error.message }, origin);
+        }
+
         return createResponse(500, { message: "Internal Server Error" }, origin);
     }
 };

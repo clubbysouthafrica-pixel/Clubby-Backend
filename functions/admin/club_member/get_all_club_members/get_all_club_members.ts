@@ -572,7 +572,7 @@ const getRegistrationPageData = async (
         ...(club?.custom_payment_methods?.map((pm: { name: string, url: string }) => pm.name) || [])
     ];
     
-    const template_variables = (club?.club_variables || []).map((variable: any) => ({ title: variable.name, name: variable.key }));
+    const template_variables = (club?.club_variables || []).map((variable: any) => ({ title: variable.name, name: variable.key, rules_engine: variable?.rules_engine ? true : false })) || [];
 
     if (club?.registration_success_email_template_body?.includes("{{member_name}}") && !template_variables.some((v: any) => v.name === "member_name")) {
         template_variables.unshift({

@@ -147,7 +147,8 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                     "ses:SendEmail"
                 ],
                 [props.club_table.tableArn]: [
-                    "dynamodb:GetItem"
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem"
                 ],
                 [props.registration_form_table.tableArn]: [
                     "dynamodb:GetItem"
