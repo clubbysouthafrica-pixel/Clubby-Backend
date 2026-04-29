@@ -175,7 +175,7 @@ export class MSC_PayfastConstruct extends Construct {
             authorizer: props.token_authorizer
         }
 
-        addCorsEnabledMethod(get_checkout_url_resource, get_checkout_url, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(get_checkout_url_resource, get_checkout_url, { methodResponses: [] }, undefined, "GET");
         addCorsEnabledMethod(handle_registration_payment_resource, handle_registration_payment, { methodResponses: [] }, undefined, "POST");
         addCorsEnabledMethod(handle_order_payment_resource, handle_order_payment, { methodResponses: [] }, undefined, "POST");
         addCorsEnabledMethod(handle_event_registration_payment_resource, handle_event_registration_payment, { methodResponses: [] }, undefined, "POST");

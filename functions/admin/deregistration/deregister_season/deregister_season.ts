@@ -92,13 +92,13 @@ async function handleRegistrations(club_account_id: string, cycle_name: string) 
     const historical_reports: any[] = []
     if (registrations) {
         for (const registration of registrations) {
-   
+
             const filteredRegistration: any = {};
             for (const [key, value] of Object.entries(registration)) {
                 if (key.startsWith("reg_field_")) {
                     if (typeof value === "object" && value !== null && "type" in value) {
                         const fieldType = (value as any).type;
- 
+
                         if (fieldType && String(fieldType).startsWith("BILLING_")) {
                             filteredRegistration[key] = value;
                         }
@@ -217,7 +217,7 @@ async function handleOrders(club_account_id: string, cycle_name: string) {
         "club_account_id = :clubId",
         { ":clubId": club_account_id }
     );
-    
+
     const historical_reports: any[] = []
     if (orders) {
         for (const order of orders) {
@@ -233,6 +233,52 @@ async function handleOrders(club_account_id: string, cycle_name: string) {
         }
     }
     await addToHistoricalReportingBucket(club_account_id, cycle_name, "Orders", historical_reports);
+}
+
+async function handleEventRegistrations(club_account_id: string, cycle_name: string) {
+    const events = await queryItems(
+        process.env.EVENTS_TABLE_NAME as string,
+        "club_account_id = :clubId",
+        { ":clubId": club_account_id }
+    );
+
+    const event_historical_reports: any[] = []
+    const event_registrations_historical_reports: any[] = []
+    for (const event of events ?? []) {
+
+        if (event.endDate < Date.now()) {
+            event_historical_reports.push(event);
+
+            await removeItem(
+                process.env.EVENTS_TABLE_NAME as string,
+                {
+                    club_account_id: club_account_id,
+                    event_id: event.event_id
+                }
+            );
+
+            const event_registrations = await queryItems(
+                process.env.EVENT_REGISTRATIONS_TABLE_NAME as string,
+                "event_id = :eventId",
+                { ":eventId": event.event_id },
+            );
+
+            if (!event_registrations || event_registrations.length === 0) continue
+            event_registrations_historical_reports.push(...event_registrations);
+
+            for (const event of event_registrations) {
+                await removeItem(
+                    process.env.EVENT_REGISTRATIONS_TABLE_NAME as string,
+                    {
+                        event_id: event.event_id,
+                        event_registration_id: event.event_registration_id
+                    }
+                );
+            }
+        }
+    }
+    await addToHistoricalReportingBucket(club_account_id, cycle_name, "Events", event_historical_reports);
+    await addToHistoricalReportingBucket(club_account_id, cycle_name, "EventRegistrations", event_registrations_historical_reports);
 }
 
 async function deleteClubSignatures(club_account_id: string): Promise<void> {
@@ -315,15 +361,16 @@ export const handler = async (event: any) => {
             await handleTransactions(club_account_id, cycle_name);
             await handleRegistrationForm(club_account_id, cycle_name);
             await handleOrders(club_account_id, cycle_name);
+            await handleEventRegistrations(club_account_id, cycle_name);
             await deleteClubSignatures(club_account_id);
 
             const currentEpoch = Date.now();
             const updatedSeasons = club.seasons ? [...club.seasons] : [];
-            
+
             if (updatedSeasons.length > 0) {
                 updatedSeasons[updatedSeasons.length - 1].end_date = currentEpoch;
             }
-            
+
             updatedSeasons.push({
                 start_date: currentEpoch,
                 end_date: null
@@ -333,12 +380,12 @@ export const handler = async (event: any) => {
                 process.env.CLUB_TABLE_NAME as string,
                 { "club_account_id": body.club_account_id },
                 "SET #deregistration_in_progress = :true, #season_cycle = :season_cycle, #seasons = :seasons",
-                { 
+                {
                     "#deregistration_in_progress": "deregistration_in_progress",
                     "#season_cycle": "season_cycle",
                     "#seasons": "seasons"
                 },
-                { 
+                {
                     ":true": false,
                     ":season_cycle": season_cycle + 1,
                     ":seasons": updatedSeasons

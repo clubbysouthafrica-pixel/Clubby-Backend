@@ -17,6 +17,8 @@ interface MSC_DeregistrationConstructProps {
     token_authorizer: TokenAuthorizer;
     club_history_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
+    event_registrations_table: MSC_Table;
+    events_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -50,6 +52,38 @@ export class MSC_DeregistrationConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const shop_status = new MSC_Lambda(this, `${id}-ShopStatus`, {
+            code: "admin/deregistration/shop_status",
+            envVariables: {
+                ORDERS_TABLE_NAME: props.orders_table.tableName
+            },
+            permissions: {
+                [props.orders_table.tableArn]: [
+                    "dynamodb:Query"
+                ]
+            },
+            timeout: 10,
+            layers: [props.layers.jwt_layer]
+        });
+
+        const registration_status = new MSC_Lambda(this, `${id}-RegistrationStatus`, {
+            code: "admin/deregistration/registration_status",
+            envVariables: {
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX: "ClubAccountIDIndex"
+            },
+            permissions: {
+                [props.registrations_table.tableArn]: [
+                    "dynamodb:Query"
+                ],
+                [`${props.registrations_table.tableArn}/index/ClubAccountIDIndex`]: [
+                    "dynamodb:Query"
+                ]
+            },
+            timeout: 10,
+            layers: [props.layers.jwt_layer]
+        });
+
         const deregister_season = new MSC_Lambda(this, `${id}-DeregisterSeason`, {
             code: "admin/deregistration/deregister_season",
             envVariables: {
@@ -63,12 +97,22 @@ export class MSC_DeregistrationConstruct extends Construct {
                 BILLING_TABLE_NAME: props.billing_table.tableName,
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
-                ORDERS_TABLE_NAME: props.orders_table.tableName
+                ORDERS_TABLE_NAME: props.orders_table.tableName,
+                EVENTS_TABLE_NAME: props.events_table.tableName,
+                EVENT_REGISTRATIONS_TABLE_NAME: props.event_registrations_table.tableName
             },
             permissions: {
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem",
                     "dynamodb:UpdateItem"
+                ],
+                [props.events_table.tableArn]: [
+                    "dynamodb:Query",
+                    "dynamodb:DeleteItem"
+                ],
+                [props.event_registrations_table.tableArn]: [
+                    "dynamodb:Query",
+                    "dynamodb:DeleteItem"
                 ],
                 [props.club_member_table.tableArn]: [
                     "dynamodb:UpdateItem"
@@ -144,10 +188,31 @@ export class MSC_DeregistrationConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const event_status = new MSC_Lambda(this, `${id}-EventStatus`, {
+            code: "admin/deregistration/event_status",
+            envVariables: {
+                EVENTS_TABLE_NAME: props.events_table.tableName,
+                EVENT_REGISTRATIONS_TABLE_NAME: props.event_registrations_table.tableName
+            },
+            permissions: {
+                [props.events_table.tableArn]: [
+                    "dynamodb:Query"
+                ],
+                [props.event_registrations_table.tableArn]: [
+                    "dynamodb:Query"
+                ],
+            },
+            timeout: 10,
+            layers: [props.layers.jwt_layer]
+        });
+
         const deregistration_resource = props.api_gateway.root.addResource("deregistration");
 
         const deregister_season_resource = deregistration_resource.addResource("season");
         const deregister_members_resource = deregistration_resource.addResource("members");
+        const shop_status_resource = deregistration_resource.addResource("shop");
+        const registration_status_resource = deregistration_resource.addResource("registration");
+        const event_status_resource = deregistration_resource.addResource("events");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -157,5 +222,8 @@ export class MSC_DeregistrationConstruct extends Construct {
 
         addCorsEnabledMethod(deregister_season_resource, process_deregister_season, methodOptions);
         addCorsEnabledMethod(deregister_members_resource, deregister_members, methodOptions);
+        addCorsEnabledMethod(shop_status_resource, shop_status, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(registration_status_resource, registration_status, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(event_status_resource, event_status, methodOptions, undefined, "GET");
     }
 }

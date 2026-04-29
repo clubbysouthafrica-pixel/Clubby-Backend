@@ -21,7 +21,7 @@ export const handler = async (event: any) => {
             process.env.USERS_TABLE_NAME as string,
             {
                 user_type: "MEMBER",
-                user_id: user_id as string,
+                user_id: query_string_params?.user_id ? query_string_params.user_id : user_id as string,
             }
         );
         if (user == null) {
@@ -32,7 +32,7 @@ export const handler = async (event: any) => {
             process.env.CLUB_MEMBER_TABLE_NAME as string,
             {
                 club_account_id: query_string_params.club_account_id,
-                user_id: user_id as string
+                user_id: query_string_params?.user_id ? query_string_params.user_id : user_id as string
             }
         );
         if (club_member == null) {
@@ -63,7 +63,7 @@ export const handler = async (event: any) => {
 
         } else {
             const registration = await getItem(process.env.REGISTRATIONS_TABLE_NAME as string, {
-                user_id: user_id as string,
+                user_id: query_string_params?.user_id ? query_string_params.user_id : user_id as string,
                 registration_id: club_member.current_reg_id
             });
             if (registration == null) {
@@ -127,7 +127,7 @@ export const handler = async (event: any) => {
             item_name: order_url ? 'Shop Order Payment' : event_url ? 'Event Registration Payment' : 'Registration Fee',
             item_description: club_member.club_name,
             custom_str1: query_string_params.club_account_id,
-            custom_str2: user_id,
+            custom_str2: query_string_params?.user_id ? query_string_params.user_id : user_id,
             ...(order_url && { custom_str3: query_string_params.order_id }),
             ...(event_url && { custom_str3: query_string_params.event_id, custom_str4: query_string_params.event_registration_id }),
         };

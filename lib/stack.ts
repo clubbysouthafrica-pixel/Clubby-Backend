@@ -69,6 +69,8 @@ export class MSC_Stack extends cdk.Stack {
 
     new MSC_AdminNestedStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}AdminStack`, {
       env: props?.env,
+      event_registrations_table: tables.event_registrations_table,
+      events_table: tables.events_table,
       signatures_bucket: buckets.signatures_bucket,
       shop_images_bucket: buckets.shop_images_bucket,
       member_user_pool: member_user_pool,
