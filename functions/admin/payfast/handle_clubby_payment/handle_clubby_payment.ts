@@ -13,10 +13,9 @@ type MonthlyBillingRecord = {
     month_paid?: boolean;
     order_amount?: number;
     support_email: string;
-    outstanding_amount?: number;
+    outstanding_amount: number;
     payment_date?: number;
     registration_amount?: number;
-    total_amount: number;
     total_emails?: number;
     total_registered_users?: number;
     total_sales?: number;
@@ -67,7 +66,7 @@ function buildInvoiceEmail(month: MonthlyBillingRecord) {
     const emailAmount = getNumberValue(month.email_amount);
     const totalSales = getNumberValue(month.total_sales);
     const orderAmount = getNumberValue(month.order_amount);
-    const totalAmount = getNumberValue(month.total_amount) || registrationAmount + emailAmount + orderAmount;
+    const totalAmount = getNumberValue(month.outstanding_amount) || registrationAmount + emailAmount + orderAmount;
     const invoiceDate = new Date().toLocaleDateString("en-ZA", {
         year: "numeric",
         month: "long",
@@ -185,9 +184,61 @@ function buildInvoiceEmail(month: MonthlyBillingRecord) {
     };
 }
 
+function buildCurrentMonthPaymentEmail(month: MonthlyBillingRecord) {
+    const billingMonth = month.year_month ?? "Unknown month";
+    const clubName = month.club_name ?? "your club";
+    const formattedBillingMonth = formatBillingMonth(billingMonth);
+
+    const html = `
+        <html>
+            <body style="margin:0;padding:24px;background:#f3f4f6;font-family:Arial, Helvetica, sans-serif;color:#111827;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <td align="center">
+                            <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
+                                <tr>
+                                    <td style="padding:32px;border-bottom:3px solid #111827;">
+                                        <div style="font-size:28px;font-weight:700;letter-spacing:0.04em;">Payment received</div>
+                                        <div style="margin-top:10px;font-size:15px;color:#4b5563;">Billing month: ${formattedBillingMonth} (${billingMonth})</div>
+                                        <div style="margin-top:4px;font-size:15px;color:#4b5563;">Club: ${clubName}</div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:32px;">
+                                        <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#374151;">We have received your payment for the current Clubby billing month.</p>
+                                        <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:#374151;">Because this month is still in progress, your invoice will only be generated once the month ends.</p>
+                                        <p style="margin:0;font-size:15px;line-height:1.7;color:#374151;">You will be able to find that invoice under the Billing &amp; Usage tab in Clubby within the admin portal.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+        </html>`;
+
+    const text = [
+        `Payment received for ${clubName}`,
+        `Billing month: ${formattedBillingMonth} (${billingMonth})`,
+        ``,
+        `We have received your payment for the current Clubby billing month.`,
+        `Because this month is still in progress, your invoice will only be generated once the month ends.`,
+        `You will be able to find that invoice under the Billing & Usage tab in Clubby within the admin portal.`
+    ].join("\n");
+
+    return {
+        subject: `Payment received for ${formattedBillingMonth}`,
+        html,
+        text
+    };
+}
+
 async function sendInvoiceEmail(month: MonthlyBillingRecord) {
     const sourceEmail = `admin@${process.env.DOMAIN as string}`;
-    const invoiceEmail = buildInvoiceEmail(month);
+    const currentYearMonth = getCurrentYearMonth();
+    const invoiceEmail = month.year_month === currentYearMonth
+        ? buildCurrentMonthPaymentEmail(month)
+        : buildInvoiceEmail(month);
 
     const command = new SendEmailCommand({
         Destination: {
@@ -273,7 +324,6 @@ async function updateMonthlyBillingTable(
 export const handler = async (event: any) => {
     console.log('Received event:', JSON.stringify(event));
     const passPhrase = process.env.PAYFAST_PASSPHRASE;
-    const currentYearMonth = getCurrentYearMonth();
 
     const bodyString = event.body || "";
     console.log('Event Body:', bodyString);
@@ -313,7 +363,7 @@ export const handler = async (event: any) => {
         }
 
         for (const month of allMonths) {
-            if (month.month_paid === true || month.year_month === currentYearMonth) {
+            if (month.month_paid === true) {
                 continue;
             }
             months.push(month);
@@ -331,14 +381,14 @@ export const handler = async (event: any) => {
             }
         ) as MonthlyBillingRecord;
 
-        if (month == null || month.month_paid === true || month.year_month === currentYearMonth) {
+        if (month == null || month.month_paid === true) {
             return { statusCode: 200, body: "Invalid payment" };
         }
 
         months.push(month);
     }
 
-    const amount_to_be_paid = roundDownToSecondDecimalPlace(months.reduce((total, month) => total + getNumberValue(month.total_amount), 0));
+    const amount_to_be_paid = roundDownToSecondDecimalPlace(months.reduce((total, month) => total + getNumberValue(month.outstanding_amount), 0));
 
     if (amount_to_be_paid <= 0) {
         return { statusCode: 200, body: "Invalid payment" };
@@ -363,14 +413,14 @@ export const handler = async (event: any) => {
             await addToTransactionsTable(
                 club_account_id,
                 transaction_id,
-                month.total_amount,
+                month.outstanding_amount,
                 month.year_month
             );
 
             await updateMonthlyBillingTable(
                 club_account_id,
                 month.year_month,
-                month.total_amount
+                month.outstanding_amount
             );
 
             try {

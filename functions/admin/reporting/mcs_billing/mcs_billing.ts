@@ -48,6 +48,7 @@ const processBillingData = (monthly_billing: Record<string, any>[], club: Record
             month: month.year_month,
             month_paid: month?.month_paid ?? false,
             payment_date: month?.payment_date ?? undefined,
+            outstanding_amount: month?.outstanding_amount ?? 0,
         });
 
         report.Orders["Total sales"] += month?.total_sales ?? 0
@@ -91,6 +92,7 @@ const processBillingData = (monthly_billing: Record<string, any>[], club: Record
         report.overall_month_data[month.year_month].registration_amount = month?.registration_amount ?? 0
         report.overall_month_data[month.year_month].total_amount = month.total_amount
         report.overall_month_data[month.year_month].order_amount = month?.order_amount ?? 0
+        report.overall_month_data[month.year_month].outstanding_amount = month?.outstanding_amount ?? 0
     });
 
     report.Registrations["Total registration charge"] = formatAmount(report.Registrations["Total registration charge"], club.currency)

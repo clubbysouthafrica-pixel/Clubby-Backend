@@ -5,11 +5,6 @@ function roundDownToSecondDecimalPlace(amount: number): number {
     return Math.floor(amount * 100) / 100;
 }
 
-function getCurrentYearMonth(): string {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
-
 async function generateSinglePaymentUrl(amount: number, year_month: string, club_account_id: string) {
 
     const club = await getItem(
@@ -103,7 +98,6 @@ async function generateAllPaymentsUrl(amount: number, club_account_id: string) {
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
-    const currentYearMonth = getCurrentYearMonth();
 
     try {
 
@@ -129,10 +123,10 @@ export const handler = async (event: any) => {
 
             let amount = 0;
             for (const month of months) {
-                if (month.month_paid === true || month.year_month === currentYearMonth) {
+                if (month.month_paid === true) {
                     continue;
                 }
-                amount += month.total_amount / 100;
+                amount += month.outstanding_amount / 100;
             }
 
             amount = roundDownToSecondDecimalPlace(amount);
@@ -144,11 +138,6 @@ export const handler = async (event: any) => {
             return createResponse(200, { payment_url: await generateAllPaymentsUrl(amount, query_string_params.club_account_id) }, origin);
 
         } else {
-
-            if (query_string_params.year_month === currentYearMonth) {
-                return createResponse(500, { message: "The current month cannot be paid as it is not complete." }, origin);
-            }
-
             const month = await getItem(
                 process.env.MONTHLY_BILLING_TABLE_NAME as string,
                 {
@@ -161,7 +150,7 @@ export const handler = async (event: any) => {
                 return createResponse(400, { message: "This month's bill has already been paid." }, origin);
             }
 
-            const amount = roundDownToSecondDecimalPlace((month?.total_amount ?? 0) / 100);
+            const amount = roundDownToSecondDecimalPlace((month?.outstanding_amount ?? 0) / 100);
 
             if (amount == null || amount <= 0) {
                 return createResponse(400, { message: "No outstanding amount for this month." }, origin);

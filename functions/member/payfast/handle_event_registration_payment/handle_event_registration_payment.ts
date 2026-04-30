@@ -59,7 +59,7 @@ async function updateEventRegistrationsTable(
     );
 }
 
-async function updateClubsOrderBilling(club_account_id: string, fee: number) {
+async function updateClubsEventRegistrationBilling(club_account_id: string, fee: number) {
     const now = new Date();
     const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -70,21 +70,21 @@ async function updateClubsOrderBilling(club_account_id: string, fee: number) {
             year_month: year_month,
         },
         `SET 
-            #total_sales = if_not_exists(#total_sales, :zero) + :one,
             #total_amount = if_not_exists(#total_amount, :zero) + :order_fee,
             #outstanding_amount = if_not_exists(#outstanding_amount, :zero) + :order_fee,
-            #events_amount = if_not_exists(#events_amount, :zero) + :order_fee
+            #events_amount = if_not_exists(#events_amount, :zero) + :order_fee,
+            #month_paid = :month_paid
         `,
         {
-            "#total_sales": "total_sales",
             "#total_amount": "total_amount",
             "#outstanding_amount": "outstanding_amount",
-            "#events_amount": "events_amount"
+            "#events_amount": "events_amount",
+            "#month_paid": "month_paid"
         },
         {
-            ":one": 1,
             ":zero": 0,
             ":order_fee": fee,
+            ":month_paid": false
         }
     );
 }
@@ -165,7 +165,7 @@ export const handler = async (event: any) => {
             selected_event?.autoConfirmIfPaid ?? true
         );
 
-        await updateClubsOrderBilling(club_account_id, event_registration.entry_fee_amount * 0.02);
+        await updateClubsEventRegistrationBilling(club_account_id, event_registration.entry_fee_amount * 0.02);
     }
 
     return { statusCode: 200, body: "OK" };

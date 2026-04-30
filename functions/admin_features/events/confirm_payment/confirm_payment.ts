@@ -64,6 +64,36 @@ async function updateEventRegistration(
 	);
 }
 
+async function updateClubsEventRegistrationBilling(club_account_id: string, fee: number) {
+	const now = new Date();
+	const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+	await updateItem(
+		process.env.MONTHLY_BILLING_TABLE_NAME as string,
+		{
+			club_account_id: club_account_id,
+			year_month: year_month,
+		},
+		`SET 
+			#total_amount = if_not_exists(#total_amount, :zero) + :order_fee,
+			#outstanding_amount = if_not_exists(#outstanding_amount, :zero) + :order_fee,
+			#events_amount = if_not_exists(#events_amount, :zero) + :order_fee,
+			#month_paid = :month_paid
+		`,
+		{
+			"#total_amount": "total_amount",
+			"#outstanding_amount": "outstanding_amount",
+			"#events_amount": "events_amount",
+			"#month_paid": "month_paid"
+		},
+		{
+			":zero": 0,
+			":order_fee": fee,
+			":month_paid": false
+		}
+	);
+}
+
 export const handler = async (event: any) => {
 	const { origin, body } = deconstructEvent(event);
 
@@ -189,6 +219,8 @@ export const handler = async (event: any) => {
 			payment_status,
 			selected_event?.autoConfirmIfPaid ?? true
 		);
+
+		await updateClubsEventRegistrationBilling(club_account_id, amount_paid * 0.02);
 
 		return createResponse(200, {
 			message: payment_status === "PAID"
