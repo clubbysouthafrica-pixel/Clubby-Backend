@@ -50,6 +50,11 @@ export class MSC_TablesConstruct extends Construct {
             indexName: "UserIDIndex",
             partitionKey: { name: "user_id", type: AttributeType.STRING },
           },
+          {
+            indexName: "UserIDClubAccountIDIndex",
+            partitionKey: { name: "user_id", type: AttributeType.STRING },
+            sortKey: { name: "club_account_id", type: AttributeType.STRING },
+          }
         ],
       },
     );
