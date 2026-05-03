@@ -218,10 +218,10 @@ export class MSC_MemberNestedStack extends Stack {
       storage_table: props.storage_table,
       storage_request_table: props.storage_requests_table,
       club_table: props.club_table,
-      orders_table: props.orders_table,
       transactions_table: props.transactions_table,
       token_authorizer: jwt_construct.token_authorizer,
       layers: all_layers,
+      club_member_table: props.club_member_table,
     });
   }
 }

@@ -42,6 +42,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     kms_key: MSC_Kms;
     event_registrations_table: MSC_Table;
     events_table: MSC_Table;
+    storage_requests_table: MSC_Table;
 }
 
 export class MSC_AdminNestedStack extends Stack {
@@ -102,6 +103,7 @@ export class MSC_AdminNestedStack extends Stack {
 
         new MSC_DeregistrationConstruct(this, `${id}-Deregistration`, {
             api_gateway: api_gateway,
+            storage_requests_table: props.storage_requests_table,
             transactions_table: props.transactions_table,
             club_table: props.club_table,
             billing_table: props.billing_table,

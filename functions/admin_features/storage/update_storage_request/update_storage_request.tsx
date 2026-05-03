@@ -1,6 +1,7 @@
 import {
   createResponse,
   deconstructEvent,
+  getItem,
   updateItem,
 } from "./function_helpers";
 
@@ -103,6 +104,66 @@ const setStorageToBooked = async (
   );
 };
 
+const cancelStorageTransaction = async (
+  club_account_id: string,
+  transaction_id: string,
+) => {
+  await updateItem(
+    process.env.TRANSACTIONS_TABLE_NAME as string,
+    {
+      club_account_id,
+      transaction_id,
+    },
+    "SET #status = :status, #lifecycle.#ts = :lifecycleValue",
+    {
+      "#status": "status",
+      "#lifecycle": "lifecycle",
+      "#ts": `${Date.now()}`,
+    },
+    {
+      ":status": "CANCELLED",
+      ":lifecycleValue": {
+        type: "CANCELLATION",
+        description: "Transaction cancelled due to storage rejection",
+        amount: "N/A",
+        payment_type: "N/A",
+      },
+    },
+  );
+};
+
+const confirmStorageTransaction = async (
+  club_account_id: string,
+  transaction_id: string,
+  payment_amount: number,
+  payment_type: string,
+) => {
+  await updateItem(
+    process.env.TRANSACTIONS_TABLE_NAME as string,
+    {
+      club_account_id,
+      transaction_id,
+    },
+    "SET #amount_paid = #amount_paid + :payment_amount, #status = :status, #lifecycle.#ts = :lifecycleValue",
+    {
+      "#amount_paid": "amount_paid",
+      "#status": "status",
+      "#lifecycle": "lifecycle",
+      "#ts": `${Date.now()}`,
+    },
+    {
+      ":status": "PAID",
+      ":payment_amount": payment_amount,
+      ":lifecycleValue": {
+        type: "CONFIRMATION",
+        description: "Payment confirmation",
+        amount: payment_amount,
+        payment_type,
+      },
+    },
+  );
+};
+
 export const handler = async (event: any) => {
   const { origin, body } = deconstructEvent(event);
 
@@ -113,6 +174,7 @@ export const handler = async (event: any) => {
     }
 
     const storage_request_id = body?.storage_request_id ?? body?.id;
+    const club_account_id = body?.club_account_id;
 
     const tableName = process.env.STORAGE_REQUESTS_TABLE as string;
     if (!tableName) {
@@ -121,6 +183,29 @@ export const handler = async (event: any) => {
         {
           message: "Server misconfigured: missing STORAGE_REQUESTS_TABLE",
         },
+        origin,
+      );
+    }
+
+    if (!club_account_id || typeof club_account_id !== "string") {
+      return createResponse(
+        400,
+        {
+          message: "club_account_id is required and must be a non-empty string",
+        },
+        origin,
+      );
+    }
+
+    const existingStorageRequest = await getItem(tableName, {
+      storage_request_id,
+      club_account_id,
+    });
+
+    if (!existingStorageRequest) {
+      return createResponse(
+        404,
+        { message: "Storage request not found" },
         origin,
       );
     }
@@ -173,7 +258,7 @@ export const handler = async (event: any) => {
       // (table_name, key, update_expression, expression_attribute_names, expression_attribute_values, condition_expression?, return_values?)
       const updated = await updateItem(
         tableName,
-        { storage_request_id, club_account_id: body.club_account_id },
+        { storage_request_id, club_account_id },
         updateExpression,
         exprNames,
         exprValues,
@@ -181,15 +266,38 @@ export const handler = async (event: any) => {
         true, // return ALL_NEW
       );
 
-      if (
-        body.status === "approved" &&
-        body.storage_id &&
-        body.club_account_id
-      ) {
+      const transitionedToPaid =
+        body.paid === true && existingStorageRequest.paid !== true;
+      const resolvedTransactionId =
+        updated?.transaction_id ?? existingStorageRequest.transaction_id;
+
+      if (body.status === "approved" && body.storage_id && club_account_id) {
         // Set storage to booked (isBooked = true) so it no longer appears available in list_storage function or disabled for purchasing
-        await setStorageToBooked(body.club_account_id, body.storage_id, true);
+        if (transitionedToPaid && resolvedTransactionId) {
+          const paymentAmount = Number(
+            updated?.costCents ?? existingStorageRequest.costCents ?? 0,
+          );
+
+          if (paymentAmount > 0) {
+            await confirmStorageTransaction(
+              club_account_id,
+              resolvedTransactionId,
+              paymentAmount,
+              updated?.paymentMethod ??
+                existingStorageRequest.paymentMethod ??
+                "EFT/Cash",
+            );
+          }
+        }
+        await setStorageToBooked(club_account_id, body.storage_id, true);
       } else if (body.status === "cancelled" || body.status === "rejected") {
-        await setStorageToBooked(body.club_account_id, body.storage_id, false);
+        if (resolvedTransactionId) {
+          await cancelStorageTransaction(
+            club_account_id,
+            resolvedTransactionId,
+          );
+        }
+        await setStorageToBooked(club_account_id, body.storage_id, false);
       }
 
       return createResponse(

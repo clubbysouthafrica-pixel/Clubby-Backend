@@ -21,6 +21,7 @@ interface MSC_StorageRequestConstructProps {
   layers: {
     jwt_layer: MSC_LambdaLayer;
   };
+  transactions_table: MSC_Table;
 }
 
 export class MSC_StorageRequestConstruct extends Construct {
@@ -39,10 +40,13 @@ export class MSC_StorageRequestConstruct extends Construct {
         envVariables: {
           STORAGE_TABLE_NAME: props.storage_table.tableName,
           STORAGE_REQUESTS_TABLE: props.storage_requests_table.tableName,
+          TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
         },
         permissions: {
+          [props.transactions_table.tableArn]: ["dynamodb:UpdateItem"],
           [props.storage_requests_table.tableArn]: [
             "dynamodb:PutItem",
+            "dynamodb:GetItem",
             "dynamodb:UpdateItem",
           ],
           [props.storage_table.tableArn]: [

@@ -3,6 +3,7 @@ import {
   deconstructEvent,
   addItem,
   updateItem,
+  getItem,
 } from "./function_helpers";
 import { randomUUID } from "crypto";
 
@@ -49,14 +50,12 @@ async function addToTransactionsTable(
   transaction_id: string,
   user_id: string,
   order_amount: number,
-  order_id: string,
   storage_request_id: string,
 ) {
   await addItem(process.env.TRANSACTIONS_TABLE_NAME as string, {
     club_account_id: club_account_id,
     name: `${first_name} ${surname}`,
     transaction_id: transaction_id,
-    order_id: order_id,
     user_id: user_id as string,
     amount_paid: 0,
     club_income: true,
@@ -65,7 +64,7 @@ async function addToTransactionsTable(
     storage_request_id: storage_request_id,
     lifecycle: {
       [Date.now()]: {
-        description: "Order submission",
+        description: "Storage request submission",
         amount: order_amount,
         type: "SUBMISSION",
       },
@@ -76,9 +75,6 @@ async function addToTransactionsTable(
 }
 
 const createOrder = async (orderRequest: OrderRequest): Promise<string> => {
-  const order_id = randomUUID();
-  const created_date = Math.floor(Date.now() / 1000);
-
   const transaction_id = randomUUID();
 
   for (const item of orderRequest.items) {
@@ -86,24 +82,6 @@ const createOrder = async (orderRequest: OrderRequest): Promise<string> => {
     item["fulfillment_quantity"] = 0;
   }
 
-  const orderItem = {
-    order_id,
-    transaction_id,
-    first_name: orderRequest.user_first_name,
-    surname: orderRequest.user_surname,
-    club_account_id: orderRequest.club_account_id,
-    user_id: orderRequest.user_id as string,
-    items: orderRequest.items,
-    total_amount: orderRequest.total_amount,
-    total_items: orderRequest.total_items,
-    payment_status: "PENDING",
-    fulfillment_status: "NOT_PROCESSED",
-    order_confirmed_by_admin: false,
-    created_date,
-    amount_paid: 0,
-  };
-
-  await addItem(process.env.ORDER_TABLE_NAME!, orderItem);
   await addToTransactionsTable(
     orderRequest.club_account_id,
     orderRequest.user_first_name,
@@ -111,7 +89,6 @@ const createOrder = async (orderRequest: OrderRequest): Promise<string> => {
     transaction_id,
     orderRequest.user_id as string,
     orderRequest.total_amount,
-    order_id,
     orderRequest.storage_request_id,
   );
 
@@ -217,6 +194,30 @@ export const handler = async (event: any) => {
       body?.paymentIntentId ?? body?.payment_intent_id ?? null;
     const notes = body?.notes ?? null;
     const club_account_id = body?.club_account_id ?? body?.clubAccountId;
+    const clubMemberTableName = process.env.CLUB_MEMBER_TABLE_NAME as string;
+
+    if (!clubMemberTableName) {
+      return createResponse(
+        500,
+        {
+          message: "Server misconfigured: missing CLUB_MEMBER_TABLE_NAME",
+        },
+        origin,
+      );
+    }
+
+    const club_member = await getItem(clubMemberTableName, {
+      club_account_id: club_account_id,
+      user_id: user_id as string,
+    });
+
+    if (!club_member) {
+      return createResponse(
+        403,
+        { message: "User is not a member of the specified club." },
+        origin,
+      );
+    }
 
     // Determine userId: prefer user_id from deconstructEvent
     const userId = user_id ?? body?.userId ?? body?.user_id;
@@ -360,8 +361,8 @@ export const handler = async (event: any) => {
             storage_request_id: item.storage_request_id,
           },
         ],
-        user_first_name: "",
-        user_surname: "",
+        user_first_name: club_member.member_first_name,
+        user_surname: club_member.member_surname,
         club_account_id: item.club_account_id,
         user_id: item.userId,
         total_amount: item.costCents,

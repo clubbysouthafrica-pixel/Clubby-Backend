@@ -235,6 +235,30 @@ async function handleOrders(club_account_id: string, cycle_name: string) {
     await addToHistoricalReportingBucket(club_account_id, cycle_name, "Orders", historical_reports);
 }
 
+async function handleStorageRequests(club_account_id: string, cycle_name: string) {
+    const storage_requests = await queryItems(
+        process.env.STORAGE_REQUESTS_TABLE_NAME as string,
+        "club_account_id = :clubId",
+        { ":clubId": club_account_id }
+    );
+
+    const historical_reports: any[] = []
+    if (storage_requests) {
+        for (const request of storage_requests) {
+            historical_reports.push(request);
+
+            await removeItem(
+                process.env.STORAGE_REQUESTS_TABLE_NAME as string,
+                {
+                    club_account_id: club_account_id,
+                    storage_request_id: request.storage_request_id
+                }
+            )
+        }
+    }
+    await addToHistoricalReportingBucket(club_account_id, cycle_name, "StorageRequests", historical_reports);
+}
+
 async function handleEventRegistrations(club_account_id: string, cycle_name: string) {
     const events = await queryItems(
         process.env.EVENTS_TABLE_NAME as string,
@@ -362,6 +386,7 @@ export const handler = async (event: any) => {
             await handleRegistrationForm(club_account_id, cycle_name);
             await handleOrders(club_account_id, cycle_name);
             await handleEventRegistrations(club_account_id, cycle_name);
+            await handleStorageRequests(club_account_id, cycle_name);
             await deleteClubSignatures(club_account_id);
 
             const currentEpoch = Date.now();

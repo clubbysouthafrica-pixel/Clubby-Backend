@@ -114,6 +114,7 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
       token_authorizer: jwt_construct.token_authorizer,
       storage_requests_table: props.storage_requests_table,
       club_table: props.club_table,
+      transactions_table: props.transactions_table,
       layers: all_layers,
     });
   }

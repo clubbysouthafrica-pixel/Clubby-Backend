@@ -18,6 +18,7 @@ interface MSC_DeregistrationConstructProps {
     club_history_bucket: MSC_Bucket;
     signatures_bucket: MSC_Bucket;
     event_registrations_table: MSC_Table;
+    storage_requests_table: MSC_Table;
     events_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
@@ -99,9 +100,14 @@ export class MSC_DeregistrationConstruct extends Construct {
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 ORDERS_TABLE_NAME: props.orders_table.tableName,
                 EVENTS_TABLE_NAME: props.events_table.tableName,
-                EVENT_REGISTRATIONS_TABLE_NAME: props.event_registrations_table.tableName
+                EVENT_REGISTRATIONS_TABLE_NAME: props.event_registrations_table.tableName,
+                STORAGE_REQUESTS_TABLE_NAME: props.storage_requests_table.tableName
             },
             permissions: {
+                [props.storage_requests_table.tableArn]: [
+                    "dynamodb:Query",
+                    "dynamodb:DeleteItem"
+                ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem",
                     "dynamodb:UpdateItem"
@@ -206,6 +212,20 @@ export class MSC_DeregistrationConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const storage_status = new MSC_Lambda(this, `${id}-StorageStatus`, {
+            code: "admin/deregistration/storage_status",
+            envVariables: {
+                STORAGE_REQUESTS_TABLE_NAME: props.storage_requests_table.tableName
+            },
+            permissions: {
+                [props.storage_requests_table.tableArn]: [
+                    "dynamodb:Query"
+                ]
+            },
+            timeout: 10,
+            layers: [props.layers.jwt_layer]
+        });
+
         const deregistration_resource = props.api_gateway.root.addResource("deregistration");
 
         const deregister_season_resource = deregistration_resource.addResource("season");
@@ -213,6 +233,7 @@ export class MSC_DeregistrationConstruct extends Construct {
         const shop_status_resource = deregistration_resource.addResource("shop");
         const registration_status_resource = deregistration_resource.addResource("registration");
         const event_status_resource = deregistration_resource.addResource("events");
+        const storage_status_resource = deregistration_resource.addResource("storage");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -225,5 +246,6 @@ export class MSC_DeregistrationConstruct extends Construct {
         addCorsEnabledMethod(shop_status_resource, shop_status, methodOptions, undefined, "GET");
         addCorsEnabledMethod(registration_status_resource, registration_status, methodOptions, undefined, "GET");
         addCorsEnabledMethod(event_status_resource, event_status, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(storage_status_resource, storage_status, methodOptions, undefined, "GET");
     }
 }

@@ -71,6 +71,7 @@ export class MSC_Stack extends cdk.Stack {
       env: props?.env,
       event_registrations_table: tables.event_registrations_table,
       events_table: tables.events_table,
+      storage_requests_table: tables.storage_request_table,
       signatures_bucket: buckets.signatures_bucket,
       shop_images_bucket: buckets.shop_images_bucket,
       member_user_pool: member_user_pool,
