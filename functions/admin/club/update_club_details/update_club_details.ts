@@ -343,6 +343,12 @@ export const handler = async (event: any) => {
       expressionAttributeValues[":enable_shop"] = body.enable_shop;
     }
 
+    if (typeof body?.enable_storage === "boolean") {
+      updateParts.push("#enable_storage = :enable_storage");
+      expressionAttributeNames["#enable_storage"] = "enable_storage";
+      expressionAttributeValues[":enable_storage"] = body.enable_storage;
+    }
+
     if (updateParts.length === 0) {
       return createResponse(200, { message: "Nothing to update." }, origin);
     }

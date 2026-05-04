@@ -1,6 +1,7 @@
 import {
   createResponse,
   deconstructEvent,
+  getItem,
   scanItems,
 } from "./function_helpers";
 
@@ -31,6 +32,14 @@ export const handler = async (event: any) => {
 
     const limit = limitParam !== undefined ? Number(limitParam) : undefined;
     const offset = offsetParam !== undefined ? Number(offsetParam) : 0;
+
+    const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
+      club_account_id,
+    });
+
+    if (!club) {
+      return createResponse(404, { message: "Club not found" }, origin);
+    }
 
     // Validate limit/offset if provided
     if (
@@ -94,6 +103,7 @@ export const handler = async (event: any) => {
         total,
         limit: limit ?? null,
         offset: offset ?? 0,
+        enable_storage: club?.enable_storage ?? false,
       },
       origin,
     );

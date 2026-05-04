@@ -1,5 +1,5 @@
 import { createResponse, deconstructEvent } from "./function_helpers";
-import { scanItems } from "./function_helpers/database_functions";
+import { getItem, scanItems } from "./function_helpers/database_functions";
 
 export const handler = async (event: any) => {
   const { origin, body, query_string_params } = deconstructEvent(event);
@@ -45,7 +45,18 @@ export const handler = async (event: any) => {
     const limit = limitParam !== undefined ? Number(limitParam) : undefined;
     const offset = offsetParam !== undefined ? Number(offsetParam) : 0;
 
-    // Validate limit/offset if provided
+    const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
+      club_account_id:
+        body?.club_account_id ??
+        body?.clubId ??
+        query_string_params?.club_account_id ??
+        query_string_params?.clubId ??
+        null,
+    });
+    if (!club) {
+      return createResponse(404, { message: "Club not found" }, origin);
+    }
+    
     if (
       (limit !== undefined && (Number.isNaN(limit) || limit < 1)) ||
       Number.isNaN(offset) ||
@@ -121,6 +132,7 @@ export const handler = async (event: any) => {
         total,
         limit: limit ?? null,
         offset: offset ?? 0,
+        enable_storage: club?.enable_storage ?? false,
       },
       origin,
     );
