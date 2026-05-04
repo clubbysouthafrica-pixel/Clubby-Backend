@@ -349,6 +349,12 @@ export const handler = async (event: any) => {
       expressionAttributeValues[":enable_storage"] = body.enable_storage;
     }
 
+    if (typeof body?.club_name === "string") {
+      updateParts.push("#club_name = :club_name");
+      expressionAttributeNames["#club_name"] = "club_name";
+      expressionAttributeValues[":club_name"] = body.club_name;
+    }
+
     if (updateParts.length === 0) {
       return createResponse(200, { message: "Nothing to update." }, origin);
     }
