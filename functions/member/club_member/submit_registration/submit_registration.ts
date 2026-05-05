@@ -324,7 +324,7 @@ export const handler = async (event: any) => {
             else standardFields.push(field as StandardField);
         });
 
-        const membership_amount = validateBillingField(billingFields, body.billing_fields);
+        const membership_amount = validateBillingField(billingFields, body.billing_fields, club.time_zone);
         if (typeof membership_amount === 'string') {
             return createResponse(400, { message: membership_amount }, origin);
         }
@@ -337,7 +337,7 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: standardFieldValidation }, origin);
         }
 
-        const billing_fields = billingFieldMapping(body.billing_fields, form);
+        const billing_fields = billingFieldMapping(body.billing_fields, form, club.time_zone);
 
         const standard_fields = await standardFieldMapping(
             body.standard_fields,

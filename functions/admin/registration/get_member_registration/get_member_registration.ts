@@ -172,10 +172,17 @@ export const handler = async (event: any) => {
                     }
 
                     else if (key.includes(field.field_id) && reg.type.includes("BILLING_")) {
+                        const formattedValue = reg.label_value
+                            ? `${reg.label_value} - ${reg.value === 0 ? "FREE" : formatAmount(reg.value, query_string_params.currency)}`
+                            : formatAmount(reg.value, query_string_params.currency);
+                        const prorataDisplay = reg.prorata_applied === "true" && typeof reg.prorata_percentage === "number"
+                            ? ` (Prorata ${reg.prorata_percentage}% applied${typeof reg.original_value === "number" ? ` from ${formatAmount(reg.original_value, query_string_params.currency)}` : ""})`
+                            : "";
+
                         new_page.fields.push({
                             type: "BILLING",
                             label: field.field_name,
-                            value: reg.label_value ? `${reg.label_value} - ${reg.value === 0 ? "FREE" : formatAmount(reg.value, query_string_params.currency)}` : formatAmount(reg.value, query_string_params.currency),
+                            value: `${formattedValue}${prorataDisplay}`,
                             quantity: reg.multiplier_value > 1 ? reg.multiplier_value : undefined,
                             position: field.field_order_id,
                             visible: field?.visible ?? true

@@ -31,6 +31,18 @@ export interface BillingOption {
     id: string;
 }
 
+export interface ProrataRule {
+    id: string;
+    prorata_start_date: string;
+    prorata_end_date: string;
+    prorata_percentage: number;
+}
+
+export interface ProrataConfig {
+    enabled: boolean;
+    rules: ProrataRule[];
+}
+
 export interface BillingField {
     field_id?: string;
     field_name: string;
@@ -42,7 +54,23 @@ export interface BillingField {
     currency: CurrencyType;
     amount?: number;
     billingOptions?: BillingOption[];
+    prorata?: ProrataConfig;
     field_type: 'BILLING';
+}
+
+function isProrataConfig(obj: any): obj is ProrataConfig {
+    return typeof obj === 'object' &&
+        typeof obj.enabled === 'boolean' &&
+        Array.isArray(obj.rules) &&
+        obj.rules.every((rule: any) =>
+            typeof rule === 'object' &&
+            typeof rule.id === 'string' &&
+            typeof rule.prorata_start_date === 'string' &&
+            !isNaN(Date.parse(rule.prorata_start_date)) &&
+            typeof rule.prorata_end_date === 'string' &&
+            !isNaN(Date.parse(rule.prorata_end_date)) &&
+            typeof rule.prorata_percentage === 'number'
+        );
 }
 
 function isBillingField(obj: any): obj is BillingField {
@@ -54,6 +82,7 @@ function isBillingField(obj: any): obj is BillingField {
 
     return obj.field_type === 'BILLING' &&
         (isDropdown || isText || isNumber) &&
+        (obj.prorata === undefined || isProrataConfig(obj.prorata)) &&
         typeof obj === 'object' &&
         typeof obj.placeholder === 'string' &&
         typeof obj.field_name === 'string' &&
@@ -187,6 +216,7 @@ export const handler = async (event: any) => {
                 item.required = field.required;
                 item.field_name = field.field_name;
                 item.multiplier = field.multiplier;
+                item.prorata = field.prorata;
                 if (field.input_type === 'TEXT') {
                     item.amount = field.amount;
                 } else if (field.input_type === 'DROPDOWN') {
