@@ -62,6 +62,7 @@ export const handler = async (event: any) => {
             const set = unmarshall(item);
 
             if (!set.visible) return
+            if (item.field_type?.S === "BILLING" && item.input_type?.S === "DISCOUNT") return
 
             delete set.club_account_id;
             delete set.visible;
@@ -175,26 +176,6 @@ export const handler = async (event: any) => {
                                     label: matchedOption.label,
                                     selectedAmountCents: matchedOption.amount,
                                     option_order_id: matchedOption.option_order_id,
-                                };
-                            }
-                        } else if (
-                            field.input_type === "DISCOUNT" &&
-                            field.discountOptions
-                        ) {
-                            const matchedOption = field.discountOptions.find(
-                                (opt: any) => opt.option_order_id === metaField.option_order_id
-                            );
-
-                            if (matchedOption) {
-                                return {
-                                    ...field,
-                                    percentage: metaField.value,
-                                    value: metaField.label_value,
-                                    label: metaField.label_value,
-                                    multiplier_value: metaField?.multiplier_value ?? undefined,
-                                    option_order_id: metaField.option_order_id,
-                                    applicable_billing_fields:
-                                        matchedOption.applicable_billing_fields,
                                 };
                             }
                         } else {

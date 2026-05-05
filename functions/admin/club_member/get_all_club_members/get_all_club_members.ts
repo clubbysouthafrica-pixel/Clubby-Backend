@@ -196,7 +196,12 @@ const getMembersPageData = async (
                 { ":userId": item.user_id }
             );
 
-            if (!allRegistrations || allRegistrations.length === 0) {
+            const clubRegistrations = (allRegistrations || []).filter(
+                (registration: any) =>
+                    registration.club_account_id === query_string_params.club_account_id,
+            );
+
+            if (!allRegistrations || allRegistrations.length === 0 || clubRegistrations.length === 0) {
                 members.push({
                     user_id: item.user_id,
                     member_first_name: item.member_first_name,
@@ -210,12 +215,8 @@ const getMembersPageData = async (
                 continue;
             }
 
-            for (const registration of allRegistrations || []) {
+            for (const registration of clubRegistrations) {
                 if (registrationFilters.length > 0 && !registration) {
-                    continue;
-                }
-
-                if (registration.club_account_id !== query_string_params.club_account_id) {
                     continue;
                 }
 
@@ -501,16 +502,6 @@ const getRegistrationPageData = async (
                     field_id: field.field_id,
                     field_name: field.field_name,
                     options: field.billingOptions.map((bo: any) => bo.label),
-                    type: "billing"
-                }
-            );
-        } else if (field.field_type === "BILLING" && field.input_type === "DISCOUNT") {
-            filters.push(
-                {
-                    key: `billing:${field.field_name}`,
-                    field_id: field.field_id,
-                    field_name: field.field_name,
-                    options: field.discountOptions.map((discount_option: any) => discount_option.label),
                     type: "billing"
                 }
             );

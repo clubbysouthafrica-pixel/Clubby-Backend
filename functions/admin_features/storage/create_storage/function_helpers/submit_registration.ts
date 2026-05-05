@@ -4,7 +4,7 @@ import { encryptData } from "./kms_encryption";
 
 const s3_client = new S3Client({ region: process.env.REGION });
 
-export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO' | 'CHECKBOX' | 'SIGNATURE' | 'DISCOUNT';
+export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO' | 'CHECKBOX' | 'SIGNATURE';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP';
 
 export interface StandardField {
@@ -33,8 +33,6 @@ interface SubmittedField {
     field_id: string;
     option_order_id?: string;
     multiplier_value?: number;
-    percentage?: number;
-    applicable_billing_fields: string[];
 }
 
 export function validateBillingField(billingFields: BillingField[], submittedFields: SubmittedField[]): number | null | string {
@@ -59,35 +57,15 @@ export function validateBillingField(billingFields: BillingField[], submittedFie
         }
     }
 
-    const discount_fields: { percentage?: number; applicable_billing_fields: string[] }[] = []
-    submittedFields.forEach(sub_field => {
-        billingFields.forEach(billing_field => {
-            if (billing_field.input_type === "DISCOUNT" && billing_field.field_id === sub_field.field_id) {
-                discount_fields.push({
-                    percentage: sub_field.percentage,
-                    applicable_billing_fields: sub_field.applicable_billing_fields
-                });
-            }
-        })
-    })
-
     let total_amount = 0;
     submittedFields.forEach(sub_field => {
         billingFields.forEach(billing_field => {
-
-            let percentage = 1;
-            discount_fields.forEach(discount_field => {
-                if (discount_field.applicable_billing_fields.includes(billing_field.field_id) && discount_field.percentage) {
-                    percentage -= (discount_field.percentage / 100);
-                }
-            })
-
             if (billing_field.input_type === "TEXT" && billing_field.field_id === sub_field.field_id) {
 
                 if (sub_field?.multiplier_value) {
-                    total_amount += ((billing_field.amount ?? 0) * sub_field.multiplier_value) * percentage;
+                    total_amount += (billing_field.amount ?? 0) * sub_field.multiplier_value;
                 } else {
-                    total_amount += (billing_field.amount ?? 0) * percentage;
+                    total_amount += billing_field.amount ?? 0;
                 }
 
             } else if (billing_field.input_type === "DROPDOWN" && billing_field.field_id === sub_field.field_id) {
@@ -95,15 +73,15 @@ export function validateBillingField(billingFields: BillingField[], submittedFie
                     if (billing_options_field.option_order_id === sub_field?.option_order_id) {
 
                         if (sub_field?.multiplier_value) {
-                            total_amount += (billing_options_field.amount * sub_field.multiplier_value) * percentage;
+                            total_amount += billing_options_field.amount * sub_field.multiplier_value;
                         } else {
-                            total_amount += billing_options_field.amount * percentage;
+                            total_amount += billing_options_field.amount;
                         }
 
                     }
                 })
             } else if (billing_field.input_type === "NUMBER" && billing_field.field_id === sub_field.field_id) {
-                total_amount += Number(sub_field.value) * percentage;
+                total_amount += Number(sub_field.value);
             }
         })
     })
@@ -137,29 +115,12 @@ export function validateStandardFields(standardFields: StandardField[], submitte
 }
 
 export function billingFieldMapping(billing_fields: any, form: Record<string, any>[]): any {
-
-    const discount_fields: { percentage?: number; applicable_billing_fields: string[] }[] = []
-    billing_fields.forEach((bf: any) => {
-        if (bf.applicable_billing_fields) {
-            discount_fields.push({
-                percentage: bf.percentage,
-                applicable_billing_fields: bf.applicable_billing_fields
-            });
-        }
-    })
-
     return billing_fields.reduce((acc: Record<string, Record<string, string | number | undefined | string[]>>, field: {
-        value: string; field_id: string; option_order_id?: string; label?: string; multiplier_value?: number, percentage?: number; applicable_billing_fields: string[]
+        value: string; field_id: string; option_order_id?: string; label?: string; multiplier_value?: number
     }) => {
         const f = form.find(f => f.field_id === field.field_id);
 
         acc[`reg_field_${field.field_id}`] = { value: Number(field.value), field_name: f?.field_name, multiplier_value: field?.multiplier_value };
-        discount_fields.forEach(df => {
-            if (df.applicable_billing_fields.includes(field.field_id) && df.percentage) {
-                acc[`reg_field_${field.field_id}`].value = Number(acc[`reg_field_${field.field_id}`].value) - Number(acc[`reg_field_${field.field_id}`].value) * (df.percentage / 100);
-                acc[`reg_field_${field.field_id}`].discount = df.percentage;
-            }
-        })
 
         if (f?.input_type === "DROPDOWN" && field?.label) {
             acc[`reg_field_${field.field_id}`].label_value = field.label
@@ -167,19 +128,6 @@ export function billingFieldMapping(billing_fields: any, form: Record<string, an
 
             if (field?.option_order_id) {
                 acc[`reg_field_${field.field_id}`].option_order_id = field?.option_order_id
-            }
-        } else if (f?.input_type === "DISCOUNT") {
-            acc[`reg_field_${field.field_id}`].label_value = field.label
-            acc[`reg_field_${field.field_id}`].type = "BILLING_DISCOUNT"
-
-            if (field?.option_order_id) {
-                acc[`reg_field_${field.field_id}`].option_order_id = field?.option_order_id
-            }
-            if (field?.percentage) {
-                acc[`reg_field_${field.field_id}`].value = field.percentage;
-            }
-            if (field?.applicable_billing_fields) {
-                acc[`reg_field_${field.field_id}`].applicable_billing_fields = field.applicable_billing_fields;
             }
         } else if (f?.input_type === "NUMBER") {
             acc[`reg_field_${field.field_id}`].type = "BILLING_NUMBER"
