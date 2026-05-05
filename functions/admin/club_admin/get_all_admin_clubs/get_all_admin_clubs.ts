@@ -48,6 +48,7 @@ export const handler = async (event: any) => {
             item.enable_shop = club?.enable_shop === true ? true : false
             item.enable_events = club?.enable_events === true ? true : false
             item.venues_enabled = club?.venues_enabled === true ? true : false
+            item.club_name = club?.club_name ?? "Unknown Club";
         
             return item;
         }));
