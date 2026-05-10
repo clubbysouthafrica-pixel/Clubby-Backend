@@ -309,6 +309,72 @@ async function updateClubMembersTable(
     );
 }
 
+async function updateStorageTable(
+    club_account_id: string,
+    storage_id: string,
+) {
+    await updateItem(
+        process.env.STORAGE_TABLE_NAME as string,
+        {
+            club_account_id,
+            storage_id,
+        },
+        "SET #isBooked = :isBooked",
+        {
+            "#isBooked": "isBooked"
+        },
+        {
+            ":isBooked": true
+        }
+    );
+}
+
+async function updateStorageRequestTable(
+    club_account_id: string,
+    storage_request_id: string,
+    payment_amount: number,
+    payment_method: string
+) {
+    const storageRequest = await getItem(
+        process.env.STORAGE_REQUESTS_TABLE_NAME as string,
+        {
+            club_account_id,
+            storage_request_id
+        }
+    );
+
+    if (!storageRequest) {
+        throw new Error("Associated storage request not found.");
+    }
+
+    await updateItem(
+        process.env.STORAGE_REQUESTS_TABLE_NAME as string,
+        {
+            club_account_id,
+            storage_request_id
+        },
+        "SET #status = :status, #paid = :paid, #costCents = :costCents, #paymentMethod = :paymentMethod, #updatedAt = :updatedAt",
+        {
+            "#status": "status",
+            "#paid": "paid",
+            "#costCents": "costCents",
+            "#paymentMethod": "paymentMethod",
+            "#updatedAt": "updatedAt"
+        },
+        {
+            ":status": "approved",
+            ":paid": true,
+            ":costCents": payment_amount,
+            ":paymentMethod": payment_method,
+            ":updatedAt": new Date().toISOString()
+        }
+    );
+
+    if (storageRequest.storage_id) {
+        await updateStorageTable(club_account_id, storageRequest.storage_id);
+    }
+}
+
 export const handler = async (event: any) => {
     const origin = getOrigin(event);
     console.log("Received event:", JSON.stringify(event));
@@ -412,7 +478,16 @@ export const handler = async (event: any) => {
 
 
         } else if (transaction.type === "STORAGE") {
-            console.log("Don't know yet...")
+            if (!transaction.storage_request_id) {
+                return createResponse(200, { message: "Associated storage request not found." }, origin);
+            }
+
+            await updateStorageRequestTable(
+                club_account_id,
+                transaction.storage_request_id,
+                payload.totalAmount || 0,
+                payload.paymentType || "SnapScan"
+            );
         } else if (transaction.type === "ORDER") {
 
             await updateOrdersTable(club_account_id, transaction.order_id!, payload.totalAmount || 0);
