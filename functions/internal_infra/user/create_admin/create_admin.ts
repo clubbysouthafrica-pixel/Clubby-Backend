@@ -1,11 +1,8 @@
 import {
-  AdminConfirmSignUpCommand,
   AdminCreateUserCommand,
   AdminGetUserCommand,
   AdminSetUserPasswordCommand,
-  AdminUpdateUserAttributesCommand,
   CognitoIdentityProviderClient,
-  SignUpCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 import { createResponse, deconstructEvent, addItem } from "./function_helpers";
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";

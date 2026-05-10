@@ -553,11 +553,6 @@ export const handler = async (event: any) => {
             season_cycle: club.season_cycle
         };
 
-        await addItem(
-            process.env.CLUB_MEMBER_TABLE_NAME as string,
-            item
-        );
-
         if (membership_amount > 0) {
             await addToTransactionsTable(
                 body.club_account_id,
@@ -569,6 +564,11 @@ export const handler = async (event: any) => {
                 current_reg_id
             )
         }
+
+        await addItem(
+            process.env.CLUB_MEMBER_TABLE_NAME as string,
+            item
+        );
 
         if (club.notify_on_member_registration !== false) {
             await sendEmailToAdmin(
@@ -608,7 +608,7 @@ export const handler = async (event: any) => {
             return createResponse(200, { message: "Registration form successfully submitted. No payment required.", amount: 0 }, origin);
         }
 
-        return createResponse(200, { message: "Registration form successfully submitted.", user_id: member_user_id, payment_reference: `${body.first_name} ${body.surname}`, account_number: club.account_number, account_type: club.account_type, bank: club.bank, branch_code: club.branch_code, payfast_enabled: club?.payfast_enabled ?? false, amount: membership_amount }, origin);
+        return createResponse(200, { message: "Registration form successfully submitted.", transaction_id: current_reg_transaction_id, user_id: member_user_id, payment_reference: `${body.first_name} ${body.surname}`, account_number: club.account_number, account_type: club.account_type, bank: club.bank, branch_code: club.branch_code, payfast_enabled: club?.payfast_enabled ?? false, amount: membership_amount }, origin);
 
     } catch (error: any) {
         console.error('Submit registration error:', error);

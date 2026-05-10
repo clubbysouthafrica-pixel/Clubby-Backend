@@ -375,11 +375,6 @@ export const handler = async (event: any) => {
             season_cycle: club.season_cycle
         };
 
-        await addItem(
-            process.env.CLUB_MEMBER_TABLE_NAME as string,
-            item
-        );
-
         if (membership_amount > 0) {
             await addToTransactionsTable(
                 body.club_account_id,
@@ -391,6 +386,11 @@ export const handler = async (event: any) => {
                 current_reg_id
             )
         }
+
+        await addItem(
+            process.env.CLUB_MEMBER_TABLE_NAME as string,
+            item
+        );
 
         if (club.notify_on_member_registration !== false) {
             await sendEmailToAdmin(

@@ -22,6 +22,7 @@ export class MSC_TablesConstruct extends Construct {
   public readonly storage_request_table: MSC_Table;
   public readonly events_table: MSC_Table;
   public readonly event_registrations_table: MSC_Table;
+  public readonly snapscan_payments_table: MSC_Table;
   constructor(scope: Construct, id: string, props: MSC_TablesProps) {
     super(scope, `${id}-Tables`);
 
@@ -35,6 +36,17 @@ export class MSC_TablesConstruct extends Construct {
         {
           indexName: "ClubNameIndex",
           partitionKey: { name: "club_name", type: AttributeType.STRING },
+        },
+      ],
+    });
+
+    this.snapscan_payments_table = new MSC_Table(this, `${id}-SnapScanPayments`, {
+      partitionKey: { merchant_reference: "STRING" },
+      timeToLiveAttribute: "ttl",
+      gsi: [
+        {
+          indexName: "TransactionIDIndex",
+          partitionKey: { name: "transaction_id", type: AttributeType.STRING }
         },
       ],
     });

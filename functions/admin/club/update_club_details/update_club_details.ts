@@ -176,6 +176,16 @@ export const handler = async (event: any) => {
         body.auto_register_members_if_paid;
     }
 
+    if (typeof body?.auto_register_members_if_paid_snapscan === "boolean") {
+      updateParts.push(
+        "#auto_register_members_if_paid_snapscan = :auto_register_members_if_paid_snapscan",
+      );
+      expressionAttributeNames["#auto_register_members_if_paid_snapscan"] =
+        "auto_register_members_if_paid_snapscan";
+      expressionAttributeValues[":auto_register_members_if_paid_snapscan"] =
+        body.auto_register_members_if_paid_snapscan;
+    }
+
     if (typeof body?.notify_on_member_registration === "boolean") {
       updateParts.push(
         "#notify_on_member_registration = :notify_on_member_registration",

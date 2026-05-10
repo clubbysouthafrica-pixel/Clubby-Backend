@@ -5,3 +5,4 @@ export { MSC_Layers } from "./lambda_layers";
 export { MSC_InternalInfraStack } from "./internal_infra";
 export { MSC_MailingStack } from "./mailer";
 export { MSC_AdminFeaturesNestedStack } from "./admin_features";
+export { MSC_SnapScanNestedStack } from "./snapscan";

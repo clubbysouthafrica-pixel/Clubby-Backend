@@ -8,6 +8,7 @@ import {
   MSC_InternalInfraStack,
   MSC_MailingStack,
   MSC_AdminFeaturesNestedStack,
+  MSC_SnapScanNestedStack,
 } from "./msc_custom_constructs";
 import { MSC_BucketsConstruct } from "./msc_custom_constructs/buckets/buckets";
 import { MSC_Cognito, MSC_Queue, MSC_Kms } from "./msc_service_constructs";
@@ -100,6 +101,22 @@ export class MSC_Stack extends cdk.Stack {
       club_admin_table: tables.club_admin_table,
       users_table: tables.users_table,
       club_table: tables.club_table,
+    });
+
+    new MSC_SnapScanNestedStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}SnapscanStack`, {
+      env: props?.env,
+      club_table: tables.club_table,
+      kms_key: kmsKey,
+      admin_user_pool: admin_user_pool,
+      snapscan_payments_table: tables.snapscan_payments_table,
+      transactions_table: tables.transactions_table,
+      event_registrations_table: tables.event_registrations_table,
+      events_table: tables.events_table,
+      monthly_billing_table: tables.billing_table,
+      club_member_table: tables.club_member_table,
+      registrations_table: tables.registrations_table,
+      mail_queue: mail_queue,
+      users_table: tables.users_table,
     });
 
     new MSC_MemberNestedStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}MemberStack`, {
