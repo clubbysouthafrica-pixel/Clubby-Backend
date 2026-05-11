@@ -21,6 +21,7 @@ export interface MSC_SnapScanNestedStackProps extends StackProps {
   users_table: MSC_Table;
   storage_table: MSC_Table;
   storage_request_table: MSC_Table;
+  orders_table: MSC_Table;
 }
 
 export class MSC_SnapScanNestedStack extends Stack {
@@ -89,6 +90,7 @@ export class MSC_SnapScanNestedStack extends Stack {
       code: "snapscan/handle_payment",
       envVariables: {
         CLUB_TABLE_NAME: props.club_table.tableName,
+        ORDERS_TABLE_NAME: props.orders_table.tableName,
         SNAPSCAN_PAYMENTS_TABLE_NAME: props.snapscan_payments_table.tableName,
         KMS_KEY_ID: props.kms_key.keyId,
         TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
@@ -102,6 +104,7 @@ export class MSC_SnapScanNestedStack extends Stack {
         STORAGE_TABLE_NAME: props.storage_table.tableName,
       },
       permissions: {
+        [props.orders_table.tableArn]: ["dynamodb:UpdateItem"],
         [props.storage_request_table.tableArn]: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
         [props.storage_table.tableArn]: ["dynamodb:UpdateItem"],
         [props.club_table.tableArn]: ["dynamodb:GetItem"],

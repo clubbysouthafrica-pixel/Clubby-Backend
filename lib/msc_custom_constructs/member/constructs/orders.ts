@@ -19,6 +19,19 @@ export class MSC_MemberOrdersConstruct extends Construct {
     constructor(scope: Construct, id: string, props: MSC_MemberOrdersConstructProps) {
         super(scope, id);
 
+        const cancel_order = new MSC_Lambda(this, `${id}-CancelOrder`, {
+            code: "member/orders/cancel_order",
+            envVariables: {
+                ORDERS_TABLE_NAME: props.orders_table.tableName,
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName
+            },
+            permissions: {
+                [props.orders_table.tableArn]: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+                [props.transactions_table.tableArn]: ["dynamodb:UpdateItem"]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const get_member_orders = new MSC_Lambda(this, `${id}-GetMemberOrders`, {
             code: "member/orders/get_member_orders",
             envVariables: {
@@ -58,6 +71,7 @@ export class MSC_MemberOrdersConstruct extends Construct {
 
         const get_member_orders_resource = orders_resource.addResource("getMemberOrders");
         const create_orders_resource = orders_resource.addResource("createOrder");
+        const cancel_order_resource = orders_resource.addResource("cancelOrder");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -67,5 +81,6 @@ export class MSC_MemberOrdersConstruct extends Construct {
 
         addCorsEnabledMethod(get_member_orders_resource, get_member_orders, methodOptions, undefined, "GET");
         addCorsEnabledMethod(create_orders_resource, create_orders, methodOptions, undefined, "POST");
+        addCorsEnabledMethod(cancel_order_resource, cancel_order, methodOptions, undefined, "POST");
     }
 }

@@ -69,7 +69,8 @@ const parseSnapScanPayload = (event: any): SnapScanWebhookPayload => {
 async function updateTransactionsTable(
     club_account_id: string,
     transaction_id: string,
-    payment_amount: number
+    payment_amount: number,
+    reference: string
 ) {
     await updateItem(
         process.env.TRANSACTIONS_TABLE_NAME as string,
@@ -91,7 +92,8 @@ async function updateTransactionsTable(
                 type: "CONFIRMATION",
                 description: "Payment confirmation",
                 amount: payment_amount,
-                payment_type: "SnapScan"
+                payment_type: "SnapScan",
+                payment_reference: reference
             }
         }
     );
@@ -205,6 +207,36 @@ async function updateClubsOrderBilling(club_account_id: string, fee: number) {
         {
             ":zero": 0,
             ":order_fee": fee,
+            ":month_paid": false
+        }
+    );
+}
+
+async function updateClubsStorageBilling(club_account_id: string, fee: number) {
+    const now = new Date();
+    const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    await updateItem(
+        process.env.MONTHLY_BILLING_TABLE_NAME as string,
+        {
+            club_account_id: club_account_id,
+            year_month: year_month,
+        },
+        `SET 
+            #total_amount = if_not_exists(#total_amount, :zero) + :storage_fee,
+            #outstanding_amount = if_not_exists(#outstanding_amount, :zero) + :storage_fee,
+            #storage_amount = if_not_exists(#storage_amount, :zero) + :storage_fee,
+            #month_paid = :month_paid
+        `,
+        {
+            "#total_amount": "total_amount",
+            "#outstanding_amount": "outstanding_amount",
+            "#storage_amount": "storage_amount",
+            "#month_paid": "month_paid"
+        },
+        {
+            ":zero": 0,
+            ":storage_fee": fee,
             ":month_paid": false
         }
     );
@@ -488,6 +520,9 @@ export const handler = async (event: any) => {
                 payload.totalAmount || 0,
                 payload.paymentType || "SnapScan"
             );
+
+            await updateClubsStorageBilling(club_account_id, payload.totalAmount || 0);
+
         } else if (transaction.type === "ORDER") {
 
             await updateOrdersTable(club_account_id, transaction.order_id!, payload.totalAmount || 0);
@@ -515,7 +550,12 @@ export const handler = async (event: any) => {
             return createResponse(200, { message: `Transaction type ${transaction.type} not supported.` }, origin);
         }
 
-        await updateTransactionsTable(existingPayment.club_account_id, existingPayment.transaction_id, payload.totalAmount || 0);
+        await updateTransactionsTable(
+            existingPayment.club_account_id, 
+            existingPayment.transaction_id, 
+            payload.totalAmount || 0,
+            payload.merchantReference
+        );
         await updateItem(
             process.env.SNAPSCAN_PAYMENTS_TABLE_NAME as string,
             { merchant_reference: payload.merchantReference },

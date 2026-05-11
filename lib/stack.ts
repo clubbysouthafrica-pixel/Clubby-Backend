@@ -119,6 +119,7 @@ export class MSC_Stack extends cdk.Stack {
       users_table: tables.users_table,
       storage_table: tables.storage_table,
       storage_request_table: tables.storage_request_table,
+      orders_table: tables.orders_table,
     });
 
     new MSC_MemberNestedStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}MemberStack`, {
