@@ -74,20 +74,23 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_account_id must be STRING type." }, origin);
         }
 
-        const club_member = await getClubMember(query_string_params.user_id as string, query_string_params.club_account_id);
+        let registration_id = query_string_params?.registration_id;
+        if (!registration_id) {
 
-        let current_reg_id = "";
-        if (!club_member) {
-            if (!query_string_params?.registration_id) {
-                return createResponse(404, { message: "Club Member not found and registration ID not provided." }, origin);
+            const club_member = await getClubMember(query_string_params.user_id as string, query_string_params.club_account_id);
+
+            if (!club_member) {
+                if (!query_string_params?.registration_id) {
+                    return createResponse(404, { message: "Club Member not found and registration ID not provided." }, origin);
+                }
+
+                registration_id = query_string_params.registration_id;
+            } else {
+                registration_id = club_member.current_reg_id;
             }
-
-            current_reg_id = query_string_params.registration_id;
-        } else {
-            current_reg_id = club_member.current_reg_id;
         }
 
-        const member_registration = await getRegistration(query_string_params.user_id as string, current_reg_id);
+        const member_registration = await getRegistration(query_string_params.user_id as string, registration_id);
         const club = await getItem(
             process.env.CLUB_TABLE_NAME as string,
             {
@@ -223,7 +226,7 @@ export const handler = async (event: any) => {
             transaction_id = member_registration?.transaction_id;
         }
 
-        const template_variables = club?.club_variables?.map((variable: any) => ({title: variable.name, name: variable.key}));
+        const template_variables = club?.club_variables?.map((variable: any) => ({ title: variable.name, name: variable.key }));
 
         let variables = [] as Array<{ name: string; title: string; value?: string }>;
         if (template_variables) {
@@ -240,7 +243,7 @@ export const handler = async (event: any) => {
                 }
             }
         }
-        
+
 
         return createResponse(200, {
             pages,
@@ -249,7 +252,7 @@ export const handler = async (event: any) => {
             registration_submitted_on: member_registration?.registration_submitted_on,
             transaction_id: transaction_id,
             admin_notes: member_registration?.admin_notes ?? undefined,
-            registration_id: current_reg_id,
+            registration_id: registration_id,
             member_id: query_string_params.user_id,
             variables
         }, origin);
