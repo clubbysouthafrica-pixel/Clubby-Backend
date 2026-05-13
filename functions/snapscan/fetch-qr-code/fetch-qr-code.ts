@@ -10,7 +10,7 @@ type SnapScanFetchQrCodeBody = {
 
 const ssm_client = new SSMClient({ region: process.env.REGION });
 
-const getInitials = (value: string, maxLength: number) => {
+const getInitials = (value: string) => {
 	const initials = value
 		.split(/\s+/)
 		.map((part) => part.trim())
@@ -19,7 +19,7 @@ const getInitials = (value: string, maxLength: number) => {
 		.filter(Boolean)
 		.join("");
 
-	return initials.slice(0, maxLength).padEnd(maxLength, "X");
+	return initials.padEnd(2, "X");
 };
 
 const generateMerchantReference = (username: string, clubName: string) => {
@@ -27,8 +27,8 @@ const generateMerchantReference = (username: string, clubName: string) => {
 	const year = String(now.getFullYear()).slice(-2);
 	const month = String(now.getMonth() + 1).padStart(2, "0");
 	const day = String(now.getDate()).padStart(2, "0");
-	const clubInitials = getInitials(clubName, 2);
-	const userInitials = getInitials(username, 2);
+	const clubInitials = getInitials(clubName);
+	const userInitials = getInitials(username);
 	const randomPart = BigInt(`0x${randomBytes(4).toString("hex")}`)
 		.toString(36)
 		.toUpperCase()

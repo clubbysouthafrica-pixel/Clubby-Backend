@@ -254,6 +254,8 @@ export const handler = async (event: any) => {
             admin_notes: member_registration?.admin_notes ?? undefined,
             registration_id: registration_id,
             member_id: query_string_params.user_id,
+            total_fee: member_registration?.total_fee,
+            total_outstanding_amount: member_registration?.total_outstanding_amount,
             variables
         }, origin);
 
