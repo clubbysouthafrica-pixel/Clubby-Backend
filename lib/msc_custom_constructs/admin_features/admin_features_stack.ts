@@ -91,6 +91,7 @@ export class MSC_AdminFeaturesNestedStack extends Stack {
       events_table: props.events_table,
       event_registrations_table: props.event_registrations_table,
       transactions_table: props.transactions_table,
+      billing_table: props.billing_table,
     });
 
     new MSC_BookingsConstruct(this, `${id}-Bookings`, {
