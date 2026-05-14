@@ -12,6 +12,7 @@ interface MSC_EventsProps {
     events_table: MSC_Table;
     event_registrations_table: MSC_Table;
     transactions_table: MSC_Table;
+    billing_table: MSC_Table;
 }
 
 export class MSC_EventsConstruct extends Construct {
@@ -80,8 +81,12 @@ export class MSC_EventsConstruct extends Construct {
                 EVENT_REGISTRATIONS_TABLE_NAME: props.event_registrations_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 EVENTS_TABLE_NAME: props.events_table.tableName,
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName
             },
             permissions: {
+                [props.billing_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ],
                 [props.event_registrations_table.tableArn]: [
                     "dynamodb:GetItem",
                     "dynamodb:UpdateItem",
