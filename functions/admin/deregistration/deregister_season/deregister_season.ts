@@ -270,36 +270,36 @@ async function handleEventRegistrations(club_account_id: string, cycle_name: str
     const event_registrations_historical_reports: any[] = []
     for (const event of events ?? []) {
 
-        if (event.endDate < Date.now()) {
-            event_historical_reports.push(event);
 
+        event_historical_reports.push(event);
+
+        await removeItem(
+            process.env.EVENTS_TABLE_NAME as string,
+            {
+                club_account_id: club_account_id,
+                event_id: event.event_id
+            }
+        );
+
+        const event_registrations = await queryItems(
+            process.env.EVENT_REGISTRATIONS_TABLE_NAME as string,
+            "event_id = :eventId",
+            { ":eventId": event.event_id },
+        );
+
+        if (!event_registrations || event_registrations.length === 0) continue
+        event_registrations_historical_reports.push(...event_registrations);
+
+        for (const event of event_registrations) {
             await removeItem(
-                process.env.EVENTS_TABLE_NAME as string,
+                process.env.EVENT_REGISTRATIONS_TABLE_NAME as string,
                 {
-                    club_account_id: club_account_id,
-                    event_id: event.event_id
+                    event_id: event.event_id,
+                    event_registration_id: event.event_registration_id
                 }
             );
-
-            const event_registrations = await queryItems(
-                process.env.EVENT_REGISTRATIONS_TABLE_NAME as string,
-                "event_id = :eventId",
-                { ":eventId": event.event_id },
-            );
-
-            if (!event_registrations || event_registrations.length === 0) continue
-            event_registrations_historical_reports.push(...event_registrations);
-
-            for (const event of event_registrations) {
-                await removeItem(
-                    process.env.EVENT_REGISTRATIONS_TABLE_NAME as string,
-                    {
-                        event_id: event.event_id,
-                        event_registration_id: event.event_registration_id
-                    }
-                );
-            }
         }
+
     }
     await addToHistoricalReportingBucket(club_account_id, cycle_name, "Events", event_historical_reports);
     await addToHistoricalReportingBucket(club_account_id, cycle_name, "EventRegistrations", event_registrations_historical_reports);

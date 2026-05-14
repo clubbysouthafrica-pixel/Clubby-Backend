@@ -29,6 +29,9 @@ export const handler = async (event: any) => {
         }
 
         for (const event of events) {
+            if (event.endDate < Date.now()) {
+                return createResponse(211, { message: `Event, ${event.title}, has not ended yet. Please wait until the event ends before de-registering.`, event_id: event.event_id }, origin);
+            }
             const event_registrations = await queryItems(
                 process.env.EVENT_REGISTRATIONS_TABLE_NAME as string,
                 "event_id = :eventId",

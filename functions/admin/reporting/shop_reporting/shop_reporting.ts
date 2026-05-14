@@ -7,8 +7,21 @@ import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
 const s3_client = new S3Client({ region: process.env.REGION });
 
+function normalizeTimestamp(timestamp: unknown): number | null {
+    if (typeof timestamp !== "number" || !Number.isFinite(timestamp)) {
+        return null;
+    }
+
+    return timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp;
+}
+
 function formatToYearMonth(timestamp: number): string {
-    const date = new Date(timestamp);
+    const normalizedTimestamp = normalizeTimestamp(timestamp);
+    if (normalizedTimestamp === null) {
+        return "Unknown Date";
+    }
+
+    const date = new Date(normalizedTimestamp);
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     return `${date.getFullYear()} ${monthNames[date.getMonth()]}`;
 }
@@ -37,6 +50,7 @@ export const handler = async (event: any) => {
                 const bodyContentsOrders = await s3ObjectOrders.Body?.transformToString();
                 const s3DataOrders = JSON.parse(bodyContentsOrders || '{}');
                 orders = Array.isArray(s3DataOrders) ? s3DataOrders : [];
+                console.log(`@@@ getObjectCommand response (Bucket_Name: ${process.env.CLUB_HISTORY_BUCKET_NAME}, Key: ${s3Key}): `, JSON.stringify(orders));
 
             } catch (err: any) {
                 const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
@@ -57,93 +71,73 @@ export const handler = async (event: any) => {
         const report: any[] = [];
 
         for (const order of orders) {
+            const isCancelledOrRefunded = ["CANCELLED", "REFUND"].includes(order.payment_status)
+                || ["CANCELLED", "REFUNDED"].includes(order.fulfillment_status);
+            const isRevenueOrder = order.payment_status === "PAID" || order.order_confirmed_by_admin === true;
+            const orderDate = isRevenueOrder
+                ? order.order_confirmed_by_admin_timestamp ?? order.created_date
+                : order.created_date;
+
             if (order?.items && order.items.length > 0) {
 
                 for (const item of order.items) {
                     let existingEntry = report.find((entry: Record<string, any>) => item.product_id === entry.product_id);
+                    if (!existingEntry) {
+                        existingEntry = {
+                            product_id: item.product_id,
+                            product_name: item.name,
+                            price: item.price,
+                            total_revenue: 0,
+                            total_pending_revenue: 0,
+                            total_sold_units: 0,
+                            total_pending_units: 0,
+                            data: []
+                        };
+                        report.push(existingEntry);
+                    }
 
-                    if (order.order_confirmed_by_admin) {
-                        if (!existingEntry) {
-                            existingEntry = {
-                                product_id: item.product_id,
-                                product_name: item.name,
-                                price: item.price,
-                                total_revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
-                                total_pending_revenue: 0,
-                                total_sold_units: item?.quantity ?? 0,
-                                total_pending_units: 0,
-                                data: [
-                                    {
-                                        date: formatToYearMonth(order.order_confirmed_by_admin_timestamp),
-                                        revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
-                                        sold_units: item?.quantity ?? 0,
-                                        pending_revenue: 0,
-                                        pending_units: 0
-                                    }
-                                ]
+                    if (isCancelledOrRefunded) {
+                        continue;
+                    }
+
+                    if (isRevenueOrder) {
+                        let existingDateData = existingEntry.data.find((entry: Record<string, any>) => formatToYearMonth(orderDate) === entry.date);
+
+                        if (!existingDateData) {
+                            existingDateData = {
+                                date: formatToYearMonth(orderDate),
+                                revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
+                                sold_units: item?.quantity ?? 0,
+                                pending_revenue: 0,
+                                pending_units: 0
                             };
-                            report.push(existingEntry);
+                            existingEntry.data.push(existingDateData);
                         } else {
-                            let existingDateData = existingEntry.data.find((entry: Record<string, any>) => formatToYearMonth(order.order_confirmed_by_admin_timestamp) === entry.date);
-
-                            if (!existingDateData) {
-                                existingDateData = {
-                                    date: formatToYearMonth(order.order_confirmed_by_admin_timestamp),
-                                    revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
-                                    sold_units: item?.quantity ?? 0,
-                                    pending_revenue: 0,
-                                    pending_units: 0
-                                };
-                                existingEntry.data.push(existingDateData);
-                            } else {
-                                existingDateData.revenue += (item?.quantity ?? 0) * (item?.price ?? 0);
-                                existingDateData.sold_units += item?.quantity ?? 0;
-                            }
-
-                            existingEntry.total_revenue += (item?.quantity ?? 0) * (item?.price ?? 0);
-                            existingEntry.total_sold_units += item?.quantity ?? 0;
+                            existingDateData.revenue += (item?.quantity ?? 0) * (item?.price ?? 0);
+                            existingDateData.sold_units += item?.quantity ?? 0;
                         }
+
+                        existingEntry.total_revenue += (item?.quantity ?? 0) * (item?.price ?? 0);
+                        existingEntry.total_sold_units += item?.quantity ?? 0;
                     } else {
-                        if (!existingEntry) {
-                            existingEntry = {
-                                product_id: item.product_id,
-                                product_name: item.name,
-                                price: item.price,
-                                total_revenue: 0,
-                                total_pending_revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
-                                total_sold_units: 0,
-                                total_pending_units: item?.quantity ?? 0,
-                                data: [
-                                    {
-                                        date: formatToYearMonth(order.created_date),
-                                        revenue: 0,
-                                        sold_units: 0,
-                                        pending_revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
-                                        pending_units: item?.quantity ?? 0
-                                    }
-                                ]
+                        let existingDateData = existingEntry.data.find((entry: Record<string, any>) => formatToYearMonth(orderDate) === entry.date);
+
+                        if (!existingDateData) {
+                            existingDateData = {
+                                date: formatToYearMonth(orderDate),
+                                revenue: 0,
+                                sold_units: 0,
+                                pending_revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
+                                pending_units: item?.quantity ?? 0
                             };
-                            report.push(existingEntry);
+                            existingEntry.data.push(existingDateData);
                         } else {
-                            let existingDateData = existingEntry.data.find((entry: Record<string, any>) => formatToYearMonth(order.created_date) === entry.date);
-
-                            if (!existingDateData) {
-                                existingDateData = {
-                                    date: formatToYearMonth(order.created_date),
-                                    revenue: 0,
-                                    sold_units: 0,
-                                    pending_revenue: (item?.quantity ?? 0) * (item?.price ?? 0),
-                                    pending_units: item?.quantity ?? 0
-                                };
-                                existingEntry.data.push(existingDateData);
-                            } else {
-                                existingDateData.pending_revenue += (item?.quantity ?? 0) * (item?.price ?? 0);
-                                existingDateData.pending_units += item?.quantity ?? 0;
-                            }
-
-                            existingEntry.total_pending_revenue += (item?.quantity ?? 0) * (item?.price ?? 0);
-                            existingEntry.total_pending_units += item?.quantity ?? 0;
+                            existingDateData.pending_revenue += (item?.quantity ?? 0) * (item?.price ?? 0);
+                            existingDateData.pending_units += item?.quantity ?? 0;
                         }
+
+                        existingEntry.total_pending_revenue += (item?.quantity ?? 0) * (item?.price ?? 0);
+                        existingEntry.total_pending_units += item?.quantity ?? 0;
                     }
 
                 }

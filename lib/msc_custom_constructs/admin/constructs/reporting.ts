@@ -26,10 +26,17 @@ export class MSC_ReportingConstruct extends Construct {
             code: "admin/reporting/general_reporting",
             envVariables: {
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName
             },
             permissions: {
                 [props.transactions_table.tableArn]: [
                     "dynamodb:Query"
+                ],
+                [props.club_history_bucket.bucketArn]: [
+                    "s3:ListBucket"
+                ],
+                [`${props.club_history_bucket.bucketArn}/*`]: [
+                    "s3:GetObject"
                 ]
             },
             memory: 2048,

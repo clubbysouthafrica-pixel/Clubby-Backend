@@ -3,6 +3,9 @@ import {
     deconstructEvent,
     queryItems
 } from "./function_helpers";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+
+const s3_client = new S3Client({ region: process.env.REGION });
 
 type IncomeType = "registration" | "event_registration" | "shop" | "storage";
 
@@ -424,11 +427,38 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "club_account_id is required." }, origin);
         }
 
-        const transactions = await queryItems(
-            process.env.TRANSACTIONS_TABLE_NAME as string,
-            "club_account_id = :clubId",
-            { ":clubId": query_string_params.club_account_id }
-        );
+        let transactions: Record<string, any>[] | null;
+
+        if (query_string_params?.season_cycle) {
+            const s3KeyTransaction = `${query_string_params.club_account_id}/Season_${query_string_params.season_cycle}/Transaction.json`;
+            try {
+
+                const s3ObjectTransactions = await s3_client.send(
+                    new GetObjectCommand({
+                        Bucket: process.env.CLUB_HISTORY_BUCKET_NAME as string,
+                        Key: s3KeyTransaction,
+                    })
+                );
+                const bodyContentsTransactions = await s3ObjectTransactions.Body?.transformToString();
+                const s3DataTransactions = JSON.parse(bodyContentsTransactions || '{}');
+                transactions = Array.isArray(s3DataTransactions) ? s3DataTransactions : [];
+                console.log(`@@@ getObjectCommand response (Bucket_Name: ${process.env.CLUB_HISTORY_BUCKET_NAME}, Key: ${s3KeyTransaction}): `, JSON.stringify(transactions));
+
+            } catch (err: any) {
+                const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
+                if (status === 404) {
+                    return createResponse(404, { message: "Transaction data not found for the specified season." }, origin);
+                }
+                console.error(`Error fetching S3 object:`, err);
+                throw err;
+            }
+        } else {
+            transactions = await queryItems(
+                process.env.TRANSACTIONS_TABLE_NAME as string,
+                "club_account_id = :clubId",
+                { ":clubId": query_string_params.club_account_id }
+            );
+        }
 
         const report = createReport();
         processTransactions(report, transactions ?? []);

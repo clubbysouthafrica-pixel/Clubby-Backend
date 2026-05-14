@@ -105,6 +105,11 @@ async function updateEventRegistrationsTable(
     payment_amount: number,
     auto_confirm: boolean
 ) {
+    const paymentHistoryEntry = {
+        date: Date.now(),
+        amount: payment_amount,
+        is_revenue: true
+    };
 
     await updateItem(
         process.env.EVENT_REGISTRATIONS_TABLE_NAME as string,
@@ -112,16 +117,19 @@ async function updateEventRegistrationsTable(
             event_id: event_id,
             event_registration_id: event_registration_id
         },
-        "SET #confirmed_status = :confirmed_status, #amount_paid = #amount_paid + :amount_paid, #payment_status = :payment_status",
+        "SET #confirmed_status = :confirmed_status, #amount_paid = #amount_paid + :amount_paid, #payment_status = :payment_status, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)",
         {
             "#confirmed_status": "confirmed_status",
             "#amount_paid": "amount_paid",
-            "#payment_status": "payment_status"
+            "#payment_status": "payment_status",
+            "#payment_history": "payment_history"
         },
         {
             ":amount_paid": payment_amount,
             ":payment_status": "PAID",
-            ":confirmed_status": auto_confirm
+            ":confirmed_status": auto_confirm,
+            ":payment_entry": [paymentHistoryEntry],
+            ":empty_list": []
         }
     );
 }

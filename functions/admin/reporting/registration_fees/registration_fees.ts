@@ -111,7 +111,24 @@ function updateReportWithNewRegistration(report: any[], registration: Record<str
 }
 
 function updateReportWithPaidRegistration(report: any[], registration: Record<string, any>) {
-    const registered_on_date = new Date(registration.registered_on);
+    const latestPaymentDate = Array.isArray(registration.payment_history)
+        ? registration.payment_history.reduce((latest: number | null, payment: Record<string, any>) => {
+            const paymentDate = typeof payment?.date === "number" ? payment.date : null;
+            if (paymentDate === null) return latest;
+            return latest === null || paymentDate > latest ? paymentDate : latest;
+        }, null)
+        : null;
+
+    const paidDateTimestamp = typeof registration.registered_on === "number"
+        ? registration.registered_on
+        : latestPaymentDate;
+
+    if (paidDateTimestamp === null) {
+        console.warn('Skipping paid registration with no registered_on or payment history date:', registration.registration_id);
+        return;
+    }
+
+    const registered_on_date = new Date(paidDateTimestamp);
     const registered_on_year = registered_on_date.getFullYear();
     const registered_on_month = String(registered_on_date.getMonth() + 1).padStart(2, '0');
     const registered_on_year_month = `${registered_on_year}/${registered_on_month}`;
@@ -202,6 +219,7 @@ export const handler = async (event: any) => {
                 const bodyContentsRegistrations = await s3ObjectRegistrations.Body?.transformToString();
                 const s3DataRegistrations = JSON.parse(bodyContentsRegistrations || '{}');
                 registrations = Array.isArray(s3DataRegistrations) ? s3DataRegistrations : [];
+                console.log(`@@@ getObjectCommand response (Bucket_Name: ${process.env.CLUB_HISTORY_BUCKET_NAME}, Key: ${s3KeyRegistrations}): `, JSON.stringify(registrations));
 
                 const s3ObjectFields = await s3_client.send(
                     new GetObjectCommand({
@@ -212,6 +230,7 @@ export const handler = async (event: any) => {
                 const bodyContentsFields = await s3ObjectFields.Body?.transformToString();
                 const s3DataFields = JSON.parse(bodyContentsFields || '{}');
                 fields = Array.isArray(s3DataFields) ? s3DataFields : [];
+                console.log(`@@@ getObjectCommand response (Bucket_Name: ${process.env.CLUB_HISTORY_BUCKET_NAME}, Key: ${s3KeyFields}): `, JSON.stringify(fields));
 
             } catch (err: any) {
                 const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
