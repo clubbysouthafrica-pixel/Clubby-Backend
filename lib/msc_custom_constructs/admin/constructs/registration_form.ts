@@ -89,23 +89,6 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
-        const remove_registration = new MSC_Lambda(this, `${id}-RemoveRegistration`, {
-            code: "admin/registration/remove_registration",
-            envVariables: {
-                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName
-            },
-            permissions: {
-                [props.registrations_table.tableArn]: [
-                    "dynamodb:DeleteItem"
-                ],
-                [props.transactions_table.tableArn]: [
-                    "dynamodb:DeleteItem"
-                ]
-            },
-            layers: [props.layers.jwt_layer]
-        });
-
         const update_admin_notes = new MSC_Lambda(this, `${id}-UpdateAdminNotes`, {
             code: "admin/registration/update_admin_notes",
             envVariables: {
@@ -188,7 +171,6 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
         const archive_registration_resource = registration_resource.addResource("archiveRegistration");
         const get_registration_field_resource = registration_resource.addResource("getRegistrationField");
         const update_registration_field_resource = registration_resource.addResource("updateRegistrationField");
-        const remove_registration_resource = registration_resource.addResource("removeRegistration");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -204,6 +186,5 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
         addCorsEnabledMethod(archive_registration_resource, archive_registration, methodOptions);
         addCorsEnabledMethod(get_registration_field_resource, get_registration_field, methodOptions, undefined, "GET");
         addCorsEnabledMethod(update_registration_field_resource, update_registration_field, methodOptions);
-        addCorsEnabledMethod(remove_registration_resource, remove_registration, methodOptions);
     }
 }

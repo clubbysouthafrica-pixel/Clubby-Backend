@@ -78,49 +78,6 @@ async function updateTransactionsTable(club_account_id: string, transaction_id: 
     );
 }
 
-async function processRefund(user_id: string, club_account_id: string, registration: any, member: any) {
-    await updateItem(
-        process.env.REGISTRATIONS_TABLE_NAME as string,
-        {
-            "registration_id": member.current_reg_id,
-            "user_id": user_id
-        },
-        `SET #outstanding = :outstanding`,
-        {
-            "#outstanding": "total_outstanding_amount"
-        },
-        {
-            ":outstanding": registration.total_fee
-        }
-    );
-
-    await updateItem(
-        process.env.TRANSACTIONS_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id,
-            transaction_id: member.current_reg_transaction_id
-        },
-        `SET #amount_paid = :amount_paid, #status = :status, #lifecycle.#ts = :lifecycleValue`,
-        {
-            "#status": "status",
-            "#lifecycle": "lifecycle",
-            "#amount_paid": "amount_paid",
-            "#ts": `${Date.now()}`
-        },
-        {
-            ":status": "REFUND",
-            ":amount_paid": 0,
-            ":lifecycleValue": {
-                type: "REFUND",
-                description: "Refund issued due to member deregistration",
-                amount: registration.total_fee - registration.total_outstanding_amount,
-                payment_type: "REFUND",
-                refund_completed: false
-            }
-        }
-    );
-}
-
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -139,28 +96,6 @@ export const handler = async (event: any) => {
 
         if (body.user_ids.length > 25) {
             return createResponse(410, { message: "Maximum of 25 members can be deregistered at a time." }, origin);
-        }
-
-        const refunds = body?.refunds ?? [];
-
-        for (const user_id of body.user_ids) {
-            const orders = await queryItems(
-                process.env.ORDERS_TABLE_NAME!,
-                "user_id = :user_id AND club_account_id = :club_account_id",
-                {
-                    ":user_id": user_id as string,
-                    ":club_account_id": body.club_account_id
-                },
-                process.env.ORDERS_INDEX_NAME
-            );
-
-            if (!orders) continue
-
-            const hasPendingPayments = orders?.some((order) => order.payment_status === "PENDING");
-
-            if (hasPendingPayments) {
-                return createResponse(411, { message: `Member ${orders[0]?.first_name} ${orders[0]?.surname} has pending payments and cannot be deregistered. Please ensure all orders have been paid to cancelled if they are pending.`, name: `${orders[0]?.first_name} ${orders[0]?.surname}` }, origin);
-            }
         }
 
         for (const user_id of body.user_ids) {
@@ -188,9 +123,7 @@ export const handler = async (event: any) => {
                 continue
             }
 
-            if (refunds.includes(user_id) && registration.total_outstanding_amount < registration.total_fee) {
-                await processRefund(user_id, body.club_account_id, registration, member);
-            } else if (registration.total_outstanding_amount > 0) {
+            if (registration.total_outstanding_amount > 0) {
                 await updateTransactionsTable(body.club_account_id, member.current_reg_transaction_id);
             }
 
