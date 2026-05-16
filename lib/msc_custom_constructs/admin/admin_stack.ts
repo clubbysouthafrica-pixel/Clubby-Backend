@@ -43,6 +43,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     event_registrations_table: MSC_Table;
     events_table: MSC_Table;
     storage_requests_table: MSC_Table;
+    storage_table: MSC_Table;
 }
 
 export class MSC_AdminNestedStack extends Stack {
@@ -117,7 +118,8 @@ export class MSC_AdminNestedStack extends Stack {
             signatures_bucket: props.signatures_bucket,
             orders_table: props.orders_table,
             event_registrations_table: props.event_registrations_table,
-            events_table: props.events_table
+            events_table: props.events_table,
+            storage_table: props.storage_table
         });
 
         new MSC_MailerConstruct(this, `${id}-Mail`, {

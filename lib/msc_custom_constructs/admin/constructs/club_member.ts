@@ -206,6 +206,28 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const get_club_member = new MSC_Lambda(this, `${id}-GetClubMember`, {
+            code: "admin/club_member/get_club_member",
+            envVariables: {
+                USER_TYPE: "MEMBER",
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                CLUB_REGISTRATION_TABLE_NAME: props.registrations_table.tableName,
+                USERS_TABLE_NAME: props.users_table.tableName
+            },
+            permissions: {
+                [props.club_member_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.registrations_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.users_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const club_member_resource = props.api_gateway.root.addResource("clubMember");
 
         const get_all_club_members_resource = club_member_resource.addResource("getAllClubMembers");
@@ -213,6 +235,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
         const submit_registration_resource = club_member_resource.addResource("submitRegistration");
         const remove_member_resource = club_member_resource.addResource("removeMember");
         const update_variables_resource = club_member_resource.addResource("updateVariables");
+        const get_club_member_resource = club_member_resource.addResource("getClubMember");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -225,5 +248,6 @@ export class MSC_ClubMemberClubConstruct extends Construct {
         addCorsEnabledMethod(submit_registration_resource, submit_registration, { methodResponses: [] })
         addCorsEnabledMethod(remove_member_resource, remove_member, methodOptions, undefined, "POST");
         addCorsEnabledMethod(update_variables_resource, update_variables, methodOptions, undefined, "POST");
+        addCorsEnabledMethod(get_club_member_resource, get_club_member, { methodResponses: [] }, undefined, "GET");
     }
 }

@@ -93,6 +93,7 @@ export class MSC_Stack extends cdk.Stack {
       email_rate_limiter_table: tables.email_rate_limiter_table,
       mail_queue: mail_queue,
       kms_key: kmsKey,
+      storage_table: tables.storage_table,
     });
 
     new MSC_InternalInfraStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}InternalInfra`, {

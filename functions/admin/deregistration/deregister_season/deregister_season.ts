@@ -254,6 +254,20 @@ async function handleStorageRequests(club_account_id: string, cycle_name: string
                     storage_request_id: request.storage_request_id
                 }
             )
+            await updateItem(
+                process.env.STORAGE_TABLE_NAME as string,
+                {
+                    club_account_id: club_account_id,
+                    storage_id: request.storage_id
+                },
+                "SET #isBooked = :isBooked",
+                {
+                    "#isBooked": "isBooked"
+                },
+                {
+                    ":isBooked": true
+                }
+            )
         }
     }
     await addToHistoricalReportingBucket(club_account_id, cycle_name, "StorageRequests", historical_reports);

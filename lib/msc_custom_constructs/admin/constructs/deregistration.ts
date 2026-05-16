@@ -23,6 +23,7 @@ interface MSC_DeregistrationConstructProps {
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
+    storage_table: MSC_Table;
 }
 
 export class MSC_DeregistrationConstruct extends Construct {
@@ -101,12 +102,16 @@ export class MSC_DeregistrationConstruct extends Construct {
                 ORDERS_TABLE_NAME: props.orders_table.tableName,
                 EVENTS_TABLE_NAME: props.events_table.tableName,
                 EVENT_REGISTRATIONS_TABLE_NAME: props.event_registrations_table.tableName,
-                STORAGE_REQUESTS_TABLE_NAME: props.storage_requests_table.tableName
+                STORAGE_REQUESTS_TABLE_NAME: props.storage_requests_table.tableName,
+                STORAGE_TABLE_NAME: props.storage_table.tableName
             },
             permissions: {
                 [props.storage_requests_table.tableArn]: [
                     "dynamodb:Query",
                     "dynamodb:DeleteItem"
+                ],
+                [props.storage_table.tableArn]: [
+                    "dynamodb:UpdateItem"
                 ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem",
