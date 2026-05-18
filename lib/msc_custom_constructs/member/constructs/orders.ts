@@ -26,8 +26,8 @@ export class MSC_MemberOrdersConstruct extends Construct {
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName
             },
             permissions: {
-                [props.orders_table.tableArn]: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
-                [props.transactions_table.tableArn]: ["dynamodb:UpdateItem"]
+                [props.orders_table.tableArn]: ["dynamodb:DeleteItem"],
+                [props.transactions_table.tableArn]: ["dynamodb:DeleteItem"]
             },
             layers: [props.layers.jwt_layer]
         });

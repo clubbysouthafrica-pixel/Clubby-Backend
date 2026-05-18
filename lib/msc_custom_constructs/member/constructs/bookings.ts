@@ -42,10 +42,25 @@ export class MSC_BookingsConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const delete_booking = new MSC_Lambda(this, `${id}-DeleteBooking`, {
+            code: "member/bookings/delete_booking",
+            envVariables: {
+                VENUES_BOOKINGS_TABLE_NAME: props.venues_bookings_table.tableName
+            },
+            permissions: {
+                [props.venues_bookings_table.tableArn]: [
+                    "dynamodb:DeleteItem",
+                    "dynamodb:Query"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const bookings_resource = props.api_gateway.root.addResource("bookings");
 
         const create_booking_resource = bookings_resource.addResource("createBooking");
         const get_bookings_resource = bookings_resource.addResource("getBookings");
+        const delete_booking_resource = bookings_resource.addResource("deleteBooking");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -55,5 +70,6 @@ export class MSC_BookingsConstruct extends Construct {
 
         addCorsEnabledMethod(create_booking_resource, create_bookings, methodOptions, undefined, "POST");
         addCorsEnabledMethod(get_bookings_resource, get_bookings, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(delete_booking_resource, delete_booking, methodOptions, undefined, "POST");
     }
 }
