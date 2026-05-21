@@ -120,6 +120,25 @@ export class MSC_EventsConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const delete_registration = new MSC_Lambda(this, `${id}-DeleteRegistration`, {
+            code: "admin_features/events/delete_registration",
+            envVariables: {
+                EVENT_REGISTRATIONS_TABLE_NAME: props.event_registrations_table.tableName,
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+            },
+            permissions: {
+                [props.event_registrations_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:DeleteItem",
+                ],
+                [props.transactions_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:DeleteItem",
+                ],
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const delete_event = new MSC_Lambda(this, `${id}-DeleteEvent`, {
             code: "admin_features/events/delete_event",
             envVariables: {
@@ -142,6 +161,7 @@ export class MSC_EventsConstruct extends Construct {
         const get_event_registration_resource = events_resource.addResource("getEventRegistration");
         const confirm_payment_resource = events_resource.addResource("confirmPayment");
         const confirm_registration_resource = events_resource.addResource("confirmRegistration");
+        const delete_registration_resource = events_resource.addResource("deleteRegistration");
         const delete_event_resource = events_resource.addResource("deleteEvent");
 
         const methodOptions: MethodOptions = {
@@ -156,6 +176,7 @@ export class MSC_EventsConstruct extends Construct {
         addCorsEnabledMethod(get_event_registration_resource, get_event_registration, methodOptions, undefined, "GET");
         addCorsEnabledMethod(confirm_payment_resource, confirm_payment, methodOptions, undefined, "POST");
         addCorsEnabledMethod(confirm_registration_resource, confirm_registration, methodOptions, undefined, "POST");
+        addCorsEnabledMethod(delete_registration_resource, delete_registration, methodOptions, undefined, "POST");
         addCorsEnabledMethod(delete_event_resource, delete_event, methodOptions, undefined, "POST");
     }
 }
