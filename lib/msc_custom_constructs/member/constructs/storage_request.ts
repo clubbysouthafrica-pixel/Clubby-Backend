@@ -50,6 +50,7 @@ export class MSC_StorageRequestConstruct extends Construct {
           [props.storage_table.tableArn]: [
             "dynamodb:PutItem",
             "dynamodb:UpdateItem",
+            "dynamodb:GetItem"
           ],
           [props.transactions_table.tableArn]: ["dynamodb:PutItem"],
           [props.club_table.tableArn]: ["dynamodb:GetItem"],

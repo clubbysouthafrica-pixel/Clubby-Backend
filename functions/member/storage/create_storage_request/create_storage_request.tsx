@@ -7,31 +7,6 @@ import {
 } from "./function_helpers";
 import { randomUUID } from "crypto";
 
-/**
- * Member Create/Update Storage Request
- *
- * Behavior:
- * - If body.storage_request_id (or id) is provided => attempt to update the existing request.
- *   - Uses updateItem with ConditionExpression "attribute_exists(storage_request_id)" so updates only succeed when the item exists.
- * - If no id provided => create a new storage request (addItem) with generated id.
- *
- * Stored shape (DynamoDB item):
- * {
- *   storage_request_id,
- *   storage_id,
- *   userId,
- *   date,
- *   status,            // default 'pending'
- *   costCents,
- *   paymentMethod,
- *   paid,
- *   paymentIntentId?,  // optional
- *   notes?,            // optional
- *   createdAt,
- *   updatedAt
- * }
- */
-
 interface OrderRequest {
   items: any[];
   user_first_name: string;
@@ -138,8 +113,11 @@ const validateInput = (body: any) => {
   return undefined;
 };
 
-
-const setStorageToBooked = async (club_account_id: string, storage_id: string) => {
+const setStorageToNotAvailable = async (
+  club_account_id: string,
+  storage_id: string,
+  booked_by_name: string,
+) => {
   const tableName = process.env.STORAGE_TABLE_NAME as string;
   if (!tableName) {
     throw new Error("Server misconfigured: missing STORAGE_TABLE_NAME");
@@ -151,12 +129,18 @@ const setStorageToBooked = async (club_account_id: string, storage_id: string) =
     await updateItem(
       tableName,
       key,
-      "SET #isBooked = :booked",
-      { "#isBooked": "isBooked" },
-      { ":booked": true },
+      "SET #pending_booked = :pending_booked, #booked_by_name = :booked_by_name",
+      {
+        "#pending_booked": "pending_booked",
+        "#booked_by_name": "booked_by_name",
+      },
+      {
+        ":pending_booked": true,
+        ":booked_by_name": booked_by_name,
+      },
     );
   } catch (err: any) {
-    console.error("Error setting storage to booked:", err);
+    console.error("Error setting storage to not available:", err);
     throw new Error(err.message ?? String(err));
   }
 };
@@ -183,6 +167,9 @@ export const handler = async (event: any) => {
     }
 
     // Normalize inputs
+    const storageTableName =
+      (process.env.STORAGE_TABLE_NAME as string) ??
+      (process.env.STORAGE_TABLE as string);
     const storage_request_id =
       body?.storage_request_id ?? body?.id ?? undefined;
     const storage_id = body?.storage_id ?? body?.storageId;
@@ -201,6 +188,16 @@ export const handler = async (event: any) => {
         500,
         {
           message: "Server misconfigured: missing CLUB_MEMBER_TABLE_NAME",
+        },
+        origin,
+      );
+    }
+
+    if (!storageTableName) {
+      return createResponse(
+        500,
+        {
+          message: "Server misconfigured: missing STORAGE_TABLE_NAME / STORAGE_TABLE",
         },
         origin,
       );
@@ -230,6 +227,7 @@ export const handler = async (event: any) => {
     }
 
     const now = new Date().toISOString();
+    const booked_by_name = `${club_member.member_first_name ?? ""} ${club_member.member_surname ?? ""}`.trim();
 
     // If storage_request_id provided -> update existing item
     if (storage_request_id) {
@@ -333,12 +331,38 @@ export const handler = async (event: any) => {
       }
     }
 
+    const storage_unit = await getItem(storageTableName, {
+      club_account_id,
+      storage_id,
+    });
+
+    if (!storage_unit) {
+      return createResponse(404, { message: "Storage unit not found" }, origin);
+    }
+
+    const parent_id = storage_unit.parent_id ?? null;
+    let parent_storage_name = null;
+
+    if (typeof parent_id === "string" && parent_id.trim() !== "") {
+      const parent_storage_unit = await getItem(storageTableName, {
+        club_account_id,
+        storage_id: parent_id,
+      });
+
+      parent_storage_name = parent_storage_unit?.storage_name ?? null;
+    }
+
     // Create new storage request
     const newId = randomUUID();
     const item = {
       storage_request_id: newId,
       club_account_id,
       storage_id,
+      storage_name: storage_unit.storage_name ?? null,
+      parent_id,
+      parent_storage_name,
+      user_first_name: club_member.member_first_name,
+      user_surname: club_member.member_surname,
       userId,
       date,
       status: "pending",
@@ -371,7 +395,7 @@ export const handler = async (event: any) => {
       });
 
       item.transaction_id = transaction_id;
-      // create-only to avoid accidental overwrite if id collision (very unlikely with UUID)
+
       await addItem(
         tableName,
         item,
@@ -379,7 +403,7 @@ export const handler = async (event: any) => {
       );
 
       // Set storage to booked (isBooked = true) so it no longer appears available in list_storage function or disabled for purchasing
-      await setStorageToBooked(club_account_id, storage_id);
+      await setStorageToNotAvailable(club_account_id, storage_id, booked_by_name);
 
       return createResponse(
         200,

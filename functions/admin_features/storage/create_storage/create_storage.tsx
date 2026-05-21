@@ -6,6 +6,19 @@ import {
 } from "./function_helpers";
 import { randomUUID } from "crypto";
 
+const validatePositiveInteger = (value: unknown, fieldName: string) => {
+  if (
+    typeof value !== "number" ||
+    !Number.isInteger(value) ||
+    Number.isNaN(value) ||
+    value < 1
+  ) {
+    return `${fieldName} must be a positive integer if provided`;
+  }
+
+  return undefined;
+};
+
 const validateStorageInput = (body: any) => {
   const storageName = body?.storage_name ?? body?.name;
   const clubAccountId = body?.storage_id
@@ -61,6 +74,51 @@ const validateStorageInput = (body: any) => {
     }
   }
 
+  if (body?.gridPosition !== undefined && body?.gridPosition !== null) {
+    const error = validatePositiveInteger(body.gridPosition, "gridPosition");
+    if (error) return error;
+  }
+  if (body?.grid_position !== undefined && body?.grid_position !== null) {
+    const error = validatePositiveInteger(body.grid_position, "grid_position");
+    if (error) return error;
+  }
+
+  if (body?.gridRow !== undefined && body?.gridRow !== null) {
+    const error = validatePositiveInteger(body.gridRow, "gridRow");
+    if (error) return error;
+  }
+  if (body?.grid_row !== undefined && body?.grid_row !== null) {
+    const error = validatePositiveInteger(body.grid_row, "grid_row");
+    if (error) return error;
+  }
+
+  if (body?.gridColumn !== undefined && body?.gridColumn !== null) {
+    const error = validatePositiveInteger(body.gridColumn, "gridColumn");
+    if (error) return error;
+  }
+  if (body?.grid_column !== undefined && body?.grid_column !== null) {
+    const error = validatePositiveInteger(body.grid_column, "grid_column");
+    if (error) return error;
+  }
+
+  if (body?.layoutRows !== undefined && body?.layoutRows !== null) {
+    const error = validatePositiveInteger(body.layoutRows, "layoutRows");
+    if (error) return error;
+  }
+  if (body?.layout_rows !== undefined && body?.layout_rows !== null) {
+    const error = validatePositiveInteger(body.layout_rows, "layout_rows");
+    if (error) return error;
+  }
+
+  if (body?.layoutColumns !== undefined && body?.layoutColumns !== null) {
+    const error = validatePositiveInteger(body.layoutColumns, "layoutColumns");
+    if (error) return error;
+  }
+  if (body?.layout_columns !== undefined && body?.layout_columns !== null) {
+    const error = validatePositiveInteger(body.layout_columns, "layout_columns");
+    if (error) return error;
+  }
+
   return undefined;
 };
 
@@ -94,6 +152,11 @@ export const handler = async (event: any) => {
     const club_account_id = body?.club_account_id ?? body?.clubId;
     const parent_id = body?.parent_id ?? body?.parentId ?? null;
     const price_cents = body?.price_cents ?? body?.priceCents ?? null;
+    const grid_position = body?.grid_position ?? body?.gridPosition;
+    const grid_row = body?.grid_row ?? body?.gridRow;
+    const grid_column = body?.grid_column ?? body?.gridColumn;
+    const layout_rows = body?.layout_rows ?? body?.layoutRows;
+    const layout_columns = body?.layout_columns ?? body?.layoutColumns;
 
     // If storage_id provided, perform update.
     if (body?.storage_id) {
@@ -132,6 +195,36 @@ export const handler = async (event: any) => {
         updateParts.push("#price_cents = :price_cents");
         expressionAttributeNames["#price_cents"] = "price_cents";
         expressionAttributeValues[":price_cents"] = price_cents;
+      }
+
+      if (grid_position !== undefined) {
+        updateParts.push("#grid_position = :grid_position");
+        expressionAttributeNames["#grid_position"] = "grid_position";
+        expressionAttributeValues[":grid_position"] = grid_position;
+      }
+
+      if (grid_row !== undefined) {
+        updateParts.push("#grid_row = :grid_row");
+        expressionAttributeNames["#grid_row"] = "grid_row";
+        expressionAttributeValues[":grid_row"] = grid_row;
+      }
+
+      if (grid_column !== undefined) {
+        updateParts.push("#grid_column = :grid_column");
+        expressionAttributeNames["#grid_column"] = "grid_column";
+        expressionAttributeValues[":grid_column"] = grid_column;
+      }
+
+      if (layout_rows !== undefined) {
+        updateParts.push("#layout_rows = :layout_rows");
+        expressionAttributeNames["#layout_rows"] = "layout_rows";
+        expressionAttributeValues[":layout_rows"] = layout_rows;
+      }
+
+      if (layout_columns !== undefined) {
+        updateParts.push("#layout_columns = :layout_columns");
+        expressionAttributeNames["#layout_columns"] = "layout_columns";
+        expressionAttributeValues[":layout_columns"] = layout_columns;
       }
 
       if (updateParts.length === 0) {
@@ -179,6 +272,11 @@ export const handler = async (event: any) => {
       storage_name,
       parent_id,
       price_cents,
+      grid_position,
+      grid_row,
+      grid_column,
+      layout_rows,
+      layout_columns,
     });
 
     return createResponse(

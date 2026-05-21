@@ -18,6 +18,7 @@ interface MSC_StorageRequestConstructProps {
   storage_requests_table: MSC_Table;
   storage_table: MSC_Table;
   club_table: MSC_Table;
+  billing_table: MSC_Table;
   layers: {
     jwt_layer: MSC_LambdaLayer;
   };
@@ -41,9 +42,11 @@ export class MSC_StorageRequestConstruct extends Construct {
           STORAGE_TABLE_NAME: props.storage_table.tableName,
           STORAGE_REQUESTS_TABLE: props.storage_requests_table.tableName,
           TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+          MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
         },
         permissions: {
           [props.transactions_table.tableArn]: ["dynamodb:UpdateItem"],
+          [props.billing_table.tableArn]: ["dynamodb:UpdateItem"],
           [props.storage_requests_table.tableArn]: [
             "dynamodb:PutItem",
             "dynamodb:GetItem",
@@ -51,6 +54,7 @@ export class MSC_StorageRequestConstruct extends Construct {
           ],
           [props.storage_table.tableArn]: [
             "dynamodb:PutItem",
+            "dynamodb:GetItem",
             "dynamodb:UpdateItem",
           ],
         },

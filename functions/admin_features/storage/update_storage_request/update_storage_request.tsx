@@ -5,26 +5,6 @@ import {
   updateItem,
 } from "./function_helpers";
 
-/**
- * Admin: Update Storage Request
- *
- * Updates one or more fields on an existing storage request.
- * Expects a body containing `storage_request_id` (or `id`) and the fields to update.
- *
- * Allowed updatable fields:
- * - status (string)
- * - paid (boolean)
- * - costCents (number)
- * - paymentMethod (string)
- * - paymentIntentId (string|null)
- * - notes (string|null)
- * - date (string)
- * - userId (string)
- *
- * This uses the shared `updateItem` helper and enforces that the item exists using
- * ConditionExpression "attribute_exists(storage_request_id)". Returns the updated item.
- */
-
 const validateUpdatableFields = (body: any) => {
   if (!body) return "Request body is required";
 
@@ -98,11 +78,52 @@ const setStorageToBooked = async (
   await updateItem(
     tableName,
     key,
-    "SET #isBooked = :booked",
-    { "#isBooked": "isBooked" },
-    { ":booked": isBooked },
+    "SET #isBooked = :booked, #pending_booked = :pending_booked",
+    {
+      "#isBooked": "isBooked",
+      "#pending_booked": "pending_booked",
+    },
+    {
+      ":booked": isBooked,
+      ":pending_booked": false,
+    },
   );
 };
+
+async function updateClubsStorageBilling(club_account_id: string, fee: number) {
+  const tableName = process.env.MONTHLY_BILLING_TABLE_NAME as string;
+  if (!tableName) {
+    throw new Error("Server misconfigured: missing MONTHLY_BILLING_TABLE_NAME");
+  }
+
+  const now = new Date();
+  const year_month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  await updateItem(
+    tableName,
+    {
+      club_account_id: club_account_id,
+      year_month: year_month,
+    },
+    `SET 
+      #total_amount = if_not_exists(#total_amount, :zero) + :storage_fee,
+      #outstanding_amount = if_not_exists(#outstanding_amount, :zero) + :storage_fee,
+      #storage_amount = if_not_exists(#storage_amount, :zero) + :storage_fee,
+      #month_paid = :month_paid
+    `,
+    {
+      "#total_amount": "total_amount",
+      "#outstanding_amount": "outstanding_amount",
+      "#storage_amount": "storage_amount",
+      "#month_paid": "month_paid",
+    },
+    {
+      ":zero": 0,
+      ":storage_fee": fee,
+      ":month_paid": false,
+    },
+  );
+}
 
 const cancelStorageTransaction = async (
   club_account_id: string,
@@ -287,6 +308,8 @@ export const handler = async (event: any) => {
                 existingStorageRequest.paymentMethod ??
                 "EFT/Cash",
             );
+
+            await updateClubsStorageBilling(club_account_id, paymentAmount * 0.02);
           }
         }
         await setStorageToBooked(club_account_id, body.storage_id, true);
