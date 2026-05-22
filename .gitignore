@@ -5,6 +5,8 @@
 !layer-code/**/package.json
 !layer-code/**/package-lock.json
 !scripts/copy-helpers.js
+!scripts/build-functions.js
+!scripts/prune-function-helper-copies.js
 .generated/
 
 .cdk.staging
