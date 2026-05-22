@@ -14,6 +14,8 @@ export const handler = async (event: any) => {
       body?.id ??
       query_string_params?.storage_id ??
       query_string_params?.id;
+    
+    const club_account_id = body?.club_account_id ?? query_string_params?.club_account_id;
 
     if (
       !storage_id ||
@@ -40,7 +42,10 @@ export const handler = async (event: any) => {
     }
 
     // removeItem returns the old item if return_old_item is true, otherwise null.
-    const oldItem = await removeItem(tableName, { storage_id }, true);
+    const oldItem = await removeItem(tableName, {
+      club_account_id: club_account_id, 
+      storage_id 
+    }, true);
 
     if (!oldItem) {
       // Nothing was deleted (item didn't exist)

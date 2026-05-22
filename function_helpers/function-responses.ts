@@ -12,7 +12,7 @@ export const createResponse = (statusCode: number, data: object, origin: string)
         body: JSON.stringify(data),
         headers: {
             "Access-Control-Allow-Origin": allowOrigin,
-            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT,DELETE",
             "Access-Control-Allow-Headers": "Content-Type,X-Requested-With,Authorization",
             "Access-Control-Allow-Credentials": "true"
         },

@@ -55,7 +55,7 @@ export class MSC_APIGateway extends RestApi {
             responseHeaders: {
                 'Access-Control-Allow-Origin': `'${process.env.ALLOWED_ORIGIN}'`,
                 'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
-                'Access-Control-Allow-Methods': "'OPTIONS,POST,GET'",
+                'Access-Control-Allow-Methods': "'OPTIONS,POST,GET,DELETE'",
                 'Access-Control-Allow-Credentials': "'true'",
             },
         });
@@ -65,7 +65,7 @@ export class MSC_APIGateway extends RestApi {
             responseHeaders: {
                 'Access-Control-Allow-Origin': `'${process.env.ALLOWED_ORIGIN}'`,
                 'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
-                'Access-Control-Allow-Methods': "'OPTIONS,POST,GET'",
+                'Access-Control-Allow-Methods': "'OPTIONS,POST,GET,DELETE'",
                 'Access-Control-Allow-Credentials': "'true'",
             },
         });

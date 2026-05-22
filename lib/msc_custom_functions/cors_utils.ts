@@ -14,7 +14,7 @@ export function addCorsEnabledMethod(
       responseParameters: {
         'method.response.header.Access-Control-Allow-Origin': `'${origin}'`,
         'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,Authorization'",
-        'method.response.header.Access-Control-Allow-Methods': "'OPTIONS,POST,GET,PUT'",
+        'method.response.header.Access-Control-Allow-Methods': "'OPTIONS,POST,GET,PUT,DELETE'",
         'method.response.header.Access-Control-Allow-Credentials': "'true'",
       },
     })),
@@ -50,7 +50,7 @@ export function addCorsOptions(resource: any, origin = `${process.env.ALLOWED_OR
               "'Content-Type,X-Amz-Date,X-Api-Key,X-Amz-Security-Token,Authorization'",
             'method.response.header.Access-Control-Allow-Origin': `'${origin}'`,
             'method.response.header.Access-Control-Allow-Credentials': "'true'",
-            'method.response.header.Access-Control-Allow-Methods': "'OPTIONS,POST,GET,PUT'",
+            'method.response.header.Access-Control-Allow-Methods': "'OPTIONS,POST,GET,PUT,DELETE'",
           },
         },
       ],
