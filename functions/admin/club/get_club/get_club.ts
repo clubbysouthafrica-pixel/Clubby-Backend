@@ -23,6 +23,13 @@ const getCurrentSeasonMemberCounts = (registrations: Record<string, any>[] | nul
     });
 };
 
+const shouldIncludeFlag = (value: unknown) => value === true || value === "true";
+
+const getCurrentYearMonth = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+};
+
 export const handler = async (event: any) => {
 
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -85,7 +92,13 @@ export const handler = async (event: any) => {
             }
         }
 
-        const [registration_form_exists, registrations] = await Promise.all([
+        const includeAccountBalance = shouldIncludeFlag(query_string_params?.includeAccountBalance);
+
+        if (includeAccountBalance && !process.env.MONTHLY_BILLING_TABLE_NAME) {
+            return createResponse(500, { message: "Server misconfigured: missing MONTHLY_BILLING_TABLE_NAME" }, origin);
+        }
+
+        const [registration_form_exists, registrations, monthly_billing_entries] = await Promise.all([
             queryItems(
                 process.env.REGISTRATION_FORM_TABLE_NAME as string,
                 "club_account_id = :clubId",
@@ -96,11 +109,35 @@ export const handler = async (event: any) => {
                 "club_account_id = :clubId",
                 { ":clubId": query_string_params.club_account_id },
                 process.env.REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX
-            )
+            ),
+            includeAccountBalance
+                ? queryItems(
+                    process.env.MONTHLY_BILLING_TABLE_NAME as string,
+                    "club_account_id = :clubId",
+                    { ":clubId": query_string_params.club_account_id }
+                )
+                : Promise.resolve(undefined)
         ]);
 
         let total_active_members: number | undefined = undefined;
         let total_pending_members: number | undefined = undefined;
+        const currentYearMonth = getCurrentYearMonth();
+        const account_balance_entries = includeAccountBalance
+            ? [...(monthly_billing_entries ?? [])]
+                .filter((entry) => {
+                    const outstandingAmount = entry?.outstanding_amount ?? 0;
+                    return entry?.year_month && entry.year_month !== currentYearMonth && outstandingAmount > 0;
+                })
+                .sort((left, right) => {
+                    const leftMonth = left?.year_month ?? "";
+                    const rightMonth = right?.year_month ?? "";
+                    return rightMonth.localeCompare(leftMonth);
+                })
+                .map((entry) => ({
+                    month_date: entry.year_month,
+                    outstanding_amount: entry.outstanding_amount,
+                }))
+            : undefined;
 
         if (query_string_params?.stats === "true") {
             const counts = getCurrentSeasonMemberCounts(registrations);
@@ -129,6 +166,7 @@ export const handler = async (event: any) => {
             joined: item["joined"],
             hide_from_public: item?.hide_from_public ?? false,
             deregistration_in_progress: item?.deregistration_in_progress ?? false,
+            account_balance_entries,
             images: query_string_params?.includeImages === "true" ? {
                 cover: { uploadUrl: cover_upload_url, fetchUrl: cover_fetch_url },
                 profile: { uploadUrl: profile_upload_url, fetchUrl: profile_fetch_url },

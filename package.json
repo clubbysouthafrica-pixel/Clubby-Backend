@@ -9,11 +9,12 @@
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npx tsc --build",
+    "build": "node scripts/build-functions.js",
     "create-layers": "bash scripts/build-layers.sh",
     "create-layers-windows": "powershell -ExecutionPolicy ByPass -File ./scripts/build-layers.ps1",
-    "update-helpers": "npm run build && node scripts/copy-helpers.js",
-    "predeploy": "npm run build && node scripts/copy-helpers.js",
+    "update-helpers": "npm run build",
+    "predeploy": "npm run build",
+    "prune-helpers": "node scripts/prune-function-helper-copies.js",
     "deploy": "cdk deploy --all --require-approval never",
     "destroy": "bash scripts/destroy-all.sh"
   },

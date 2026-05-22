@@ -25,3 +25,8 @@
         - Get the necessary access AWS keys for the Development environment from a team member
     - npm run create-layers
     - npm run deploy
+
+## Function helpers
+- Lambda builds now stage a temporary copy of `functions/`, inject the root `function_helpers/` tree into each Lambda folder, and compile from that staged tree.
+- You can remove the tracked `functions/**/function_helpers` copies once by running `npm run prune-helpers`.
+- `npm run build` and `npm run deploy` will keep working after those duplicate helper folders are removed.
