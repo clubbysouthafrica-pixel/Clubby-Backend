@@ -42,10 +42,10 @@ export const handler = async (event: any) => {
             });
 
             if (member_registration) {
-                if (member_registration?.deregistered_on) registration = "DEREGISTERED";
 				if (member_registration?.last_season_registration) registration = "DEREGISTERED (LAST SEASONS REGISTRATION)";
-                else if (member_registration?.registered_on) registration = "REGISTERED";
-                else registration = "PENDING";
+				else if (member_registration?.deregistered_on || member_registration?.deregistered) registration = "DEREGISTERED";
+				else if (member_registration?.registered_on) registration = "REGISTERED";
+				else registration = "PENDING";
             }
         }
 
