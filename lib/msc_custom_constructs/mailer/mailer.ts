@@ -1,11 +1,15 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Construct } from 'constructs';
-import { MSC_Lambda, MSC_LambdaLayer, MSC_Queue, MSC_Table } from '../../msc_service_constructs';
+import { MSC_Bucket, MSC_Lambda, MSC_LambdaLayer, MSC_Queue, MSC_Table } from '../../msc_service_constructs';
+
+const synthEnv = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
 
 export interface MSC_MailingStackProps extends StackProps {
     mail_queue: MSC_Queue;
     billing_table: MSC_Table;
+    image_bucket: MSC_Bucket;
+    club_history_bucket: MSC_Bucket;
 }
 
 export class MSC_MailingStack extends Stack {
@@ -21,11 +25,15 @@ export class MSC_MailingStack extends Stack {
             code: "mailer/send_mail",
             envVariables: {
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
-                ENVIRONMENT: process.env.ENVIRONMENT as string
+                ENVIRONMENT: synthEnv.ENVIRONMENT as string,
+                IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
+                CLUB_HISTORY_BUCKET_NAME: props.club_history_bucket.bucketName,
+                REGION: synthEnv.REGION as string,
             },
             permissions: {
-                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
-                    "ses:SendEmail"
+                [`arn:aws:ses:${synthEnv.REGION}:${synthEnv.ACCOUNT}:identity/*`]: [
+                    "ses:SendEmail",
+                    "ses:SendRawEmail"
                 ],
                 [props.billing_table.tableArn]: [
                     "dynamodb:UpdateItem"
@@ -33,6 +41,8 @@ export class MSC_MailingStack extends Stack {
             },
             layers: [jwt_layer],
         });
+        props.image_bucket.grantRead(send_mail);
+        props.club_history_bucket.grantPut(send_mail);
         send_mail.addEventSource(new SqsEventSource(props.mail_queue, {
             batchSize: 1
         }));

@@ -49,6 +49,8 @@ export class MSC_Stack extends cdk.Stack {
       env: props?.env,
       mail_queue: mail_queue,
       billing_table: tables.billing_table,
+      image_bucket: buckets.image_bucket,
+      club_history_bucket: buckets.club_history_bucket,
     });
 
     new MSC_AdminFeaturesNestedStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}AdminFeaturesStack`, {

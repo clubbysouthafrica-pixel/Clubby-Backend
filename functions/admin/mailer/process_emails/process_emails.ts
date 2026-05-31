@@ -5,8 +5,83 @@ import {
     getItem
 } from "./function_helpers";
 import { SESClient, GetSendQuotaCommand } from "@aws-sdk/client-ses";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { randomUUID } from "crypto";
 
 const sesClient = new SESClient({ region: process.env.REGION });
+const s3Client = new S3Client({ region: process.env.REGION });
+const INLINE_IMAGE_DATA_URL_REGEX = /data:(image\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\r\n]+)/gi;
+
+interface InlineImageReference {
+    cid: string;
+    key: string;
+    mime_type: string;
+    filename: string;
+}
+
+function buildInlineImageKey(clubAccountId: string, mimeType: string): string {
+    const extension = mimeType.split("/")[1]?.split("+")[0] ?? "bin";
+    return `mailer/${clubAccountId}/${randomUUID()}.${extension}`;
+}
+
+async function uploadInlineImages(emailBody: string, clubAccountId: string): Promise<{ emailBody: string; inlineImages: InlineImageReference[] }> {
+    if (!emailBody.includes("data:image/")) {
+        return {
+            emailBody,
+            inlineImages: []
+        };
+    }
+
+    const imageBucketName = process.env.IMAGE_BUCKET_NAME;
+
+    if (!imageBucketName) {
+        throw new Error("Server misconfigured: missing inline image hosting configuration.");
+    }
+
+    const replacements = new Map<string, { cidUrl: string; image: InlineImageReference }>();
+    const matches = Array.from(emailBody.matchAll(INLINE_IMAGE_DATA_URL_REGEX));
+
+    for (const match of matches) {
+        const [dataUrl, mimeType, base64Data] = match;
+
+        if (replacements.has(dataUrl)) {
+            continue;
+        }
+
+        const key = buildInlineImageKey(clubAccountId, mimeType);
+        const cid = `${randomUUID()}@myclubsoftware`;
+        const extension = mimeType.split("/")[1]?.split("+")[0] ?? "bin";
+        const body = Buffer.from(base64Data.replace(/\s+/g, ""), "base64");
+
+        await s3Client.send(new PutObjectCommand({
+            Bucket: imageBucketName,
+            Key: key,
+            Body: body,
+            ContentType: mimeType,
+            CacheControl: "public, max-age=31536000, immutable"
+        }));
+
+        replacements.set(dataUrl, {
+            cidUrl: `cid:${cid}`,
+            image: {
+                cid,
+                key,
+                mime_type: mimeType,
+                filename: `inline-image.${extension}`
+            }
+        });
+    }
+
+    let transformedBody = emailBody;
+    for (const [dataUrl, replacement] of replacements.entries()) {
+        transformedBody = transformedBody.split(dataUrl).join(replacement.cidUrl);
+    }
+
+    return {
+        emailBody: transformedBody,
+        inlineImages: Array.from(replacements.values(), ({ image }) => image)
+    };
+}
 
 async function getSentLast24Hours(emails: string[]): Promise<string | null> {
     const command = new GetSendQuotaCommand({});
@@ -97,12 +172,15 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: club_sending_limit }, origin);
         }
 
+        const { emailBody: processedEmailBody, inlineImages } = await uploadInlineImages(body.email_body, body.club_account_id);
+
         await sendSqsMessage(
             process.env.SEND_EMAIL_QUEUE_URL as string,
             {
                 emails: body.emails,
                 subject: body.subject,
-                email_body: body.email_body,
+                email_body: processedEmailBody,
+                inline_images: inlineImages,
                 club_account_id: body.club_account_id,
                 ...club_sending_limit
             },
