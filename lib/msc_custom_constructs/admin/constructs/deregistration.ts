@@ -126,7 +126,8 @@ export class MSC_DeregistrationConstruct extends Construct {
                     "dynamodb:DeleteItem"
                 ],
                 [props.club_member_table.tableArn]: [
-                    "dynamodb:UpdateItem"
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem"
                 ],
                 [`${props.club_member_table.tableArn}/index/ClubAccountIDIndex`]: [
                     "dynamodb:Query"

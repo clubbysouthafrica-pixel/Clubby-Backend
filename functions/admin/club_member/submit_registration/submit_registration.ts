@@ -541,6 +541,7 @@ export const handler = async (event: any) => {
             club_account_id: body.club_account_id,
             resubmission_required: false,
             current_reg_id,
+            email_opt_in: body?.email_opt_in ?? false,
             user_id: member_user_id,
             current_reg_transaction_id: membership_amount > 0 ? current_reg_transaction_id : undefined,
             member_email: memberEmail,

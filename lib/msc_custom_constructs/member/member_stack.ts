@@ -101,12 +101,17 @@ export class MSC_MemberNestedStack extends Stack {
       layers: all_layers,
       product_table: props.product_table,
       users_table: props.users_table,
+      club_table: props.club_table,
+      club_member_table: props.club_member_table,
+      member_user_pool: props.member_user_pool,
       transactions_table: props.transactions_table,
     });
 
     new MSC_MemberShopConstruct(this, `${id}-Shop`, {
       api_gateway: api_gateway,
       product_table: props.product_table,
+      club_table: props.club_table,
+      club_member_table: props.club_member_table,
       token_authorizer: jwt_construct.token_authorizer,
       shop_images_bucket: props.shop_images_bucket,
       layers: all_layers,

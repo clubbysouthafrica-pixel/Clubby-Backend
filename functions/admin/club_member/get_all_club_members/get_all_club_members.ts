@@ -204,6 +204,8 @@ const getMembersPageData = async (
             if (!allRegistrations || allRegistrations.length === 0 || clubRegistrations.length === 0) {
                 members.push({
                     user_id: item.user_id,
+                    non_registration: item?.non_registration ?? false,
+                    email_opt_in: item?.email_opt_in ?? true,
                     member_first_name: item.member_first_name,
                     member_surname: item.member_surname,
                     member_email: item.member_email,
@@ -243,6 +245,8 @@ const getMembersPageData = async (
                 } else {
                     members.push({
                         user_id: item.user_id,
+                        non_registration: item?.non_registration ?? false,
+                        email_opt_in: item?.email_opt_in ?? true,
                         member_first_name: item.member_first_name,
                         member_surname: item.member_surname,
                         member_email: item.member_email,

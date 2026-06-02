@@ -1,9 +1,12 @@
+import jwt from "jsonwebtoken";
 import { GetObjectCommand, HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
     createResponse,
-    deconstructEvent,
-    queryItems
+    getItem,
+    normalizeProductTicketValidityForResponse,
+    queryItems,
+    deconstructEvent
 } from "./function_helpers";
 
 const s3_client = new S3Client({ region: process.env.REGION });
@@ -16,6 +19,26 @@ export const handler = async (event: any) => {
 
         if (!club_account_id || typeof club_account_id !== "string") {
             return createResponse(400, { message: "Invalid or missing club_account_id parameter." }, origin);
+        }
+
+        const club = await getItem(process.env.CLUB_TABLE_NAME as string, {
+            club_account_id: club_account_id
+        });
+        if (!club) {
+            return createResponse(404, { message: "Club not found." }, origin);
+        }
+        if (club?.public_shop !== true) {
+            if (typeof user_id !== "string") {
+                return createResponse(401, { message: "Shop is not public." }, origin);
+            }
+
+            const club_member = await getItem(process.env.CLUB_MEMBER_TABLE_NAME as string, {
+                club_account_id: club_account_id,
+                user_id: user_id
+            });
+            if (!club_member || club_member?.registered !== true) {
+                return createResponse(403, { message: "You must be a member of the club to view the shop." }, origin);
+            }
         }
 
         const products = await queryItems(
@@ -40,16 +63,16 @@ export const handler = async (event: any) => {
                             Key: product.product_image_key
                         });
                         const imageUrl = await getSignedUrl(s3_client, getCommand, { expiresIn: 60 * 5 });
-                        return { ...product, product_image_url: imageUrl };
+                        return { ...normalizeProductTicketValidityForResponse(product), product_image_url: imageUrl };
                     } catch (err: any) {
                         const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
                         if (status && status !== 404) {
                             console.error(`Error checking product image ${product.product_image_key}:`, err);
                         }
-                        return product;
+                        return normalizeProductTicketValidityForResponse(product);
                     }
                 }
-                return product;
+                return normalizeProductTicketValidityForResponse(product);
             })
         );
 
@@ -62,3 +85,4 @@ export const handler = async (event: any) => {
         return createResponse(statusCode, { message }, origin);
     }
 };
+

@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_LambdaLayer } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_LambdaLayer, MSC_Cognito } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 
@@ -10,6 +10,9 @@ interface MSC_MemberOrdersConstructProps {
     transactions_table: MSC_Table;
     product_table: MSC_Table;
     users_table: MSC_Table;
+    club_table: MSC_Table;
+    club_member_table: MSC_Table;
+    member_user_pool: MSC_Cognito;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -67,10 +70,55 @@ export class MSC_MemberOrdersConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const public_create_orders = new MSC_Lambda(this, `${id}-PublicCreateOrders`, {
+            code: "member/orders/public_create_orders",
+            envVariables: {
+                ORDER_TABLE_NAME: props.orders_table.tableName,
+                USERS_TABLE_NAME: props.users_table.tableName,
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+                CLUB_TABLE_NAME: props.club_table.tableName,
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                USER_POOL_ID: props.member_user_pool.userPoolId,
+                USER_TYPE: "MEMBER",
+                DOMAIN: process.env.DOMAIN as string
+            },
+            permissions: {
+                [props.orders_table.tableArn]: [
+                    "dynamodb:PutItem"
+                ],
+                [props.users_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem"
+                ],
+                [props.transactions_table.tableArn]: [
+                    "dynamodb:PutItem"
+                ],
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.club_member_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem"
+                ],
+                [props.member_user_pool.userPoolArn]: [
+                    "cognito-idp:AdminCreateUser",
+                    "cognito-idp:AdminSetUserPassword",
+                    "cognito-idp:AdminGetUser"
+                ],
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                    "ses:SendEmail"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const orders_resource = props.api_gateway.root.addResource("orders");
 
         const get_member_orders_resource = orders_resource.addResource("getMemberOrders");
         const create_orders_resource = orders_resource.addResource("createOrder");
+        const public_create_orders_resource = orders_resource.addResource("publicCreateOrder");
         const cancel_order_resource = orders_resource.addResource("cancelOrder");
 
         const methodOptions: MethodOptions = {
@@ -78,9 +126,10 @@ export class MSC_MemberOrdersConstruct extends Construct {
             authorizationType: AuthorizationType.CUSTOM,
             authorizer: props.token_authorizer
         }
-
+        
         addCorsEnabledMethod(get_member_orders_resource, get_member_orders, methodOptions, undefined, "GET");
         addCorsEnabledMethod(create_orders_resource, create_orders, methodOptions, undefined, "POST");
+        addCorsEnabledMethod(public_create_orders_resource, public_create_orders, { methodResponses: [] }, undefined, "POST");
         addCorsEnabledMethod(cancel_order_resource, cancel_order, methodOptions, undefined, "POST");
     }
 }

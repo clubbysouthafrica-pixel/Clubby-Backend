@@ -1,4 +1,36 @@
-import { createResponse, deconstructEvent, removeItem,  } from "./function_helpers";
+import { createResponse, deconstructEvent, getItem, removeItem } from "./function_helpers";
+
+async function removeMembersLastSeasonRegistration(clubAccountId: string, memberId: string) {
+    const clubMember = await getItem(
+        process.env.CLUB_MEMBER_TABLE_NAME as string,
+        {
+            club_account_id: clubAccountId,
+            user_id: memberId
+        }
+    );
+
+    if (!clubMember?.current_reg_id) {
+        return;
+    }
+
+    const registration = await getItem(
+        process.env.REGISTRATIONS_TABLE_NAME as string,
+        {
+            user_id: memberId,
+            registration_id: clubMember.current_reg_id
+        }
+    );
+
+    if (registration?.last_season_registration === true) {
+        await removeItem(
+            process.env.REGISTRATIONS_TABLE_NAME as string,
+            {
+                user_id: memberId,
+                registration_id: clubMember.current_reg_id
+            }
+        );
+    }
+}
 
 export const handler = async (event: any) => {
 
@@ -16,15 +48,17 @@ export const handler = async (event: any) => {
         }
 
         await Promise.all(
-            body.member_ids.map((member_id: string) =>
-                removeItem(
+            body.member_ids.map(async (member_id: string) => {
+                await removeMembersLastSeasonRegistration(query_string_params.club_account_id, member_id);
+
+                await removeItem(
                     process.env.CLUB_MEMBER_TABLE_NAME as string,
                     {
                         club_account_id: query_string_params.club_account_id,
                         user_id: member_id
                     }
-                )
-            )
+                );
+            })
         );
 
         return createResponse(200, { message: `${body.member_ids.length} member(s) successfully removed.` }, origin);

@@ -185,6 +185,7 @@ export const handler = async (event: any) => {
             const item: any = {
                 field_id: field?.field_id ?? randomUUID(),
                 visible: true,
+                form_name: body.form_name,
                 club_account_id: body.club_account_id,
                 page_index: field.page_index,
                 page_header: field.page_header,

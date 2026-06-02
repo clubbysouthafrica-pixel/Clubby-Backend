@@ -2,10 +2,14 @@ import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import {
     createResponse,
     deconstructEvent,
-    updateItem
+    normalizeProductTicketValidityForResponse,
+    updateItem,
+    resolveProductTicketValidityForStorage
 } from "./function_helpers";
 
 const s3_client = new S3Client({ region: process.env.REGION });
+
+const isValidProductType = (value: unknown): value is "standard" | "ticket" => value === "standard" || value === "ticket";
 
 export const handler = async (event: any) => {
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -29,6 +33,15 @@ export const handler = async (event: any) => {
             if (typeof body.active_product !== "boolean") {
                 return createResponse(400, { message: "Invalid active_product provided (Must be a boolean)." }, origin);
             }
+        }
+
+        if (body.product_type !== undefined && !isValidProductType(body.product_type)) {
+            return createResponse(400, { message: "Invalid product_type provided (Must be 'standard' or 'ticket')." }, origin);
+        }
+
+        const ticketValidityResolution = resolveProductTicketValidityForStorage(body ?? {});
+        if (ticketValidityResolution.error) {
+            return createResponse(400, { message: ticketValidityResolution.error }, origin);
         }
 
         if (body.product_image !== undefined) {
@@ -61,29 +74,71 @@ export const handler = async (event: any) => {
             }
         }
 
-        const updateExpressions: string[] = [];
+        const setExpressions: string[] = [];
+        const removeExpressions = new Set<string>(ticketValidityResolution.removeAttributes);
         const expressionAttributeValues: Record<string, any> = {};
         const expressionAttributeNames: Record<string, string> = {};
 
         if (body.name !== undefined) {
-            updateExpressions.push("#n = :n");
+            setExpressions.push("#n = :n");
             expressionAttributeNames["#n"] = "name";
             expressionAttributeValues[":n"] = body.name;
         }
 
         if (body.active_product !== undefined) {
-            updateExpressions.push("#ap = :ap");
+            setExpressions.push("#ap = :ap");
             expressionAttributeNames["#ap"] = "active_product";
             expressionAttributeValues[":ap"] = body.active_product;
         }
 
+        if (body.product_type !== undefined) {
+            setExpressions.push("#pt = :pt");
+            expressionAttributeNames["#pt"] = "product_type";
+            expressionAttributeValues[":pt"] = body.product_type;
+        }
+
+        if (ticketValidityResolution.fields.valid_day_start_date !== undefined) {
+            setExpressions.push("#vdsd = :vdsd");
+            expressionAttributeNames["#vdsd"] = "valid_day_start_date";
+            expressionAttributeValues[":vdsd"] = ticketValidityResolution.fields.valid_day_start_date;
+        }
+
+        if (ticketValidityResolution.fields.valid_day_end_date !== undefined) {
+            setExpressions.push("#vded = :vded");
+            expressionAttributeNames["#vded"] = "valid_day_end_date";
+            expressionAttributeValues[":vded"] = ticketValidityResolution.fields.valid_day_end_date;
+        }
+
+        if (ticketValidityResolution.fields.excluded_valid_day_options !== undefined) {
+            setExpressions.push("#evdo = :evdo");
+            expressionAttributeNames["#evdo"] = "excluded_valid_day_options";
+            expressionAttributeValues[":evdo"] = ticketValidityResolution.fields.excluded_valid_day_options;
+        }
+
         if (imageKey !== undefined) {
-            updateExpressions.push("#img = :img");
+            setExpressions.push("#img = :img");
             expressionAttributeNames["#img"] = "product_image_key";
             expressionAttributeValues[":img"] = imageKey;
         }
 
-        const updateExpression = `SET ${updateExpressions.join(", ")}`;
+        for (const attributeName of removeExpressions) {
+            const attributeKey = `#${attributeName.replace(/_/g, "")}`;
+            expressionAttributeNames[attributeKey] = attributeName;
+        }
+
+        if (setExpressions.length === 0 && removeExpressions.size === 0) {
+            return createResponse(400, { message: "No valid product fields were provided for update." }, origin);
+        }
+
+        const expressionParts: string[] = [];
+        if (setExpressions.length > 0) {
+            expressionParts.push(`SET ${setExpressions.join(", ")}`);
+        }
+        if (removeExpressions.size > 0) {
+            const removeAttributeKeys = Array.from(removeExpressions).map((attributeName) => `#${attributeName.replace(/_/g, "")}`);
+            expressionParts.push(`REMOVE ${removeAttributeKeys.join(", ")}`);
+        }
+        const updateExpression = expressionParts.join(" ");
 
         const updatedProduct = await updateItem(
             process.env.PRODUCT_TABLE_NAME!,
@@ -98,7 +153,11 @@ export const handler = async (event: any) => {
             true
         );
 
-        return createResponse(200, { message: "Product updated successfully", product: updatedProduct }, origin);
+        if (!updatedProduct) {
+            return createResponse(500, { message: "Product update did not return the updated product." }, origin);
+        }
+
+        return createResponse(200, { message: "Product updated successfully", product: normalizeProductTicketValidityForResponse(updatedProduct) }, origin);
 
     } catch (error: any) {
         console.error('Update product error:', error);

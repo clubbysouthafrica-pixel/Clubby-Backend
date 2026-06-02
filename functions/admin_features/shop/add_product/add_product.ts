@@ -3,10 +3,13 @@ import { randomUUID } from "crypto";
 import {
     createResponse,
     deconstructEvent,
-    addItem
+    addItem,
+    resolveProductTicketValidityForStorage
 } from "./function_helpers";
 
 const s3_client = new S3Client({ region: process.env.REGION });
+
+const isValidProductType = (value: unknown): value is "standard" | "ticket" => value === "standard" || value === "ticket";
 
 export const handler = async (event: any) => {
     const { origin, body, query_string_params, user_id } = deconstructEvent(event);
@@ -31,6 +34,15 @@ export const handler = async (event: any) => {
 
         if (typeof body.active_product !== "boolean") {
             return createResponse(400, { message: "Invalid active_product provided (Must be a boolean)." }, origin);
+        }
+
+        if (body.product_type !== undefined && !isValidProductType(body.product_type)) {
+            return createResponse(400, { message: "Invalid product_type provided (Must be 'standard' or 'ticket')." }, origin);
+        }
+
+        const ticketValidityResolution = resolveProductTicketValidityForStorage(body ?? {});
+        if (ticketValidityResolution.error) {
+            return createResponse(400, { message: ticketValidityResolution.error }, origin);
         }
 
         if (body.product_image !== undefined) {
@@ -71,8 +83,10 @@ export const handler = async (event: any) => {
             name: body.name,
             price: body.price,
             active_product: body.active_product,
+            product_type: body.product_type ?? "standard",
             purchase_limit: body.purchase_limit,
             created_date,
+            ...ticketValidityResolution.fields,
             ...(body.description && { description: body.description }),
             ...(product_image_key && { product_image_key })
         };

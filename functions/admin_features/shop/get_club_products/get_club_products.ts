@@ -4,6 +4,7 @@ import {
     createResponse,
     deconstructEvent,
     getItem,
+    normalizeProductTicketValidityForResponse,
     queryItems
 } from "./function_helpers";
 
@@ -50,16 +51,16 @@ export const handler = async (event: any) => {
                             Key: product.product_image_key
                         });
                         const imageUrl = await getSignedUrl(s3_client, getCommand, { expiresIn: 60 * 5 });
-                        return { ...product, product_image_url: imageUrl };
+                        return { ...normalizeProductTicketValidityForResponse(product), product_image_url: imageUrl };
                     } catch (err: any) {
                         const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
                         if (status && status !== 404) {
                             console.error(`Error checking product image ${product.product_image_key}:`, err);
                         }
-                        return product;
+                        return normalizeProductTicketValidityForResponse(product);
                     }
                 }
-                return product;
+                return normalizeProductTicketValidityForResponse(product);
             })
         );
 

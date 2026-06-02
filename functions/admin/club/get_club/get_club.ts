@@ -147,6 +147,7 @@ export const handler = async (event: any) => {
         
         return createResponse(200, {
             club_account_id: item["club_account_id"],
+            public_shop: item?.public_shop ?? false,
             total_active_members,
             total_pending_members,
             registration_form_exists: registration_form_exists ? true : false,

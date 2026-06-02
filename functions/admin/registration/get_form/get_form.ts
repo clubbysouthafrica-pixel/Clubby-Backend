@@ -27,10 +27,13 @@ export const handler = async (event: any) => {
             return createResponse(200, { pages }, origin);
         }
 
+        let form_name = ""
+
         form.forEach((item) => {
             const set = unmarshall(item);
 
             if (!set.visible) return
+            form_name = set.form_name;
 
             delete set.club_account_id;
             delete set.visible;
@@ -57,7 +60,7 @@ export const handler = async (event: any) => {
             });
         });
 
-        return createResponse(200, { pages }, origin);
+        return createResponse(200, { form_name, pages }, origin);
 
 
     } catch (error: any) {

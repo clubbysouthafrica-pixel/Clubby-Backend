@@ -179,9 +179,15 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             code: "admin/club_member/remove_member",
             envVariables: {
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
             },
             permissions: {
                 [props.club_member_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:DeleteItem"
+                ],
+                [props.registrations_table.tableArn]: [
+                    "dynamodb:GetItem",
                     "dynamodb:DeleteItem"
                 ]
             },

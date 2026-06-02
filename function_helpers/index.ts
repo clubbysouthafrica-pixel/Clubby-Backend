@@ -16,5 +16,10 @@ export { getSignatureUrl } from "./get_signature_url";
 export { getClubEmailSendingLimit } from "./club_email_sending_limit";
 export { encryptData, decryptData } from "./kms_encryption";
 export { extractTemplateVariables } from "./extract_template_variables";
+export {
+    expandTicketValidityToDates,
+    normalizeProductTicketValidityForResponse,
+    resolveProductTicketValidityForStorage
+} from "./product_ticket_validity";
 export { buildFinalTemplateVariables, RuleEngineError } from "./rule_engine";
 export type { TemplateVariable } from "./rule_engine";

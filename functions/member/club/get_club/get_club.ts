@@ -126,6 +126,12 @@ export const handler = async (event: any) => {
             { ":clubId": query_string_params.club_account_id }
         )
 
+        let form_name = ""
+        form?.forEach((item) => {
+            if (!item.visible) return
+            form_name = item.form_name;
+        });
+
         const onboarded = Boolean(
             form &&
             item?.["country_of_operation"] &&
@@ -137,9 +143,11 @@ export const handler = async (event: any) => {
         );
 
         return createResponse(200, {
+            form_name: form_name === "" ? "Join Club" : form_name,
             user_id: user_id,
             member_name: `${club_member?.member_first_name ?? ""} ${club_member?.member_surname ?? ""}`.trim(),
             currency: item.currency,
+            public_shop: item?.public_shop ?? false,
             club_account_id: item["club_account_id"],
             venues_enabled: item["venues_enabled"] ?? false,
             enable_storage: item?.enable_storage ?? false,
@@ -163,6 +171,7 @@ export const handler = async (event: any) => {
             deregistration_in_progress: item?.deregistration_in_progress ?? false,
             onboarded,
             club_member_exists,
+            non_registration: club_member?.non_registration ?? false,
             registered,
             resubmission_required,
             ...await getClubImageUrls(query_string_params.club_account_id),

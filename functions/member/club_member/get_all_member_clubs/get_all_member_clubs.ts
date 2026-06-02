@@ -16,11 +16,13 @@ export const handler = async (event: any) => {
             { ":user_id": user_id as string }
         )
 
-        if (clubs == null) {
+        const registrationClubs = clubs?.filter((item: Record<string, any>) => item?.non_registration !== true);
+
+        if (registrationClubs == null) {
             return createResponse(200, { items: [] }, origin);
         }
 
-        const items = await Promise.all(clubs.map(async item => {
+        const items = await Promise.all(registrationClubs.map(async (item: Record<string, any>) => {
             delete item.user_id;
             return item;
         }));
