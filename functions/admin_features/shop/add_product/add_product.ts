@@ -40,6 +40,10 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Invalid product_type provided (Must be 'standard' or 'ticket')." }, origin);
         }
 
+        if (body.auto_deliver !== undefined && typeof body.auto_deliver !== "boolean") {
+            return createResponse(400, { message: "Invalid auto_deliver provided (Must be a boolean)." }, origin);
+        }
+
         const ticketValidityResolution = resolveProductTicketValidityForStorage(body ?? {});
         if (ticketValidityResolution.error) {
             return createResponse(400, { message: ticketValidityResolution.error }, origin);
@@ -88,7 +92,8 @@ export const handler = async (event: any) => {
             created_date,
             ...ticketValidityResolution.fields,
             ...(body.description && { description: body.description }),
-            ...(product_image_key && { product_image_key })
+            ...(product_image_key && { product_image_key }),
+            auto_deliver: body.auto_deliver ?? false
         };
 
         await addItem(process.env.PRODUCT_TABLE_NAME!, productItem);

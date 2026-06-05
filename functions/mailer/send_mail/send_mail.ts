@@ -190,10 +190,10 @@ async function updateClubsEmailBilling(club_account_id: string, total_emails: nu
     );
 }
 
-async function sendChunkedEmails(source: string, supportEmail: string, subject: string, body: string, allEmails: string[][], inlineImages: InlineImageReference[]) {
+async function sendChunkedEmails(source: string, supportEmail: string, subject: string, body: string, allEmails: string[][], inlineImages: InlineImageReference[], isHtml: boolean = false) {
     const rateLimit = 14;
     const delayMs = 1000;
-    const processedBody = processEmailBody(body);
+    const processedBody = isHtml ? body : processEmailBody(body);
     const loadedInlineImages = await loadInlineImages(inlineImages);
     const sentChunks: SentChunkResult[] = [];
 
@@ -201,7 +201,7 @@ async function sendChunkedEmails(source: string, supportEmail: string, subject: 
         const batch = allEmails.slice(i, i + rateLimit);
 
         const batchResults = await Promise.all(batch.map(async (chunk) => {
-            const wrappedBody = `
+            const wrappedBody = isHtml ? processedBody : `
             <html>
               <body style="margin:0;padding:0;background:#f7f7f9;font-family: Arial, Helvetica, sans-serif;color:#1f2937;">
                                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#f7f7f9;padding:24px 0;">
@@ -277,7 +277,8 @@ export const handler = async (event: any) => {
                 free_email_limit,
                 email_fee,
                 support_email,
-                emails_sent
+                emails_sent,
+                is_html = false
             } = body;
 
             const totalEmails = emails.length;
@@ -296,7 +297,8 @@ export const handler = async (event: any) => {
                 subject,
                 email_body,
                 chunkedEmails as string[][],
-                inline_images as InlineImageReference[]
+                inline_images as InlineImageReference[],
+                is_html
             );
 
             await storeEmailHistory(

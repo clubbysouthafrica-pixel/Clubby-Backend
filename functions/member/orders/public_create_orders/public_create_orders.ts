@@ -92,42 +92,78 @@ async function sendAccountCreatedEmail(
   password: string,
   clubName: string,
 ): Promise<void> {
-  const emailSubject = `Your ${clubName} account has been created`;
+  const emailSubject = "Your Clubby Account Has Been Created";
+  const loginUrl = `https://${process.env.DOMAIN as string}/login?email=${encodeURIComponent(toAddress)}&tempPassword=${encodeURIComponent(password)}`;
+
   const emailBody = `
     <html>
-      <body style="margin:0;padding:24px;background:#f7f7f9;font-family:Arial, Helvetica, sans-serif;color:#1f2937;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+      <body style="margin:0;padding:0;background:#f7f7f9;font-family:Arial, Helvetica, sans-serif;color:#1f2937;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f7f9;padding:24px 0;">
           <tr>
-            <td style="padding:24px;">
-              <h2 style="margin:0 0 12px 0;">Hello ${firstName}</h2>
-              <p style="margin:0 0 12px 0;line-height:1.6;">We created your Clubby member account while placing your order for ${clubName}.</p>
-              <p style="margin:0 0 12px 0;line-height:1.6;">You can sign in with <strong>${toAddress}</strong> and this temporary password:</p>
-              <p style="margin:0 0 12px 0;line-height:1.6;font-size:18px;"><strong>${password}</strong></p>
-              <p style="margin:0;line-height:1.6;">You will be asked to change it the first time you log in.</p>
+            <td align="center">
+              <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                <tr>
+                  <td style="padding:24px 24px 0 24px;">
+                    <h1 style="margin:0 0 12px 0;font-size:20px;line-height:28px;color:#111827;">Welcome to Clubby, ${firstName}!</h1>
+                    <p style="margin:0 0 16px 0;line-height:1.6;">We created your Clubby member account while placing your order for <strong>${clubName}</strong>. You can use it to view your orders and manage your membership.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 0 24px;">
+                    <p style="margin:0 0 12px 0;line-height:1.6;">Click the button below to activate your account and set up your password.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;">
+                    <a href="${loginUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;padding:10px 16px;font-weight:600;">Activate Your Account</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;">
+                    <p style="margin:0 0 12px 0;line-height:1.6;color:#374151;"><strong>We recommend using the button above for the easiest login experience.</strong></p>
+                    <p style="margin:0 0 12px 0;line-height:1.6;color:#374151;">If you prefer, you can also sign in manually with the credentials below:</p>
+                    <div style="background:#f3f4f6;border-left:4px solid #2563eb;padding:12px;border-radius:4px;margin:12px 0;">
+                      <p style="margin:0 0 8px 0;line-height:1.6;color:#1f2937;"><strong>Email:</strong> ${toAddress}</p>
+                      <p style="margin:0;line-height:1.6;color:#1f2937;"><strong>Temporary Password:</strong> ${password}</p>
+                    </div>
+                    <p style="margin:8px 0 0 0;line-height:1.6;color:#374151;">Security tip: For your protection, please change your password after your first login and keep your credentials confidential.</p>
+                    <p style="margin:8px 0 0 0;line-height:1.6;color:#374151;">Need help? Email us at <a href="mailto:admin@${process.env.DOMAIN as string}" style="color:#2563eb;text-decoration:none;">admin@${process.env.DOMAIN as string}</a>.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 24px 24px 24px;border-top:1px solid #e5e7eb;">
+                    <p style="margin:12px 0 0 0;line-height:1.6;color:#6b7280;">Welcome to Clubby!<br/>The Clubby Team</p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
         </table>
       </body>
     </html>`;
 
-  await sesClient.send(new SendEmailCommand({
-    Destination: {
-      ToAddresses: [toAddress],
-    },
-    Message: {
-      Body: {
-        Html: {
+  try {
+    await sesClient.send(new SendEmailCommand({
+      Destination: {
+        ToAddresses: [toAddress],
+      },
+      Message: {
+        Body: {
+          Html: {
+            Charset: "UTF-8",
+            Data: emailBody,
+          },
+        },
+        Subject: {
           Charset: "UTF-8",
-          Data: emailBody,
+          Data: emailSubject,
         },
       },
-      Subject: {
-        Charset: "UTF-8",
-        Data: emailSubject,
-      },
-    },
-    Source: `registrations@${process.env.DOMAIN as string}`,
-  }));
+      Source: `registrations@${process.env.DOMAIN as string}`,
+    }));
+  } catch (error) {
+    console.error("Error sending account created email:", error);
+  }
 }
 
 async function ensureUserRecord(

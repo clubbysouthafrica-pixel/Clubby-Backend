@@ -42,7 +42,8 @@ export class MSC_AdminOrdersConstruct extends Construct {
             envVariables: {
                 ORDERS_TABLE_NAME: props.orders_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
-                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName
+                MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
+                PRODUCT_TABLE_NAME: props.product_table.tableName
             },
             permissions: {
                 [props.orders_table.tableArn]: [
@@ -54,6 +55,9 @@ export class MSC_AdminOrdersConstruct extends Construct {
                 ],
                 [props.billing_table.tableArn]: [
                     "dynamodb:UpdateItem",
+                    "dynamodb:GetItem"
+                ],
+                [props.product_table.tableArn]: [
                     "dynamodb:GetItem"
                 ]
             },

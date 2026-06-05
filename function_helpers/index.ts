@@ -23,3 +23,4 @@ export {
 } from "./product_ticket_validity";
 export { buildFinalTemplateVariables, RuleEngineError } from "./rule_engine";
 export type { TemplateVariable } from "./rule_engine";
+export { autoDeliverOrderItems } from "./auto_deliver_order_items";

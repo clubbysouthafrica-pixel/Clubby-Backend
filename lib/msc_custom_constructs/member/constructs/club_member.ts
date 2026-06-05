@@ -120,12 +120,26 @@ export class MSC_ClubMemberConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
 
+        const update_club_member = new MSC_Lambda(this, `${id}-UpdateClubMember`, {
+            code: "member/club_member/update_club_member",
+            envVariables: {
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName
+            },
+            permissions: {
+                [props.club_member_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const club_resource = props.api_gateway.root.addResource("clubMember");
 
         const get_club_member_resource = club_resource.addResource("getClubMember");
         const submit_registration_resource = club_resource.addResource("submitRegistration");
         const get_all_member_clubs_resource = club_resource.addResource("getAllMemberClubs");
         const update_payment_reference_resource = club_resource.addResource("updatePaymentReference");
+        const update_club_member_resource = club_resource.addResource("updateClubMember");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
@@ -137,5 +151,6 @@ export class MSC_ClubMemberConstruct extends Construct {
         addCorsEnabledMethod(get_all_member_clubs_resource, get_all_member_clubs, methodOptions, undefined, "GET");
         addCorsEnabledMethod(submit_registration_resource, submit_registration, methodOptions, undefined, "PUT");
         addCorsEnabledMethod(update_payment_reference_resource, update_payment_reference, methodOptions, undefined, "POST");
+        addCorsEnabledMethod(update_club_member_resource, update_club_member, methodOptions, undefined, "POST");
     }
 }

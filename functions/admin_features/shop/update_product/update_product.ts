@@ -39,6 +39,10 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Invalid product_type provided (Must be 'standard' or 'ticket')." }, origin);
         }
 
+        if (body.auto_deliver !== undefined && typeof body.auto_deliver !== "boolean") {
+            return createResponse(400, { message: "Invalid auto_deliver provided (Must be a boolean)." }, origin);
+        }
+
         const ticketValidityResolution = resolveProductTicketValidityForStorage(body ?? {});
         if (ticketValidityResolution.error) {
             return createResponse(400, { message: ticketValidityResolution.error }, origin);
@@ -119,6 +123,12 @@ export const handler = async (event: any) => {
             setExpressions.push("#img = :img");
             expressionAttributeNames["#img"] = "product_image_key";
             expressionAttributeValues[":img"] = imageKey;
+        }
+
+        if (body.auto_deliver !== undefined) {
+            setExpressions.push("#ad = :ad");
+            expressionAttributeNames["#ad"] = "auto_deliver";
+            expressionAttributeValues[":ad"] = body.auto_deliver;
         }
 
         for (const attributeName of removeExpressions) {

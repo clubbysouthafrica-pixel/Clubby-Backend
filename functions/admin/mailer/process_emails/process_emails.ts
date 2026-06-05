@@ -108,6 +108,9 @@ function validateBody(body: any): string | null {
     if (!Array.isArray(body.emails) || !body.emails.every((id: any) => typeof id === 'string')) {
         return "Invalid request. IDs must be an array of strings."
     }
+    if (body.is_html !== undefined && typeof body.is_html !== 'boolean') {
+        return "Invalid request. is_html must be a boolean."
+    }
 
     return null;
 }
@@ -182,6 +185,7 @@ export const handler = async (event: any) => {
                 email_body: processedEmailBody,
                 inline_images: inlineImages,
                 club_account_id: body.club_account_id,
+                is_html: body.is_html ?? false,
                 ...club_sending_limit
             },
             "ChargeableEmails"

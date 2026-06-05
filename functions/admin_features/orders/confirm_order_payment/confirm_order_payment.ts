@@ -1,4 +1,4 @@
-import { getItem, updateItem, createResponse, deconstructEvent } from "./function_helpers";
+import { getItem, updateItem, createResponse, deconstructEvent, autoDeliverOrderItems } from "./function_helpers";
 
 async function updateTransactionsTable(
     club_account_id: string,
@@ -180,6 +180,7 @@ export const handler = async (event: any) => {
             await updateTransactionsTable(club_account_id, transaction_id, payment_amount, payment_type);
             await updateOrdersTable(club_account_id, order_id, payment_amount);
             await updateClubsOrderBilling(club_account_id, order.total_amount * 0.02);
+            await autoDeliverOrderItems(order, process.env.ORDERS_TABLE_NAME!, process.env.PRODUCT_TABLE_NAME!);
 
             return createResponse(200, { message: "Order payment confirmed." }, origin);
         }
