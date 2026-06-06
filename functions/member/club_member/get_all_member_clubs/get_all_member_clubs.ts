@@ -16,6 +16,7 @@ export const handler = async (event: any) => {
             { ":user_id": user_id as string }
         )
 
+        const non_registration_clubs = clubs?.filter((item: Record<string, any>) => item?.non_registration === true);
         const registrationClubs = clubs?.filter((item: Record<string, any>) => item?.non_registration !== true);
 
         if (registrationClubs == null) {
@@ -27,7 +28,7 @@ export const handler = async (event: any) => {
             return item;
         }));
 
-        return createResponse(200, { items }, origin);
+        return createResponse(200, { items, non_registration_clubs }, origin);
         
     } catch (error) {
         console.error("Error:", error);
