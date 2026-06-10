@@ -161,13 +161,19 @@ export class MSC_Stack extends cdk.Stack {
     buckets.image_bucket.grantRead(assetsOai);
     buckets.shop_images_bucket.grantRead(shopImagesOai);
 
+    const assetsSubdomain = `${cdnDeployer}assets.${domain}`;
+    const shopImagesSubdomain = `${cdnDeployer}shop-images.${domain}`;
+    console.log(`[InfraStack] cert_arn: ${process.env.ASSETS_CERT_ARN}`);
+    console.log(`[InfraStack] assets_subdomain: ${assetsSubdomain}`);
+    console.log(`[InfraStack] shop_images_subdomain: ${shopImagesSubdomain}`);
+
     new MSC_InfraStack(this, `${stackPrefix}InfraStack`, {
       env: props?.env,
       assets_bucket_name: buckets.image_bucket.bucketName,
       shop_images_bucket_name: buckets.shop_images_bucket.bucketName,
       cert_arn: process.env.ASSETS_CERT_ARN as string,
-      assets_subdomain: `${cdnDeployer}assets.${domain}`,
-      shop_images_subdomain: `${cdnDeployer}shop-images.${domain}`,
+      assets_subdomain: assetsSubdomain,
+      shop_images_subdomain: shopImagesSubdomain,
       assets_oai: assetsOai,
       shop_images_oai: shopImagesOai,
     });
