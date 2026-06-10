@@ -163,9 +163,6 @@ export class MSC_Stack extends cdk.Stack {
 
     const assetsSubdomain = `${cdnDeployer}assets.${domain}`;
     const shopImagesSubdomain = `${cdnDeployer}shop-images.${domain}`;
-    console.log(`[InfraStack] cert_arn: ${process.env.ASSETS_CERT_ARN}`);
-    console.log(`[InfraStack] assets_subdomain: ${assetsSubdomain}`);
-    console.log(`[InfraStack] shop_images_subdomain: ${shopImagesSubdomain}`);
 
     new MSC_InfraStack(this, `${stackPrefix}InfraStack`, {
       env: props?.env,
