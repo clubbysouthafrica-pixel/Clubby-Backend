@@ -124,22 +124,35 @@ export class MSC_MemberOrdersConstruct extends Construct {
             layers: [props.layers.jwt_layer, props.layers.qrcode_layer]
         });
 
+        const get_public_order = new MSC_Lambda(this, `${id}-GetPublicOrder`, {
+            code: "member/orders/get_public_order",
+            envVariables: {
+                ORDERS_TABLE_NAME: props.orders_table.tableName
+            },
+            permissions: {
+                [props.orders_table.tableArn]: ["dynamodb:GetItem"]
+            },
+            layers: [props.layers.jwt_layer]
+        });
+
         const orders_resource = props.api_gateway.root.addResource("orders");
 
         const get_member_orders_resource = orders_resource.addResource("getMemberOrders");
         const create_orders_resource = orders_resource.addResource("createOrder");
         const public_create_orders_resource = orders_resource.addResource("publicCreateOrder");
         const cancel_order_resource = orders_resource.addResource("cancelOrder");
+        const get_public_order_resource = orders_resource.addResource("getPublicOrder");
 
         const methodOptions: MethodOptions = {
             methodResponses: [],
             authorizationType: AuthorizationType.CUSTOM,
             authorizer: props.token_authorizer
         }
-        
+
         addCorsEnabledMethod(get_member_orders_resource, get_member_orders, methodOptions, undefined, "GET");
         addCorsEnabledMethod(create_orders_resource, create_orders, methodOptions, undefined, "POST");
         addCorsEnabledMethod(public_create_orders_resource, public_create_orders, { methodResponses: [] }, undefined, "POST");
         addCorsEnabledMethod(cancel_order_resource, cancel_order, methodOptions, undefined, "POST");
+        addCorsEnabledMethod(get_public_order_resource, get_public_order, { methodResponses: [] }, undefined, "GET");
     }
 }
