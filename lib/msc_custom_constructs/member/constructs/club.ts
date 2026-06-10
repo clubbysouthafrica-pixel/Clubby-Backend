@@ -30,7 +30,8 @@ export class MSC_MemberClubConstruct extends Construct {
                 IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
-                SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName
+                SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
+                ASSETS_CDN_URL: `https://${process.env.DEPLOYER ? `${process.env.DEPLOYER}-` : ""}assets.${process.env.DOMAIN}`
             },
             permissions: {
                 [props.club_table.tableArn]: [

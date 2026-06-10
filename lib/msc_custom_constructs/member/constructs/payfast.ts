@@ -15,6 +15,7 @@ interface MSC_PayfastConstructProps {
     events_table: MSC_Table;
     event_registrations_table: MSC_Table;
     orders_table: MSC_Table;
+    product_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
         axios_layer: MSC_LambdaLayer;
@@ -146,6 +147,7 @@ export class MSC_PayfastConstruct extends Construct {
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 ORDERS_TABLE_NAME: props.orders_table.tableName,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
+                PRODUCT_TABLE_NAME: props.product_table.tableName,
             },
             permissions: {
                 [props.orders_table.tableArn]: [
@@ -156,6 +158,10 @@ export class MSC_PayfastConstruct extends Construct {
                     "dynamodb:UpdateItem"
                 ],
                 [props.billing_table.tableArn]: [
+                    "dynamodb:UpdateItem"
+                ],
+                [props.product_table.tableArn]: [
+                    "dynamodb:GetItem",
                     "dynamodb:UpdateItem"
                 ]
             },

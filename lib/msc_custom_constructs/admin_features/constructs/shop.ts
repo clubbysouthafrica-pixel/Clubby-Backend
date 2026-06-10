@@ -42,7 +42,7 @@ export class MSC_AdminShopConstruct extends Construct {
             code: "admin_features/shop/get_club_products",
             envVariables: {
                 PRODUCT_TABLE_NAME: props.product_table.tableName,
-                SHOP_IMAGES_BUCKET_NAME: props.shop_images_bucket.bucketName,
+                SHOP_IMAGES_CDN_URL: `https://${process.env.DEPLOYER ? `${process.env.DEPLOYER}-` : ""}shop-images.${process.env.DOMAIN}`,
                 CLUB_TABLE_NAME: props.club_table.tableName
             },
             permissions: {
@@ -51,14 +51,6 @@ export class MSC_AdminShopConstruct extends Construct {
                 ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
-                ],
-                [props.shop_images_bucket.bucketArn]: [
-                    "s3:GetObject",
-                    "s3:HeadObject"
-                ],
-                [`${props.shop_images_bucket.bucketArn}/*`]: [
-                    "s3:GetObject",
-                    "s3:HeadObject"
                 ]
             },
             layers: [props.layers.jwt_layer]

@@ -1,10 +1,10 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
+import { OriginAccessIdentity } from "aws-cdk-lib/aws-cloudfront";
 import {
   MSC_MemberNestedStack,
   MSC_AdminNestedStack,
   MSC_TablesConstruct,
-  MSC_Layers,
   MSC_InternalInfraStack,
   MSC_MailingStack,
   MSC_AdminFeaturesNestedStack,
@@ -123,6 +123,7 @@ export class MSC_Stack extends cdk.Stack {
       storage_table: tables.storage_table,
       storage_request_table: tables.storage_request_table,
       orders_table: tables.orders_table,
+      product_table: tables.products_table,
     });
 
     new MSC_MemberNestedStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}MemberStack`, {
@@ -151,9 +152,24 @@ export class MSC_Stack extends cdk.Stack {
       kms_key: kmsKey,
     });
 
-    new MSC_InfraStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}InfraStack`, {
+    const cdnDeployer = process.env.DEPLOYER ? `${process.env.DEPLOYER}-` : "";
+    const domain = process.env.DOMAIN as string;
+    const stackPrefix = process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : "";
+
+    const assetsOai = new OriginAccessIdentity(this, `${stackPrefix}AssetsOAI`);
+    const shopImagesOai = new OriginAccessIdentity(this, `${stackPrefix}ShopImagesOAI`);
+    buckets.image_bucket.grantRead(assetsOai);
+    buckets.shop_images_bucket.grantRead(shopImagesOai);
+
+    new MSC_InfraStack(this, `${stackPrefix}InfraStack`, {
       env: props?.env,
       assets_bucket_name: buckets.image_bucket.bucketName,
+      shop_images_bucket_name: buckets.shop_images_bucket.bucketName,
+      cert_arn: process.env.ASSETS_CERT_ARN as string,
+      assets_subdomain: `${cdnDeployer}assets.${domain}`,
+      shop_images_subdomain: `${cdnDeployer}shop-images.${domain}`,
+      assets_oai: assetsOai,
+      shop_images_oai: shopImagesOai,
     });
   }
 }

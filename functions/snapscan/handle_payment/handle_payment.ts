@@ -1,4 +1,4 @@
-import { createResponse, getClubEmailSendingLimit, getItem, removeItem, sendSqsMessage, updateItem } from "./function_helpers";
+import { createResponse, getClubEmailSendingLimit, getItem, removeItem, sendSqsMessage, updateItem, autoDeliverOrderItems } from "./function_helpers";
 
 type SnapScanWebhookPayload = {
     id?: number;
@@ -533,8 +533,17 @@ export const handler = async (event: any) => {
 
         } else if (transaction.type === "ORDER") {
 
+            const order = await getItem(
+                process.env.ORDERS_TABLE_NAME as string,
+                { club_account_id, order_id: transaction.order_id! }
+            );
+
             await updateOrdersTable(club_account_id, transaction.order_id!, payload.totalAmount || 0);
             await updateClubsOrderBilling(club_account_id, payload.totalAmount || 0);
+
+            if (order) {
+                await autoDeliverOrderItems(order, process.env.ORDERS_TABLE_NAME!, process.env.PRODUCT_TABLE_NAME!);
+            }
 
         } else if (transaction.type === "EVENT REGISTRATION") {
 

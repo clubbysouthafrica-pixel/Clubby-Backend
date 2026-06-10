@@ -22,6 +22,7 @@ export interface MSC_SnapScanNestedStackProps extends StackProps {
   storage_table: MSC_Table;
   storage_request_table: MSC_Table;
   orders_table: MSC_Table;
+  product_table: MSC_Table;
 }
 
 export class MSC_SnapScanNestedStack extends Stack {
@@ -102,9 +103,11 @@ export class MSC_SnapScanNestedStack extends Stack {
         SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
         STORAGE_REQUESTS_TABLE_NAME: props.storage_request_table.tableName,
         STORAGE_TABLE_NAME: props.storage_table.tableName,
+        PRODUCT_TABLE_NAME: props.product_table.tableName,
       },
       permissions: {
-        [props.orders_table.tableArn]: ["dynamodb:UpdateItem"],
+        [props.orders_table.tableArn]: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+        [props.product_table.tableArn]: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
         [props.storage_request_table.tableArn]: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
         [props.storage_table.tableArn]: ["dynamodb:UpdateItem"],
         [props.club_table.tableArn]: ["dynamodb:GetItem"],

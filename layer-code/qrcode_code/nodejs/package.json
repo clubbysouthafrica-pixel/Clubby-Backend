@@ -1,0 +1,8 @@
+{
+  "name": "qrcode_code",
+  "version": "1.0.0",
+  "description": "QRCode Lambda Layer",
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}

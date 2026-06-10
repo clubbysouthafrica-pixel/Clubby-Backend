@@ -1,5 +1,4 @@
-import { GetObjectCommand, S3Client, HeadObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { S3Client, HeadObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { createResponse, deconstructEvent, getItem, queryItems } from "./function_helpers";
 
 const s3_client = new S3Client({ region: process.env.REGION });
@@ -18,11 +17,7 @@ async function getClubImageUrls(club_account_id: string): Promise<Record<string,
     const cover_key = `club_cover/${club_account_id}_cover`;
     try {
         await s3_client.send(new HeadObjectCommand({ Bucket: process.env.IMAGE_BUCKET_NAME, Key: cover_key }));
-        const getCoverCommand = new GetObjectCommand({
-            Bucket: process.env.IMAGE_BUCKET_NAME,
-            Key: cover_key,
-        });
-        result.club_cover_url = await getSignedUrl(s3_client, getCoverCommand, { expiresIn: 60 * 5 });
+        result.club_cover_url = `${process.env.ASSETS_CDN_URL}/${cover_key}`;
     } catch (err: any) {
         const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
         if (status && status !== 404) {
@@ -34,11 +29,7 @@ async function getClubImageUrls(club_account_id: string): Promise<Record<string,
     const profile_key = `club_profile/${club_account_id}_profile`;
     try {
         await s3_client.send(new HeadObjectCommand({ Bucket: process.env.IMAGE_BUCKET_NAME, Key: profile_key }));
-        const getProfileCommand = new GetObjectCommand({
-            Bucket: process.env.IMAGE_BUCKET_NAME,
-            Key: profile_key,
-        });
-        result.club_profile_url = await getSignedUrl(s3_client, getProfileCommand, { expiresIn: 60 * 5 });
+        result.club_profile_url = `${process.env.ASSETS_CDN_URL}/${profile_key}`;
     } catch (err: any) {
         const status = err?.$metadata?.httpStatusCode ?? err?.statusCode ?? err?.status;
         if (status && status !== 404) {
@@ -69,16 +60,9 @@ async function getGalleryImages(clubAccountId: string): Promise<GalleryImage[]> 
 
     for (const object of listResponse.Contents) {
       if (object.Key) {
-        const getCommand = new GetObjectCommand({
-          Bucket: process.env.IMAGE_BUCKET_NAME,
-          Key: object.Key,
-        });
-
-        const signedUrl = await getSignedUrl(s3_client, getCommand, { expiresIn: 3600 });
-        
         galleryImages.push({
           key: object.Key,
-          url: signedUrl,
+          url: `${process.env.ASSETS_CDN_URL}/${object.Key}`,
         });
       }
     }

@@ -113,7 +113,6 @@ export class MSC_MemberNestedStack extends Stack {
       club_table: props.club_table,
       club_member_table: props.club_member_table,
       token_authorizer: jwt_construct.token_authorizer,
-      shop_images_bucket: props.shop_images_bucket,
       layers: all_layers,
     });
 
@@ -129,6 +128,7 @@ export class MSC_MemberNestedStack extends Stack {
       transactions_table: props.transactions_table,
       billing_table: props.billing_table,
       orders_table: props.orders_table,
+      product_table: props.product_table,
       kms_key: props.kms_key,
       event_registrations_table: props.event_registrations_table,
       events_table: props.events_table,

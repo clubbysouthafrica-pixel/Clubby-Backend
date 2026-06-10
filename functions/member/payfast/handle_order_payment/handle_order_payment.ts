@@ -1,4 +1,4 @@
-import { getItem, updateItem } from "./function_helpers";
+import { getItem, updateItem, autoDeliverOrderItems } from "./function_helpers";
 import { validatePayFastPayment } from "./payfast_validation";
 
 async function updateTransactionsTable(
@@ -148,6 +148,7 @@ export const handler = async (event: any) => {
         );
 
         await updateClubsOrderBilling(club_account_id, order.total_amount * 0.02);
+        await autoDeliverOrderItems(order, process.env.ORDERS_TABLE_NAME!, process.env.PRODUCT_TABLE_NAME!);
     }
 
     return { statusCode: 200, body: "OK" };

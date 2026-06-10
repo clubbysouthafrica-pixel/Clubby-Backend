@@ -15,6 +15,7 @@ interface MSC_MemberOrdersConstructProps {
     member_user_pool: MSC_Cognito;
     layers: {
         jwt_layer: MSC_LambdaLayer;
+        qrcode_layer: MSC_LambdaLayer;
     };
 }
 
@@ -54,7 +55,9 @@ export class MSC_MemberOrdersConstruct extends Construct {
             envVariables: {
                 ORDER_TABLE_NAME: props.orders_table.tableName,
                 USERS_TABLE_NAME: props.users_table.tableName,
-                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName
+                TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
+                CLUB_TABLE_NAME: props.club_table.tableName,
+                DOMAIN: process.env.DOMAIN as string
             },
             permissions: {
                 [props.orders_table.tableArn]: [
@@ -65,9 +68,15 @@ export class MSC_MemberOrdersConstruct extends Construct {
                 ],
                 [props.transactions_table.tableArn]: [
                     "dynamodb:PutItem"
+                ],
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                    "ses:SendRawEmail"
                 ]
             },
-            layers: [props.layers.jwt_layer]
+            layers: [props.layers.jwt_layer, props.layers.qrcode_layer]
         });
 
         const public_create_orders = new MSC_Lambda(this, `${id}-PublicCreateOrders`, {
@@ -108,10 +117,11 @@ export class MSC_MemberOrdersConstruct extends Construct {
                     "cognito-idp:AdminGetUser"
                 ],
                 [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
-                    "ses:SendEmail"
+                    "ses:SendEmail",
+                    "ses:SendRawEmail"
                 ]
             },
-            layers: [props.layers.jwt_layer]
+            layers: [props.layers.jwt_layer, props.layers.qrcode_layer]
         });
 
         const orders_resource = props.api_gateway.root.addResource("orders");
