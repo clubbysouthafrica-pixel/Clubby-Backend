@@ -78,6 +78,8 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
         return false;
     } else if (club_member.resubmission_required) {
         return false;
+    } else if (club_member?.non_registration === true) {
+        return false;
     }
 
     return true;
@@ -90,7 +92,8 @@ async function addToRegistrationsTable(
     standard_fields: any,
     membership_amount: number,
     registration_submitted_on: number,
-    transaction_id?: string
+    transaction_id?: string,
+    ttl?: number,
 ): Promise<string> {
     const all_registrations = await queryItems(
         process.env.REGISTRATIONS_TABLE_NAME as string,
@@ -144,6 +147,7 @@ async function addToRegistrationsTable(
             latest_registration: true,
             ...billing_fields,
             ...standard_fields,
+            ...(ttl !== undefined ? { ttl } : {}),
         }
     )
 
@@ -157,7 +161,8 @@ async function addToTransactionsTable(
     transaction_id: string,
     user_id: string,
     membership_amount: number,
-    registration_id: string
+    registration_id: string,
+    ttl?: number,
 ) {
     await addItem(
         process.env.TRANSACTIONS_TABLE_NAME as string,
@@ -179,7 +184,8 @@ async function addToTransactionsTable(
                 }
             },
             type: "REGISTRATION",
-            status: "PENDING"
+            status: "PENDING",
+            ...(ttl !== undefined ? { ttl } : {}),
         }
     )
 }
@@ -349,6 +355,10 @@ export const handler = async (event: any) => {
 
         const current_reg_transaction_id = randomUUID();
 
+        const ttl = club.eft_enabled === false
+            ? Math.floor(Date.now() / 1000) + 3600
+            : undefined;
+
         const current_reg_id = await addToRegistrationsTable(
             body.club_account_id,
             user_id as string,
@@ -356,7 +366,8 @@ export const handler = async (event: any) => {
             standard_fields,
             membership_amount,
             registration_submitted_on,
-            membership_amount > 0 ? current_reg_transaction_id : undefined
+            membership_amount > 0 ? current_reg_transaction_id : undefined,
+            ttl,
         )
 
         const item = {
@@ -373,7 +384,8 @@ export const handler = async (event: any) => {
             registration_payment_reference: `${user.first_name} ${user.surname}`,
             currency: club.currency,
             club_name: club.club_name,
-            season_cycle: club.season_cycle
+            season_cycle: club.season_cycle,
+            ...(ttl !== undefined ? { ttl } : {}),
         };
 
         if (membership_amount > 0) {
@@ -384,7 +396,8 @@ export const handler = async (event: any) => {
                 current_reg_transaction_id,
                 user_id as string,
                 membership_amount,
-                current_reg_id
+                current_reg_id,
+                ttl,
             )
         }
 

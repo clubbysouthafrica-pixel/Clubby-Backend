@@ -24,8 +24,8 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: "Invalid name provided." }, origin);
         }
 
-        if (!body?.price || typeof body.price !== "number" || body.price <= 0) {
-            return createResponse(400, { message: "Invalid price provided (Must be greater than 0)." }, origin);
+        if (body?.price === undefined || body?.price === null || typeof body.price !== "number" || body.price < 0) {
+            return createResponse(400, { message: "Invalid price provided (Must be 0 or greater)." }, origin);
         }
 
         if (body?.active_product === undefined || body?.purchase_limit === undefined) {

@@ -88,6 +88,7 @@ export const handler = async (event: any) => {
           }
           : undefined,
         instagram_url: item?.instagram_url,
+        eft_enabled: item?.eft_enabled ?? true,
         time_zone: item?.time_zone,
         club_variables: item?.club_variables ?? undefined,
         facebook_url: item?.facebook_url,

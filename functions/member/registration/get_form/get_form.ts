@@ -110,6 +110,10 @@ export const handler = async (event: any) => {
             }, origin);
         }
 
+        if (!club_member.current_reg_id) {
+            return createResponse(200, { pages, club_name: club.club_name, currency: club.currency }, origin);
+        }
+
         const registration = await getItem(
             process.env.REGISTRATIONS_TABLE_NAME as string,
             {
@@ -199,7 +203,7 @@ export const handler = async (event: any) => {
         }, origin);
 
     } catch (error: any) {
-        console.error('Signup error:', error);
+        console.error('Get form error:', error);
         const message = error?.message || "Internal Server Error";
         const statusCode = error?.$metadata?.httpStatusCode || 500;
         return createResponse(statusCode, { message }, origin);

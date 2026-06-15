@@ -155,9 +155,9 @@ export const handler = async (event: any) => {
                 break;
             }
 
-            let filteredOrders = queryOrders;
+            let filteredOrders = queryOrders.filter((order: any) => order.ttl == null);
             if (Object.values(filters).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value && value !== "all"))) {
-                filteredOrders = queryOrders.filter((order: any) => applyOrderFilters(order, filters));
+                filteredOrders = filteredOrders.filter((order: any) => applyOrderFilters(order, filters));
             }
 
             console.log("Filtered orders page", {

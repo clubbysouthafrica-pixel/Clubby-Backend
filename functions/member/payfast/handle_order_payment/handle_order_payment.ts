@@ -1,24 +1,28 @@
-import { getItem, updateItem, autoDeliverOrderItems } from "./function_helpers";
+import { getItem, updateItem, autoDeliverOrderItems, sendOrderConfirmationEmail } from "./function_helpers";
 import { validatePayFastPayment } from "./payfast_validation";
 
 async function updateTransactionsTable(
     club_account_id: string,
     transaction_id: string,
-    payment_amount: number
+    payment_amount: number,
+    removeTtl: boolean = false,
 ) {
+    const expressionNames: Record<string, string> = {
+        "#amount_paid": "amount_paid",
+        "#status": "status",
+        "#lifecycle": "lifecycle",
+        "#ts": `${Date.now()}`
+    };
+    if (removeTtl) expressionNames["#ttl"] = "ttl";
+
     await updateItem(
         process.env.TRANSACTIONS_TABLE_NAME as string,
         {
             club_account_id: club_account_id,
             transaction_id: transaction_id
         },
-        `SET #amount_paid = #amount_paid + :payment_amount, #status = :status, #lifecycle.#ts = :lifecycleValue`,
-        {
-            "#amount_paid": "amount_paid",
-            "#status": "status",
-            "#lifecycle": "lifecycle",
-            "#ts": `${Date.now()}`
-        },
+        `SET #amount_paid = #amount_paid + :payment_amount, #status = :status, #lifecycle.#ts = :lifecycleValue${removeTtl ? " REMOVE #ttl" : ""}`,
+        expressionNames,
         {
             ":status": "PAID",
             ":payment_amount": payment_amount,
@@ -35,8 +39,15 @@ async function updateTransactionsTable(
 async function updateOrdersTable(
     club_account_id: string,
     order_id: string,
-    payment_amount: number
+    payment_amount: number,
+    removeTtl: boolean = false,
 ) {
+    const expressionNames: Record<string, string> = {
+        "#amount_paid": "amount_paid",
+        "#payment_status": "payment_status",
+        "#fulfillment_status": "fulfillment_status"
+    };
+    if (removeTtl) expressionNames["#ttl"] = "ttl";
 
     await updateItem(
         process.env.ORDERS_TABLE_NAME as string,
@@ -44,17 +55,23 @@ async function updateOrdersTable(
             club_account_id: club_account_id,
             order_id: order_id
         },
-        "SET #amount_paid = #amount_paid + :amount_paid, #payment_status = :payment_status, #fulfillment_status = :fulfillment_status",
-        {
-            "#amount_paid": "amount_paid",
-            "#payment_status": "payment_status",
-            "#fulfillment_status": "fulfillment_status"
-        },
+        `SET #amount_paid = #amount_paid + :amount_paid, #payment_status = :payment_status, #fulfillment_status = :fulfillment_status${removeTtl ? " REMOVE #ttl" : ""}`,
+        expressionNames,
         {
             ":amount_paid": payment_amount,
             ":payment_status": "PAID",
             ":fulfillment_status": "PROCESSING"
         }
+    );
+}
+
+async function removeClubMemberTtl(club_account_id: string, member_id: string) {
+    await updateItem(
+        process.env.CLUB_MEMBER_TABLE_NAME as string,
+        { user_id: member_id, club_account_id },
+        "SET #reg = if_not_exists(#reg, :false) REMOVE #ttl",
+        { "#reg": "registered", "#ttl": "ttl" },
+        { ":false": false }
     );
 }
 
@@ -110,13 +127,16 @@ export const handler = async (event: any) => {
         return { statusCode: 400, body: "Invalid payment" };
     }
 
-    const order = await getItem(
-        process.env.ORDERS_TABLE_NAME as string,
-        {
-            club_account_id: club_account_id,
-            order_id: order_id
-        }
-    );
+    const [order, club] = await Promise.all([
+        getItem(
+            process.env.ORDERS_TABLE_NAME as string,
+            { club_account_id: club_account_id, order_id: order_id }
+        ),
+        getItem(
+            process.env.CLUB_TABLE_NAME as string,
+            { club_account_id: club_account_id }
+        ),
+    ]);
     if (order == null) {
         return { statusCode: 400, body: "Invalid payment" };
     }
@@ -135,20 +155,45 @@ export const handler = async (event: any) => {
     if (isValid) {
         console.log("✅ Payment verified successfully");
 
+        const removeTtl = club?.eft_enabled === false;
+
         await updateTransactionsTable(
             club_account_id,
             order.transaction_id,
-            amount_paid
+            amount_paid,
+            removeTtl,
         );
 
         await updateOrdersTable(
             club_account_id,
             order_id,
-            amount_paid
+            amount_paid,
+            removeTtl,
         );
 
         await updateClubsOrderBilling(club_account_id, order.total_amount * 0.02);
         await autoDeliverOrderItems(order, process.env.ORDERS_TABLE_NAME!, process.env.PRODUCT_TABLE_NAME!);
+
+        if (removeTtl && user_id) {
+            await removeClubMemberTtl(club_account_id, user_id);
+        }
+
+        const club_member = await getItem(
+            process.env.CLUB_MEMBER_TABLE_NAME as string,
+            { club_account_id, user_id }
+        );
+        if (club_member?.member_email) {
+            await sendOrderConfirmationEmail(
+                club_member.member_email,
+                order.first_name,
+                club?.club_name ?? "",
+                club_account_id,
+                order_id,
+                order.items ?? [],
+                order.total_amount,
+                club?.currency ?? "ZAR",
+            );
+        }
     }
 
     return { statusCode: 200, body: "OK" };

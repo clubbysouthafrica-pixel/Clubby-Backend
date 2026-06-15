@@ -453,11 +453,12 @@ export const handler = async (event: any) => {
                 throw err;
             }
         } else {
-            transactions = await queryItems(
+            const rawTransactions = await queryItems(
                 process.env.TRANSACTIONS_TABLE_NAME as string,
                 "club_account_id = :clubId",
                 { ":clubId": query_string_params.club_account_id }
             );
+            transactions = rawTransactions?.filter((t: any) => t.ttl == null) ?? null;
         }
 
         const report = createReport();

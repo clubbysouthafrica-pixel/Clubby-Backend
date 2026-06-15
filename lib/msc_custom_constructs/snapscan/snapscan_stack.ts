@@ -104,6 +104,7 @@ export class MSC_SnapScanNestedStack extends Stack {
         STORAGE_REQUESTS_TABLE_NAME: props.storage_request_table.tableName,
         STORAGE_TABLE_NAME: props.storage_table.tableName,
         PRODUCT_TABLE_NAME: props.product_table.tableName,
+        DOMAIN: process.env.DOMAIN as string,
       },
       permissions: {
         [props.orders_table.tableArn]: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
@@ -122,8 +123,9 @@ export class MSC_SnapScanNestedStack extends Stack {
         [props.club_member_table.tableArn]: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
         [props.registrations_table.tableArn]: ["dynamodb:UpdateItem"],
         [props.mail_queue.queueArn]: ["sqs:SendMessage"],
+        [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: ["ses:SendRawEmail"],
       },
-      layers: [all_layers.jwt_layer],
+      layers: [all_layers.jwt_layer, all_layers.qrcode_layer],
       timeout: 29,
     });
 

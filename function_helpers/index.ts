@@ -24,3 +24,4 @@ export {
 export { buildFinalTemplateVariables, RuleEngineError } from "./rule_engine";
 export type { TemplateVariable } from "./rule_engine";
 export { autoDeliverOrderItems } from "./auto_deliver_order_items";
+export { sendOrderConfirmationEmail } from "./send_order_confirmation_email";

@@ -19,6 +19,7 @@ interface MSC_PayfastConstructProps {
     layers: {
         jwt_layer: MSC_LambdaLayer;
         axios_layer: MSC_LambdaLayer;
+        qrcode_layer: MSC_LambdaLayer;
     };
     billing_table: MSC_Table;
     mail_queue: MSC_Queue;
@@ -148,6 +149,9 @@ export class MSC_PayfastConstruct extends Construct {
                 ORDERS_TABLE_NAME: props.orders_table.tableName,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 PRODUCT_TABLE_NAME: props.product_table.tableName,
+                CLUB_TABLE_NAME: props.club_table.tableName,
+                CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                DOMAIN: process.env.DOMAIN as string,
             },
             permissions: {
                 [props.orders_table.tableArn]: [
@@ -163,9 +167,19 @@ export class MSC_PayfastConstruct extends Construct {
                 [props.product_table.tableArn]: [
                     "dynamodb:GetItem",
                     "dynamodb:UpdateItem"
+                ],
+                [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.club_member_table.tableArn]: [
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem"
+                ],
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                    "ses:SendRawEmail"
                 ]
             },
-            layers: [props.layers.jwt_layer, props.layers.axios_layer]
+            layers: [props.layers.jwt_layer, props.layers.axios_layer, props.layers.qrcode_layer]
         });
 
         const pay_fast_resource = props.api_gateway.root.addResource("payfast");

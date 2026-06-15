@@ -136,6 +136,11 @@ const getMembersPageData = async (
         expressionAttributeNames = { "#registered": "registered", "#resubmission": "resubmission_required" };
     }
 
+    filterExpression = filterExpression
+        ? `${filterExpression} AND attribute_not_exists(#ttl)`
+        : "attribute_not_exists(#ttl)";
+    expressionAttributeNames = { ...(expressionAttributeNames ?? {}), "#ttl": "ttl" };
+
     const members: any[] = [];
     const userDataCache = new Map<string, Record<string, any>>();
     let currentToken = previousToken;
@@ -327,6 +332,8 @@ const getRegistrationPageData = async (
             true,
             (queryLimit ?? 0) - members.length,
             currentToken,
+            "attribute_not_exists(#ttl)",
+            { "#ttl": "ttl" },
         );
         const registrations = queryResult.items;
         const queryLastEvaluatedKey = queryResult.lastEvaluatedKey;

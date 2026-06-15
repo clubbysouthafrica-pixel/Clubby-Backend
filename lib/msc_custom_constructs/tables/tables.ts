@@ -110,6 +110,7 @@ export class MSC_TablesConstruct extends Construct {
     this.club_member_table = new MSC_Table(this, `${id}-ClubMember`, {
       partitionKey: { user_id: "STRING" },
       sortKey: { club_account_id: "STRING" },
+      timeToLiveAttribute: "ttl",
       gsi: [
         {
           indexName: "ClubAccountIDIndex",
@@ -121,6 +122,7 @@ export class MSC_TablesConstruct extends Construct {
     this.orders_table = new MSC_Table(this, `${id}-Orders`, {
       partitionKey: { club_account_id: "STRING" },
       sortKey: { order_id: "STRING" },
+      timeToLiveAttribute: "ttl",
       gsi: [
         {
           indexName: "UserIDIndex",
@@ -158,6 +160,7 @@ export class MSC_TablesConstruct extends Construct {
     this.transactions_table = new MSC_Table(this, `${id}-Transaction`, {
       partitionKey: { club_account_id: "STRING" },
       sortKey: { transaction_id: "STRING" },
+      timeToLiveAttribute: "ttl",
       gsi: [
         {
           indexName: "UserIDIndex",
@@ -170,6 +173,7 @@ export class MSC_TablesConstruct extends Construct {
     this.registrations_table = new MSC_Table(this, `${id}-Registrations`, {
       partitionKey: { user_id: "STRING" },
       sortKey: { registration_id: "STRING" },
+      timeToLiveAttribute: "ttl",
       gsi: [
         {
           indexName: "ClubAccountIDIndex",

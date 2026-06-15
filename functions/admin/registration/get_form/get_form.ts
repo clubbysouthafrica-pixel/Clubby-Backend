@@ -28,12 +28,14 @@ export const handler = async (event: any) => {
         }
 
         let form_name = ""
+        let deregistered_form_name = ""
 
         form.forEach((item) => {
             const set = unmarshall(item);
 
             if (!set.visible) return
             form_name = set.form_name;
+            deregistered_form_name = set.deregistered_form_name;
 
             delete set.club_account_id;
             delete set.visible;
@@ -60,7 +62,7 @@ export const handler = async (event: any) => {
             });
         });
 
-        return createResponse(200, { form_name, pages }, origin);
+        return createResponse(200, { form_name, deregistered_form_name, pages }, origin);
 
 
     } catch (error: any) {

@@ -1,4 +1,4 @@
-import { createResponse, getClubEmailSendingLimit, getItem, removeItem, sendSqsMessage, updateItem, autoDeliverOrderItems } from "./function_helpers";
+import { createResponse, getClubEmailSendingLimit, getItem, removeItem, sendSqsMessage, updateItem, autoDeliverOrderItems, sendOrderConfirmationEmail } from "./function_helpers";
 
 type SnapScanWebhookPayload = {
     id?: number;
@@ -70,21 +70,25 @@ async function updateTransactionsTable(
     club_account_id: string,
     transaction_id: string,
     payment_amount: number,
-    reference: string
+    reference: string,
+    removeTtl: boolean = false,
 ) {
+    const expressionNames: Record<string, string> = {
+        "#amount_paid": "amount_paid",
+        "#status": "status",
+        "#lifecycle": "lifecycle",
+        "#ts": `${Date.now()}`
+    };
+    if (removeTtl) expressionNames["#ttl"] = "ttl";
+
     await updateItem(
         process.env.TRANSACTIONS_TABLE_NAME as string,
         {
             club_account_id: club_account_id,
             transaction_id: transaction_id
         },
-        `SET #amount_paid = #amount_paid + :payment_amount, #status = :status, #lifecycle.#ts = :lifecycleValue`,
-        {
-            "#amount_paid": "amount_paid",
-            "#status": "status",
-            "#lifecycle": "lifecycle",
-            "#ts": `${Date.now()}`
-        },
+        `SET #amount_paid = #amount_paid + :payment_amount, #status = :status, #lifecycle.#ts = :lifecycleValue${removeTtl ? " REMOVE #ttl" : ""}`,
+        expressionNames,
         {
             ":status": "PAID",
             ":payment_amount": payment_amount,
@@ -167,8 +171,15 @@ async function updateClubsEventRegistrationBilling(club_account_id: string, fee:
 async function updateOrdersTable(
     club_account_id: string,
     order_id: string,
-    payment_amount: number
+    payment_amount: number,
+    removeTtl: boolean = false,
 ) {
+    const expressionNames: Record<string, string> = {
+        "#amount_paid": "amount_paid",
+        "#payment_status": "payment_status",
+        "#fulfillment_status": "fulfillment_status"
+    };
+    if (removeTtl) expressionNames["#ttl"] = "ttl";
 
     await updateItem(
         process.env.ORDERS_TABLE_NAME as string,
@@ -176,12 +187,8 @@ async function updateOrdersTable(
             club_account_id: club_account_id,
             order_id: order_id
         },
-        "SET #amount_paid = #amount_paid + :amount_paid, #payment_status = :payment_status, #fulfillment_status = :fulfillment_status",
-        {
-            "#amount_paid": "amount_paid",
-            "#payment_status": "payment_status",
-            "#fulfillment_status": "fulfillment_status"
-        },
+        `SET #amount_paid = #amount_paid + :amount_paid, #payment_status = :payment_status, #fulfillment_status = :fulfillment_status${removeTtl ? " REMOVE #ttl" : ""}`,
+        expressionNames,
         {
             ":amount_paid": payment_amount,
             ":payment_status": "PAID",
@@ -287,7 +294,8 @@ async function updateRegistrationsTable(
     member_id: string,
     current_reg_id: string,
     payment_amount: number,
-    shouldAutoRegisterMember: boolean
+    shouldAutoRegisterMember: boolean,
+    removeTtl: boolean = false,
 ) {
     const paymentHistoryEntry = {
         date: Date.now(),
@@ -295,25 +303,30 @@ async function updateRegistrationsTable(
         is_revenue: true
     };
 
+    const baseNames: Record<string, string> = shouldAutoRegisterMember
+        ? {
+            "#total_outstanding_amount": "total_outstanding_amount",
+            "#registered_on": "registered_on",
+            "#payment_history": "payment_history"
+        }
+        : {
+            "#total_outstanding_amount": "total_outstanding_amount",
+            "#payment_history": "payment_history"
+        };
+    const expressionNames = removeTtl ? { ...baseNames, "#ttl": "ttl" } : baseNames;
+
+    const setClause = shouldAutoRegisterMember
+        ? "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #registered_on = :registered_on, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)"
+        : "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)";
+
     await updateItem(
         process.env.REGISTRATIONS_TABLE_NAME as string,
         {
             user_id: member_id,
             registration_id: current_reg_id
         },
-        shouldAutoRegisterMember
-            ? "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #registered_on = :registered_on, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)"
-            : "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)",
-        shouldAutoRegisterMember
-            ? {
-                "#total_outstanding_amount": "total_outstanding_amount",
-                "#registered_on": "registered_on",
-                "#payment_history": "payment_history"
-            }
-            : {
-                "#total_outstanding_amount": "total_outstanding_amount",
-                "#payment_history": "payment_history"
-            },
+        removeTtl ? `${setClause} REMOVE #ttl` : setClause,
+        expressionNames,
         shouldAutoRegisterMember
             ? {
                 ":payment_amount": payment_amount,
@@ -331,21 +344,33 @@ async function updateRegistrationsTable(
 
 async function updateClubMembersTable(
     club_account_id: string,
-    member_id: string
+    member_id: string,
+    removeTtl: boolean = false,
 ) {
+    const expressionNames: Record<string, string> = { "#reg": "registered" };
+    if (removeTtl) expressionNames["#ttl"] = "ttl";
+
     await updateItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
         {
             user_id: member_id,
             club_account_id: club_account_id,
         },
-        "SET #reg = :registered",
-        {
-            "#reg": "registered"
-        },
+        removeTtl ? "SET #reg = :registered REMOVE #ttl" : "SET #reg = :registered",
+        expressionNames,
         {
             ":registered": true
         }
+    );
+}
+
+async function removeClubMemberTtl(club_account_id: string, member_id: string) {
+    await updateItem(
+        process.env.CLUB_MEMBER_TABLE_NAME as string,
+        { user_id: member_id, club_account_id },
+        "SET #reg = if_not_exists(#reg, :false) REMOVE #ttl",
+        { "#reg": "registered", "#ttl": "ttl" },
+        { ":false": false }
     );
 }
 
@@ -457,6 +482,8 @@ export const handler = async (event: any) => {
             return createResponse(200, { message: "Associated club not found." }, origin);
         }
 
+        let removeTtlOnTransaction = false;
+
         if (transaction.type === "REGISTRATION") {
 
             const club_member = await getItem(
@@ -470,17 +497,22 @@ export const handler = async (event: any) => {
                 return createResponse(200, { message: "Associated club member not found." }, origin);
             }
 
+            const removeTtl = club.eft_enabled === false;
+            removeTtlOnTransaction = removeTtl;
+
             await updateRegistrationsTable(
                 transaction.user_id,
                 club_member.current_reg_id,
                 payload.totalAmount || 0,
-                club?.auto_register_members_if_paid_snapscan === true
+                club?.auto_register_members_if_paid_snapscan === true,
+                removeTtl,
             );
 
             if (club?.auto_register_members_if_paid_snapscan === true) {
                 await updateClubMembersTable(
                     club_account_id,
-                    transaction.user_id
+                    transaction.user_id,
+                    removeTtl,
                 );
             }
 
@@ -538,11 +570,35 @@ export const handler = async (event: any) => {
                 { club_account_id, order_id: transaction.order_id! }
             );
 
-            await updateOrdersTable(club_account_id, transaction.order_id!, payload.totalAmount || 0);
+            const orderRemoveTtl = club.eft_enabled === false;
+            removeTtlOnTransaction = orderRemoveTtl;
+
+            await updateOrdersTable(club_account_id, transaction.order_id!, payload.totalAmount || 0, orderRemoveTtl);
             await updateClubsOrderBilling(club_account_id, payload.totalAmount || 0);
+
+            if (orderRemoveTtl && transaction.user_id) {
+                await removeClubMemberTtl(club_account_id, transaction.user_id);
+            }
 
             if (order) {
                 await autoDeliverOrderItems(order, process.env.ORDERS_TABLE_NAME!, process.env.PRODUCT_TABLE_NAME!);
+            }
+
+            const order_club_member = await getItem(
+                process.env.CLUB_MEMBER_TABLE_NAME as string,
+                { club_account_id, user_id: transaction.user_id }
+            );
+            if (order_club_member?.member_email && order) {
+                await sendOrderConfirmationEmail(
+                    order_club_member.member_email,
+                    order.first_name,
+                    club?.club_name ?? "",
+                    club_account_id,
+                    transaction.order_id!,
+                    order.items ?? [],
+                    order.total_amount,
+                    club?.currency ?? "ZAR",
+                );
             }
 
         } else if (transaction.type === "EVENT REGISTRATION") {
@@ -568,10 +624,11 @@ export const handler = async (event: any) => {
         }
 
         await updateTransactionsTable(
-            existingPayment.club_account_id, 
-            existingPayment.transaction_id, 
+            existingPayment.club_account_id,
+            existingPayment.transaction_id,
             payload.totalAmount || 0,
-            payload.merchantReference
+            payload.merchantReference,
+            removeTtlOnTransaction,
         );
         await updateItem(
             process.env.SNAPSCAN_PAYMENTS_TABLE_NAME as string,

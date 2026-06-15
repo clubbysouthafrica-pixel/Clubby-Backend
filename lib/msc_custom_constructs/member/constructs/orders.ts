@@ -57,11 +57,13 @@ export class MSC_MemberOrdersConstruct extends Construct {
                 USERS_TABLE_NAME: props.users_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
+                PRODUCT_TABLE_NAME: props.product_table.tableName,
                 DOMAIN: process.env.DOMAIN as string
             },
             permissions: {
                 [props.orders_table.tableArn]: [
-                    "dynamodb:PutItem"
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem"
                 ],
                 [props.users_table.tableArn]: [
                     "dynamodb:GetItem"
@@ -70,6 +72,9 @@ export class MSC_MemberOrdersConstruct extends Construct {
                     "dynamodb:PutItem"
                 ],
                 [props.club_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
+                [props.product_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
                 [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
@@ -87,13 +92,15 @@ export class MSC_MemberOrdersConstruct extends Construct {
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
+                PRODUCT_TABLE_NAME: props.product_table.tableName,
                 USER_POOL_ID: props.member_user_pool.userPoolId,
                 USER_TYPE: "MEMBER",
                 DOMAIN: process.env.DOMAIN as string
             },
             permissions: {
                 [props.orders_table.tableArn]: [
-                    "dynamodb:PutItem"
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem"
                 ],
                 [props.users_table.tableArn]: [
                     "dynamodb:GetItem",
@@ -110,6 +117,9 @@ export class MSC_MemberOrdersConstruct extends Construct {
                     "dynamodb:GetItem",
                     "dynamodb:PutItem",
                     "dynamodb:UpdateItem"
+                ],
+                [props.product_table.tableArn]: [
+                    "dynamodb:GetItem"
                 ],
                 [props.member_user_pool.userPoolArn]: [
                     "cognito-idp:AdminCreateUser",

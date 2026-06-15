@@ -247,12 +247,13 @@ export const handler = async (event: any) => {
                 { ":clubId": query_string_params.club_account_id }
             )
 
-            registrations = await queryItems(
+            const rawRegistrations = await queryItems(
                 process.env.REGISTRATIONS_TABLE_NAME as string,
                 "club_account_id = :clubId",
                 { ":clubId": query_string_params.club_account_id },
                 process.env.REGISTRATIONS_CLUB_ACCOUNT_ID_INDEX
             )
+            registrations = rawRegistrations?.filter((r: any) => r.ttl == null) ?? null;
         }
 
         if (!fields) {

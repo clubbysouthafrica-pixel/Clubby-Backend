@@ -196,6 +196,16 @@ export const handler = async (event: any) => {
         body.auto_register_members_if_paid_snapscan;
     }
 
+    if (typeof body?.eft_enabled === "boolean") {
+      updateParts.push(
+        "#eft_enabled = :eft_enabled",
+      );
+      expressionAttributeNames["#eft_enabled"] =
+        "eft_enabled";
+      expressionAttributeValues[":eft_enabled"] =
+        body.eft_enabled;
+    }
+
     if (typeof body?.notify_on_member_registration === "boolean") {
       updateParts.push(
         "#notify_on_member_registration = :notify_on_member_registration",

@@ -94,9 +94,9 @@ export const handler = async (event: any) => {
                 break;
             }
 
-            let filteredTransactions = queryTransactions;
+            let filteredTransactions = queryTransactions.filter((tx: any) => tx.ttl == null);
             if (Object.keys(filters).length > 0) {
-                filteredTransactions = queryTransactions.filter((tx: any) => applyTransactionFilters(tx, filters));
+                filteredTransactions = filteredTransactions.filter((tx: any) => applyTransactionFilters(tx, filters));
             }
 
             for (const tx of filteredTransactions) {

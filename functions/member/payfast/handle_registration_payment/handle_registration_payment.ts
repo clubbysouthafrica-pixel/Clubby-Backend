@@ -37,21 +37,25 @@ async function updateClubsRegistrationBilling(club_account_id: string, fee: numb
 async function updateTransactionsTable(
     club_account_id: string,
     current_reg_transaction_id: string,
-    payment_amount: number
+    payment_amount: number,
+    removeTtl: boolean = false,
 ) {
+    const expressionNames: Record<string, string> = {
+        "#amount_paid": "amount_paid",
+        "#status": "status",
+        "#lifecycle": "lifecycle",
+        "#ts": `${Date.now()}`
+    };
+    if (removeTtl) expressionNames["#ttl"] = "ttl";
+
     await updateItem(
         process.env.TRANSACTIONS_TABLE_NAME as string,
         {
             club_account_id: club_account_id,
             transaction_id: current_reg_transaction_id
         },
-        `SET #amount_paid = #amount_paid + :payment_amount, #status = :status, #lifecycle.#ts = :lifecycleValue`,
-        {
-            "#amount_paid": "amount_paid",
-            "#status": "status",
-            "#lifecycle": "lifecycle",
-            "#ts": `${Date.now()}`
-        },
+        `SET #amount_paid = #amount_paid + :payment_amount, #status = :status, #lifecycle.#ts = :lifecycleValue${removeTtl ? " REMOVE #ttl" : ""}`,
+        expressionNames,
         {
             ":status": "PAID",
             ":payment_amount": payment_amount,
@@ -69,7 +73,8 @@ async function updateRegistrationsTable(
     member_id: string,
     current_reg_id: string,
     payment_amount: number,
-    shouldAutoRegisterMember: boolean
+    shouldAutoRegisterMember: boolean,
+    removeTtl: boolean = false,
 ) {
     const paymentHistoryEntry = {
         date: Date.now(),
@@ -77,25 +82,30 @@ async function updateRegistrationsTable(
         is_revenue: true
     };
 
+    const baseNames: Record<string, string> = shouldAutoRegisterMember
+        ? {
+            "#total_outstanding_amount": "total_outstanding_amount",
+            "#registered_on": "registered_on",
+            "#payment_history": "payment_history"
+        }
+        : {
+            "#total_outstanding_amount": "total_outstanding_amount",
+            "#payment_history": "payment_history"
+        };
+    const expressionNames = removeTtl ? { ...baseNames, "#ttl": "ttl" } : baseNames;
+
+    const setClause = shouldAutoRegisterMember
+        ? "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #registered_on = :registered_on, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)"
+        : "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)";
+
     await updateItem(
         process.env.REGISTRATIONS_TABLE_NAME as string,
         {
             user_id: member_id,
             registration_id: current_reg_id
         },
-        shouldAutoRegisterMember
-            ? "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #registered_on = :registered_on, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)"
-            : "SET #total_outstanding_amount = #total_outstanding_amount - :payment_amount, #payment_history = list_append(if_not_exists(#payment_history, :empty_list), :payment_entry)",
-        shouldAutoRegisterMember
-            ? {
-                "#total_outstanding_amount": "total_outstanding_amount",
-                "#registered_on": "registered_on",
-                "#payment_history": "payment_history"
-            }
-            : {
-                "#total_outstanding_amount": "total_outstanding_amount",
-                "#payment_history": "payment_history"
-            },
+        removeTtl ? `${setClause} REMOVE #ttl` : setClause,
+        expressionNames,
         shouldAutoRegisterMember
             ? {
                 ":payment_amount": payment_amount,
@@ -113,18 +123,20 @@ async function updateRegistrationsTable(
 
 async function updateClubMembersTable(
     club_account_id: string,
-    member_id: string
+    member_id: string,
+    removeTtl: boolean = false,
 ) {
+    const expressionNames: Record<string, string> = { "#reg": "registered" };
+    if (removeTtl) expressionNames["#ttl"] = "ttl";
+
     await updateItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
         {
             user_id: member_id,
             club_account_id: club_account_id,
         },
-        "SET #reg = :registered",
-        {
-            "#reg": "registered"
-        },
+        removeTtl ? "SET #reg = :registered REMOVE #ttl" : "SET #reg = :registered",
+        expressionNames,
         {
             ":registered": true
         }
@@ -190,24 +202,28 @@ export const handler = async (event: any) => {
         console.log("✅ Payment verified successfully");
 
         const shouldAutoRegisterMember = club?.auto_register_members_if_paid === true;
+        const removeTtl = club.eft_enabled === false;
 
         await updateTransactionsTable(
             club_account_id,
             club_member.current_reg_transaction_id,
-            amount_paid
+            amount_paid,
+            removeTtl,
         );
 
         await updateRegistrationsTable(
             user_id,
             club_member.current_reg_id,
             amount_paid,
-            shouldAutoRegisterMember
+            shouldAutoRegisterMember,
+            removeTtl,
         );
 
         if (shouldAutoRegisterMember) {
             await updateClubMembersTable(
                 club_account_id,
-                user_id
+                user_id,
+                removeTtl,
             );
         }
 

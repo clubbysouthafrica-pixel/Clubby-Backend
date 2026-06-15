@@ -6,6 +6,7 @@ import {
   deconstructEvent,
   addItem,
   getItem,
+  autoDeliverOrderItems,
 } from "./function_helpers";
 
 const sesClient = new SESClient({ region: process.env.REGION });
@@ -135,6 +136,7 @@ async function addToTransactionsTable(
   user_id: string,
   order_amount: number,
   order_id: string,
+  ttl?: number,
 ) {
   await addItem(process.env.TRANSACTIONS_TABLE_NAME as string, {
     club_account_id: club_account_id,
@@ -155,6 +157,7 @@ async function addToTransactionsTable(
     },
     type: "ORDER",
     status: "PENDING",
+    ...(ttl !== undefined ? { ttl } : {}),
   });
 }
 
@@ -179,7 +182,7 @@ export const handler = async (event: any) => {
       );
     }
 
-    if (typeof body?.total_amount !== "number" || body.total_amount <= 0) {
+    if (typeof body?.total_amount !== "number" || body.total_amount < 0) {
       return createResponse(
         400,
         { message: "Invalid total_amount provided." },
@@ -230,6 +233,10 @@ export const handler = async (event: any) => {
 
     const transaction_id = randomUUID();
 
+    const ttl = club?.eft_enabled === false
+      ? Math.floor(Date.now() / 1000) + 7200
+      : undefined;
+
     for (const item of body.items) {
       item["fulfillment_status"] = "NOT_PROCESSED";
       item["fulfillment_quantity"] = 0;
@@ -245,14 +252,27 @@ export const handler = async (event: any) => {
       items: body.items,
       total_amount: body.total_amount,
       total_items: body.total_items,
-      payment_status: "PENDING",
+      payment_status: body.total_amount === 0 ? "PAID" : "PENDING",
       fulfillment_status: "NOT_PROCESSED",
       order_confirmed_by_admin: false,
       created_date,
       amount_paid: 0,
+      ...(ttl !== undefined ? { ttl } : {}),
     };
 
     await addItem(process.env.ORDER_TABLE_NAME!, orderItem);
+
+    if (body.total_amount === 0) {
+      const freeItems = body.items.filter((item: any) => item.price === 0);
+      if (freeItems.length > 0) {
+        await autoDeliverOrderItems(
+          { order_id, club_account_id: body.club_account_id, items: freeItems },
+          process.env.ORDER_TABLE_NAME!,
+          process.env.PRODUCT_TABLE_NAME!,
+        );
+      }
+    }
+
     await addToTransactionsTable(
       body.club_account_id,
       user.first_name,
@@ -261,6 +281,7 @@ export const handler = async (event: any) => {
       user_id as string,
       body.total_amount,
       order_id,
+      ttl,
     );
 
     if (user.email) {

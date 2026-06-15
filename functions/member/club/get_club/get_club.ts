@@ -111,9 +111,11 @@ export const handler = async (event: any) => {
         )
 
         let form_name = ""
+        let deregistered_form_name = ""
         form?.forEach((item) => {
             if (!item.visible) return
             form_name = item.form_name;
+            deregistered_form_name = item.deregistered_form_name;
         });
 
         const onboarded = Boolean(
@@ -128,6 +130,7 @@ export const handler = async (event: any) => {
 
         return createResponse(200, {
             form_name: form_name === "" ? "Join Club" : form_name,
+            deregistered_form_name: deregistered_form_name === "" ? "Resubmission Required" : deregistered_form_name,
             user_id: user_id,
             member_name: `${club_member?.member_first_name ?? ""} ${club_member?.member_surname ?? ""}`.trim(),
             currency: item.currency,

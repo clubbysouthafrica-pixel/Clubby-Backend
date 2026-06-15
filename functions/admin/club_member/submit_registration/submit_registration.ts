@@ -92,7 +92,7 @@ function validateRequestBody(body: any) {
     return null;
 }
 
-async function alreadyAssociated(club_account_id: string, user_id: string): Promise<boolean> {
+async function alreadyRegistered(club_account_id: string, user_id: string): Promise<boolean> {
     const club_member = await getItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
         {
@@ -101,7 +101,7 @@ async function alreadyAssociated(club_account_id: string, user_id: string): Prom
         }
     )
 
-    if (club_member == null) {
+    if (club_member == null || club_member?.registered !== true) {
         return false;
     }
     return true;
@@ -115,6 +115,7 @@ async function addToRegistrationsTable(
     membership_amount: number,
     registration_submitted_on: number,
     transaction_id?: string,
+    ttl?: number,
 ): Promise<string> {
     const all_registrations = await queryItems(
         process.env.REGISTRATIONS_TABLE_NAME as string,
@@ -167,6 +168,7 @@ async function addToRegistrationsTable(
             latest_registration: true,
             ...billing_fields,
             ...standard_fields,
+            ...(ttl !== undefined ? { ttl } : {}),
         }
     )
 
@@ -181,6 +183,7 @@ async function addToTransactionsTable(
     user_id: string,
     membership_amount: number,
     registration_id: string,
+    ttl?: number,
 ) {
     await addItem(
         process.env.TRANSACTIONS_TABLE_NAME as string,
@@ -202,7 +205,8 @@ async function addToTransactionsTable(
                 }
             },
             type: "REGISTRATION",
-            status: "PENDING"
+            status: "PENDING",
+            ...(ttl !== undefined ? { ttl } : {}),
         }
     )
 }
@@ -486,8 +490,8 @@ export const handler = async (event: any) => {
             return createResponse(500, { message: "Issue registering user" }, origin);
         }
 
-        if (await alreadyAssociated(body.club_account_id, member_user_id as string)) {
-            return createResponse(500, { message: `A member with email ${memberEmail} is already associated with the club or was in the past. Please login as a member with this email to continue registration.` }, origin);
+        if (await alreadyRegistered(body.club_account_id, member_user_id as string)) {
+            return createResponse(500, { message: `A member with email ${memberEmail} is already registered with the club. Please login as a member with this email to continue handling your registration.` }, origin);
         }
 
         const billingFields: BillingField[] = [];
@@ -527,6 +531,10 @@ export const handler = async (event: any) => {
 
         const current_reg_transaction_id = randomUUID();
 
+        const ttl = club.eft_enabled === false
+            ? Math.floor(Date.now() / 1000) + 3600
+            : undefined;
+
         const current_reg_id = await addToRegistrationsTable(
             body.club_account_id,
             member_user_id,
@@ -534,7 +542,8 @@ export const handler = async (event: any) => {
             standard_fields,
             membership_amount,
             registration_submitted_on,
-            membership_amount > 0 ? current_reg_transaction_id : undefined
+            membership_amount > 0 ? current_reg_transaction_id : undefined,
+            ttl,
         )
 
         const item = {
@@ -551,7 +560,8 @@ export const handler = async (event: any) => {
             registration_payment_reference: `${body.first_name} ${body.surname}`,
             currency: club.currency,
             club_name: club.club_name,
-            season_cycle: club.season_cycle
+            season_cycle: club.season_cycle,
+            ...(ttl !== undefined ? { ttl } : {}),
         };
 
         if (membership_amount > 0) {
@@ -562,7 +572,8 @@ export const handler = async (event: any) => {
                 current_reg_transaction_id,
                 member_user_id as string,
                 membership_amount,
-                current_reg_id
+                current_reg_id,
+                ttl,
             )
         }
 

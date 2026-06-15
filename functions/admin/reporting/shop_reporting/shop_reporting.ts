@@ -61,11 +61,12 @@ export const handler = async (event: any) => {
                 throw err;
             }
         } else {
-            orders = await queryItems(
+            const rawOrders = await queryItems(
                 process.env.ORDERS_TABLE_NAME as string,
                 "club_account_id = :clubId",
                 { ":clubId": query_string_params.club_account_id }
-            ) || []
+            );
+            orders = rawOrders?.filter((o: any) => o.ttl == null) ?? [];
         }
 
         const report: any[] = [];
