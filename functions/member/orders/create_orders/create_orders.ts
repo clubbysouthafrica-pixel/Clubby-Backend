@@ -233,7 +233,7 @@ export const handler = async (event: any) => {
 
     const transaction_id = randomUUID();
 
-    const ttl = club?.eft_enabled === false
+    const ttl = club?.eft_enabled === false && body.total_amount > 0
       ? Math.floor(Date.now() / 1000) + 7200
       : undefined;
 
@@ -273,16 +273,18 @@ export const handler = async (event: any) => {
       }
     }
 
-    await addToTransactionsTable(
-      body.club_account_id,
-      user.first_name,
-      user.surname,
-      transaction_id,
-      user_id as string,
-      body.total_amount,
-      order_id,
-      ttl,
-    );
+    if (body.total_amount > 0) {
+      await addToTransactionsTable(
+        body.club_account_id,
+        user.first_name,
+        user.surname,
+        transaction_id,
+        user_id as string,
+        body.total_amount,
+        order_id,
+        ttl,
+      );
+    }
 
     if (user.email) {
       await sendOrderConfirmationEmail(

@@ -388,7 +388,7 @@ export const handler = async (event: any) => {
       body.email_opt_in,
     );
 
-    const ttl = club.eft_enabled === false
+    const ttl = club.eft_enabled === false && body.total_amount > 0
       ? Math.floor(Date.now() / 1000) + 7200
       : undefined;
 
@@ -443,16 +443,18 @@ export const handler = async (event: any) => {
       }
     }
 
-    await addToTransactionsTable(
-      body.club_account_id,
-      ensuredUser.first_name,
-      ensuredUser.surname,
-      transaction_id,
-      ensuredUser.user_id,
-      body.total_amount,
-      order_id,
-      ttl,
-    );
+    if (body.total_amount > 0) {
+      await addToTransactionsTable(
+        body.club_account_id,
+        ensuredUser.first_name,
+        ensuredUser.surname,
+        transaction_id,
+        ensuredUser.user_id,
+        body.total_amount,
+        order_id,
+        ttl,
+      );
+    }
 
     if (club.eft_enabled !== false) {
       await sendOrderConfirmationEmail(
