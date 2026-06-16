@@ -101,7 +101,7 @@ async function alreadyRegistered(club_account_id: string, user_id: string): Prom
         }
     )
 
-    if (club_member == null || club_member?.registered !== true) {
+    if (club_member == null || club_member?.resubmission_required === true || club_member?.non_registration === true) {
         return false;
     }
     return true;
@@ -298,7 +298,7 @@ export async function sendAccountCreatedEmail(
     }
 }
 
-export async function createClubbyUser(email: string, first_name: string, surname: string, club_name: string): Promise<string> {
+export async function createClubbyUser(email: string, first_name: string, surname: string, club_name: string, sendEmail: boolean = true): Promise<string> {
     const password = generateCognitoPassword();
 
     try {
@@ -339,12 +339,14 @@ export async function createClubbyUser(email: string, first_name: string, surnam
             }
         );
 
-        await sendAccountCreatedEmail(
-            email,
-            first_name,
-            password,
-            club_name,
-        )
+        if (sendEmail) {
+            await sendAccountCreatedEmail(
+                email,
+                first_name,
+                password,
+                club_name,
+            );
+        }
 
         return userSub;
 
@@ -485,13 +487,13 @@ export const handler = async (event: any) => {
 
         const memberEmail = body.member_email.trim().toLowerCase();
 
-        const member_user_id = await createClubbyUser(memberEmail, body.first_name, body.surname, club.club_name)
+        const member_user_id = await createClubbyUser(memberEmail, body.first_name, body.surname, club.club_name, body.send_account_email !== false)
         if (member_user_id === "Issue registering user.") {
             return createResponse(500, { message: "Issue registering user" }, origin);
         }
 
         if (await alreadyRegistered(body.club_account_id, member_user_id as string)) {
-            return createResponse(500, { message: `A member with email ${memberEmail} is already registered with the club. Please login as a member with this email to continue handling your registration.` }, origin);
+            return createResponse(500, { message: `A member with email ${memberEmail} is already registered or has a pending registration with the club. Please login as a member with this email to continue handling your registration.` }, origin);
         }
 
         const billingFields: BillingField[] = [];
@@ -582,7 +584,7 @@ export const handler = async (event: any) => {
             item
         );
 
-        if (club.notify_on_member_registration !== false) {
+        if (club.notify_on_member_registration !== false && body.send_club_email !== false) {
             await sendEmailToAdmin(
                 club.support_email,
                 body.first_name,
