@@ -34,33 +34,33 @@ async function handleClubMemberTable(club_account_id: string) {
 
     if (club_members) {
         for (const club_member of club_members) {
-            if (club_member?.non_registration) {
-                await removeItem(
-                    process.env.CLUB_MEMBER_TABLE_NAME as string,
-                    {
-                        club_account_id: club_member.club_account_id,
-                        user_id: club_member.user_id
-                    }
-                );
-                continue;
-            } else {
-                await updateItem(
-                    process.env.CLUB_MEMBER_TABLE_NAME as string,
-                    {
-                        user_id: club_member.user_id,
-                        club_account_id: club_account_id
-                    },
-                    "SET #registered = :registered, #resubmission_required = :resubmission_required",
-                    {
-                        "#registered": "registered",
-                        "#resubmission_required": "resubmission_required"
-                    },
-                    {
-                        ":registered": false,
-                        ":resubmission_required": true
-                    }
-                )
-            }
+            // if (club_member?.non_registration) {
+            //     await removeItem(
+            //         process.env.CLUB_MEMBER_TABLE_NAME as string,
+            //         {
+            //             club_account_id: club_member.club_account_id,
+            //             user_id: club_member.user_id
+            //         }
+            //     );
+            //     continue;
+            // } else {
+            await updateItem(
+                process.env.CLUB_MEMBER_TABLE_NAME as string,
+                {
+                    user_id: club_member.user_id,
+                    club_account_id: club_account_id
+                },
+                "SET #registered = :registered, #resubmission_required = :resubmission_required",
+                {
+                    "#registered": "registered",
+                    "#resubmission_required": "resubmission_required"
+                },
+                {
+                    ":registered": false,
+                    ":resubmission_required": true
+                }
+            )
+            // }
         }
     }
 }
