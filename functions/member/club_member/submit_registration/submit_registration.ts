@@ -440,7 +440,16 @@ export const handler = async (event: any) => {
             }
         }
 
-        return createResponse(200, { message: "Registration form successfully submitted." }, origin);
+        return createResponse(
+            200, 
+            { 
+                message: "Registration form successfully submitted.",
+                transaction_id: current_reg_transaction_id, 
+                user_id: user_id as string,
+                amount: membership_amount 
+            }, 
+            origin
+        );
 
     } catch (error: any) {
         console.error('Submit registration error:', error);

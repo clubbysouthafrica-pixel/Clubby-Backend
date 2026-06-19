@@ -622,7 +622,22 @@ export const handler = async (event: any) => {
             return createResponse(200, { message: "Registration form successfully submitted. No payment required.", amount: 0 }, origin);
         }
 
-        return createResponse(200, { message: "Registration form successfully submitted.", transaction_id: current_reg_transaction_id, user_id: member_user_id, payment_reference: `${body.first_name} ${body.surname}`, account_number: club.account_number, account_type: club.account_type, bank: club.bank, branch_code: club.branch_code, payfast_enabled: club?.payfast_enabled ?? false, amount: membership_amount }, origin);
+        return createResponse(
+            200, 
+            { 
+                message: "Registration form successfully submitted.", 
+                transaction_id: current_reg_transaction_id, 
+                user_id: member_user_id, 
+                payment_reference: `${body.first_name} ${body.surname}`, 
+                account_number: club.account_number, 
+                account_type: club.account_type, 
+                bank: club.bank, 
+                branch_code: club.branch_code, 
+                payfast_enabled: club?.payfast_enabled ?? false, 
+                amount: membership_amount 
+            }, 
+            origin
+        );
 
     } catch (error: any) {
         console.error('Submit registration error:', error);
