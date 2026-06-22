@@ -225,6 +225,7 @@ async function ensureClubbyUser(
   surname: string,
   clubName: string,
   emailOptIn: boolean,
+  sendAccountEmail: boolean,
 ): Promise<{ user_id: string; first_name: string; surname: string }> {
   const password = generateCognitoPassword();
 
@@ -255,7 +256,9 @@ async function ensureClubbyUser(
     }
 
     const userRecord = await ensureUserRecord(userSub, email, firstName, surname, emailOptIn);
-    await sendAccountCreatedEmail(email, userRecord.first_name, password, clubName);
+    if (sendAccountEmail) {
+      await sendAccountCreatedEmail(email, userRecord.first_name, password, clubName);
+    }
 
     return {
       user_id: userSub,
@@ -360,6 +363,9 @@ async function addToTransactionsTable(
 
 export const handler = async (event: any) => {
   const { origin, body } = deconstructEvent(event, false);
+  const queryParams = event.queryStringParameters ?? {};
+  const sendAccountEmail = body.send_account_email !== false && queryParams.send_account_email !== "false";
+  const sendOrderEmail = body.send_order_email !== false && queryParams.send_order_email !== "false";
 
   try {
     const validationMessage = validateRequestBody(body);
@@ -386,6 +392,7 @@ export const handler = async (event: any) => {
       body.surname,
       club.club_name,
       body.email_opt_in,
+      sendAccountEmail,
     );
 
     const ttl = club.eft_enabled === false && body.total_amount > 0
@@ -456,7 +463,7 @@ export const handler = async (event: any) => {
       );
     }
 
-    if (club.eft_enabled !== false) {
+    if (club.eft_enabled !== false && sendOrderEmail) {
       await sendOrderConfirmationEmail(
         email,
         ensuredUser.first_name,
