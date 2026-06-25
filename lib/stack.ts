@@ -9,6 +9,7 @@ import {
   MSC_MailingStack,
   MSC_AdminFeaturesNestedStack,
   MSC_SnapScanNestedStack,
+  MSC_PayFastNestedStack,
 } from "./msc_custom_constructs";
 import { MSC_BucketsConstruct } from "./msc_custom_constructs/buckets/buckets";
 import { MSC_Cognito, MSC_Queue, MSC_Kms } from "./msc_service_constructs";
@@ -51,6 +52,16 @@ export class MSC_Stack extends cdk.Stack {
       billing_table: tables.billing_table,
       image_bucket: buckets.image_bucket,
       club_history_bucket: buckets.club_history_bucket,
+    });
+
+    new MSC_PayFastNestedStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}PayFastStack`, {
+      env: props?.env,
+      club_table: tables.club_table,
+      admin_user_pool: admin_user_pool,
+      kms_key: kmsKey,
+      transactions_table: tables.transactions_table,
+      monthly_billing_table: tables.billing_table,
+      users_table: tables.users_table,
     });
 
     new MSC_AdminFeaturesNestedStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}AdminFeaturesStack`, {

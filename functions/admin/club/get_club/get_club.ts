@@ -146,6 +146,7 @@ export const handler = async (event: any) => {
         }
         
         return createResponse(200, {
+            payfast_token: item?.payfast_token ? true : false,
             club_account_id: item["club_account_id"],
             public_shop: item?.public_shop ?? false,
             total_active_members,
