@@ -25,6 +25,8 @@ jobs:
       MERCHANT_ID: ${{ secrets.MERCHANT_ID }}
       MERCHANT_KEY: ${{ secrets.MERCHANT_KEY }}
       ASSETS_CERT_ARN: ${{ vars.ASSETS_CERT_ARN }}
+      PASSPHRASE: ${{ secrets.PASSPHRASE }}
+      PAYFAST_CERT_ARN: ${{ vars.PAYFAST_CERT_ARN }}
 
     steps:
       - name: Checkout code
