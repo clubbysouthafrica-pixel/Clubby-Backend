@@ -165,8 +165,7 @@ export class PayFast {
         try {
             console.log('Generating payment URL with data:', data);
 
-            const res: AxiosResponse = await axios.post(fullUrl, null, {
-                params: data,
+            const res: AxiosResponse = await axios.post(fullUrl, new URLSearchParams(data).toString(), {
                 headers,
                 maxRedirects: 0, // <- Important
                 validateStatus: (status) => status >= 200 && status < 400, // allow 3xx
