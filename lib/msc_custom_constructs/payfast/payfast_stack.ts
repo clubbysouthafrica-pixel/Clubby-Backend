@@ -112,6 +112,7 @@ export class MSC_PayFastNestedStack extends Stack {
         ],
         [`arn:aws:ses:${region}:${account}:identity/*`]: [
           "ses:SendRawEmail",
+          "ses:SendEmail",
         ],
       },
       layers: [all_layers.jwt_layer, all_layers.axios_layer],
