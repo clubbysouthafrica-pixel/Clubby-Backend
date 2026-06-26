@@ -20,10 +20,10 @@ export class PayFast {
     getApiUrl(): string {
         const env = this.config.environment;
 
-        if (env && env === "Prod") {
-            return 'https://www.payfast.co.za';
+        if (env && env === "Dev") {
+            return 'https://sandbox.payfast.co.za';
         }
-        return 'https://sandbox.payfast.co.za';
+        return 'https://www.payfast.co.za';
     }
 
     getMerchantId(): string | undefined {
@@ -120,7 +120,7 @@ export class PayFast {
     ): Promise<boolean> {
         const merchantId = this.config.merchant_id ?? '';
         const timestamp = new Date().toISOString().slice(0, 19);
-        const isSandbox = this.config.environment !== 'Prod';
+        const isSandbox = this.config.environment === 'Dev';
 
         const bodyParams: Record<string, string> = {
             amount: amountInCents.toString(),

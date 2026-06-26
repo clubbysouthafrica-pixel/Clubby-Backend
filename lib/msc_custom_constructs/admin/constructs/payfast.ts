@@ -72,6 +72,7 @@ export class MSC_PayFastConstruct extends Construct {
                 ENVIRONMENT: process.env.ENVIRONMENT || "Prod",
                 MERCHANT_ID: process.env.MERCHANT_ID as string,
                 MERCHANT_KEY: process.env.MERCHANT_KEY as string,
+                PASSPHRASE: process.env.PASSPHRASE as string,
                 DOMAIN: process.env.ENVIRONMENT === "Dev" ? "http://localhost:5173" : `https://${process.env.DOMAIN}` as string,
                 NOTIFY_URL: `https://${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}admin.${process.env.DOMAIN}/payfast/handleClubbyPayment`,
             },

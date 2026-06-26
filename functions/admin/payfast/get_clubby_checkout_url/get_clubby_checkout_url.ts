@@ -22,6 +22,7 @@ async function generateSinglePaymentUrl(amount: number, year_month: string, club
     } = {
         merchant_id: process.env.MERCHANT_ID as string,
         merchant_key: process.env.MERCHANT_KEY as string,
+        passphrase: process.env.PASSPHRASE as string,
         environment: `${process.env.ENVIRONMENT === "Dev" ? "sandbox" : "Prod"}` as string,
     }
 
@@ -67,6 +68,7 @@ async function generateAllPaymentsUrl(amount: number, club_account_id: string) {
     } = {
         merchant_id: process.env.MERCHANT_ID as string,
         merchant_key: process.env.MERCHANT_KEY as string,
+        passphrase: process.env.PASSPHRASE as string,
         environment: `${process.env.ENVIRONMENT === "Dev" ? "sandbox" : "Prod"}` as string,
     }
 

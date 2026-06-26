@@ -458,6 +458,9 @@ export const handler = async (event: any) => {
         if (!existingPayment) {
             return createResponse(200, { message: "Payment record not found." }, origin);
         }
+        if (existingPayment.paid) {
+            return createResponse(200, { message: "Payment has already been processed." }, origin);
+        }
 
         const club_account_id = existingPayment.club_account_id;
 
@@ -518,7 +521,7 @@ export const handler = async (event: any) => {
 
             await updateClubsRegistrationBilling(
                 club_account_id,
-                payload.totalAmount || 0
+                (payload.totalAmount || 0) * (club.member_registration_fee_to_club / 100)
             );
 
             if (club.use_success_email_template && club?.auto_register_members_if_paid_snapscan === true) {
@@ -561,7 +564,7 @@ export const handler = async (event: any) => {
                 payload.paymentType || "SnapScan"
             );
 
-            await updateClubsStorageBilling(club_account_id, payload.totalAmount || 0);
+            await updateClubsStorageBilling(club_account_id, (payload.totalAmount || 0) * 0.02);
 
         } else if (transaction.type === "ORDER") {
 
@@ -574,7 +577,7 @@ export const handler = async (event: any) => {
             removeTtlOnTransaction = orderRemoveTtl;
 
             await updateOrdersTable(club_account_id, transaction.order_id!, payload.totalAmount || 0, orderRemoveTtl);
-            await updateClubsOrderBilling(club_account_id, payload.totalAmount || 0);
+            await updateClubsOrderBilling(club_account_id, (payload.totalAmount || 0) * 0.03);
 
             if (orderRemoveTtl && transaction.user_id) {
                 await removeClubMemberTtl(club_account_id, transaction.user_id);
@@ -617,7 +620,7 @@ export const handler = async (event: any) => {
                 payload.totalAmount || 0,
                 event?.auto_confirm_registrations || false
             );
-            await updateClubsEventRegistrationBilling(club_account_id, payload.totalAmount || 0);
+            await updateClubsEventRegistrationBilling(club_account_id, (payload.totalAmount || 0) * 0.03);
 
         } else {
             return createResponse(200, { message: `Transaction type ${transaction.type} not supported.` }, origin);
