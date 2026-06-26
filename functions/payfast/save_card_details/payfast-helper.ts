@@ -81,11 +81,14 @@ export class PayFast {
             getString += `&passphrase=${this.encodeURIString(passPhrase.trim())}`;
         }
 
+        console.log('[PayFast] Signature string (passphrase masked):', getString.replace(/passphrase=[^&]+/, 'passphrase=***'));
         return getString;
     }
 
     createSignature(input: string): string {
-        return crypto.createHash('md5').update(input).digest('hex');
+        const signature = crypto.createHash('md5').update(input).digest('hex');
+        console.log('[PayFast] Generated signature:', signature);
+        return signature;
     }
 
     generateApiSignature(timestamp: string, bodyParams: Record<string, string>): string {
@@ -163,24 +166,36 @@ export class PayFast {
         const fullUrl = `${this.getApiUrl()}/${url}`;
 
         try {
-            console.log('Generating payment URL with data:', data);
+            console.log('[PayFast] generatePaymentUrl called');
+            console.log('[PayFast] Target URL:', fullUrl);
+            console.log('[PayFast] Environment:', this.config.environment);
+            console.log('[PayFast] Payment data:', JSON.stringify(data, null, 2));
 
-            const res: AxiosResponse = await axios.post(fullUrl, new URLSearchParams(data).toString(), {
+            const res: AxiosResponse = await axios.post(fullUrl, null, {
+                params: data,
                 headers,
                 maxRedirects: 0, // <- Important
                 validateStatus: (status) => status >= 200 && status < 400, // allow 3xx
             });
 
+            console.log('[PayFast] Response status:', res.status);
+            console.log('[PayFast] Response headers:', JSON.stringify(res.headers, null, 2));
+
             const redirectUrl = res.headers['location'];
-            console.log('Redirect URL:', redirectUrl);
+            console.log('[PayFast] Redirect URL:', redirectUrl);
 
             return redirectUrl;
         } catch (err: any) {
+            console.error('[PayFast] generatePaymentUrl error status:', err.response?.status);
+            console.error('[PayFast] generatePaymentUrl error response headers:', JSON.stringify(err.response?.headers, null, 2));
+            console.error('[PayFast] generatePaymentUrl error response body:', err.response?.data?.substring?.(0, 500) ?? err.response?.data);
+
             if (err.response?.headers?.location) {
+                console.log('[PayFast] Found redirect in error response:', err.response.headers.location);
                 return err.response.headers.location;
             }
 
-            console.error('Error generating payment URL', err);
+            console.error('[PayFast] No redirect URL found, returning undefined');
             return undefined;
         }
     }
