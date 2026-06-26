@@ -54,8 +54,8 @@ export class MSC_PayFastNestedStack extends Stack {
         MERCHANT_KEY: process.env.MERCHANT_KEY as string,
         PASSPHRASE: process.env.PASSPHRASE as string,
         USERS_TABLE_NAME: props.users_table.tableName,
-        RETURN_URL: `${process.env.ENVIRONMENT === "Dev" ? "http://localhost:5173" : `https://${process.env.DOMAIN}`}/billing-usage?success=true`,
-        CANCEL_URL: `${process.env.ENVIRONMENT === "Dev" ? "http://localhost:5173" : `https://${process.env.DOMAIN}`}/billing-usage?success=false`,
+        RETURN_URL: `${process.env.ENVIRONMENT === "Dev" ? "http://localhost:5173" : `https://${process.env.DOMAIN}`}/billing&usage?success=true`,
+        CANCEL_URL: `${process.env.ENVIRONMENT === "Dev" ? "http://localhost:5173" : `https://${process.env.DOMAIN}`}/billing&usage?success=false`,
         NOTIFY_URL: `https://${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}payfast.${process.env.DOMAIN}/payfast/saveCardSuccess`,
       },
       permissions: {
