@@ -41,7 +41,7 @@ export const handler = async (event: any) => {
 
             m_payment_id: query_string_params.club_account_id,
 
-            amount: "1.00",
+            amount: "0.00",
             item_name: "Card Registration",
 
             payment_method: "cc",
