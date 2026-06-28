@@ -231,32 +231,45 @@ export const handler = async (event: any) => {
 
         const results: { club_account_id: string; year_month: string; success: boolean; amount_in_cents: number }[] = [];
 
+        const PAYFAST_MINIMUM_CENTS = 500; // R5.00
+
         for (const club_account_id of Object.keys(byClub)) {
+            const months = byClub[club_account_id];
             const club = await getItem(process.env.CLUB_TABLE_NAME as string, { club_account_id });
 
             if (!club?.payfast_token) {
                 console.warn(`No PayFast token for club ${club_account_id} — skipping.`);
-                for (const month of byClub[club_account_id]) {
+                for (const month of months) {
+                    results.push({ club_account_id, year_month: month.year_month, success: false, amount_in_cents: month.outstanding_amount });
+                }
+                continue;
+            }
+
+            const totalAmountInCents = months.reduce((sum: number, month: any) => sum + getNumberValue(month.outstanding_amount), 0);
+
+            if (totalAmountInCents < PAYFAST_MINIMUM_CENTS) {
+                console.log(`Club ${club_account_id}: total R${(totalAmountInCents / 100).toFixed(2)} is below R5.00 minimum — skipping.`);
+                for (const month of months) {
                     results.push({ club_account_id, year_month: month.year_month, success: false, amount_in_cents: month.outstanding_amount });
                 }
                 continue;
             }
 
             const token = await decryptData(club.payfast_token);
+            const monthList = months.map((m: any) => m.year_month).join(', ');
+            const mPaymentId = `${club_account_id}_combined_${Date.now()}`;
+            const itemName = `Clubby Combined Charges - ${monthList}`;
 
-            for (const month of byClub[club_account_id]) {
-                const amountInCents = month.outstanding_amount as number;
-                const mPaymentId = `${club_account_id}_${month.year_month}`;
-                const itemName = `Clubby Charges - ${month.year_month}`;
+            try {
+                const success = await payfast.chargeToken(token, totalAmountInCents, itemName, mPaymentId);
 
-                try {
-                    const success = await payfast.chargeToken(token, amountInCents, itemName, mPaymentId);
+                console.log(`${club_account_id}: ${success ? 'SUCCESS' : 'FAILED'} combined charge of ${totalAmountInCents} cents for months: ${monthList}`);
 
-                    if (success) {
-                        const transaction_id = randomUUID();
+                if (success) {
+                    await addToTransactionsTable(club_account_id, randomUUID(), totalAmountInCents, monthList);
 
-                        await addToTransactionsTable(club_account_id, transaction_id, amountInCents, month.year_month);
-                        await updateMonthlyBillingTable(club_account_id, month.year_month, amountInCents);
+                    for (const month of months) {
+                        await updateMonthlyBillingTable(club_account_id, month.year_month, getNumberValue(month.outstanding_amount));
 
                         try {
                             await sendInvoiceEmail({
@@ -269,17 +282,22 @@ export const handler = async (event: any) => {
                         } catch (emailErr) {
                             console.error(`Failed to send invoice for ${club_account_id} / ${month.year_month}:`, emailErr);
                         }
-                    }
 
-                    results.push({ club_account_id, year_month: month.year_month, success, amount_in_cents: amountInCents });
-                    console.log(`${club_account_id} / ${month.year_month}: ${success ? 'SUCCESS' : 'FAILED'} (${amountInCents} cents)`);
-                } catch (err: any) {
-                    console.error(`Failed to charge ${club_account_id} / ${month.year_month}:`, JSON.stringify({
-                        message: err.message,
-                        status: err.response?.status,
-                        data: err.response?.data,
-                    }, null, 2));
-                    results.push({ club_account_id, year_month: month.year_month, success: false, amount_in_cents: amountInCents });
+                        results.push({ club_account_id, year_month: month.year_month, success: true, amount_in_cents: getNumberValue(month.outstanding_amount) });
+                    }
+                } else {
+                    for (const month of months) {
+                        results.push({ club_account_id, year_month: month.year_month, success: false, amount_in_cents: getNumberValue(month.outstanding_amount) });
+                    }
+                }
+            } catch (err: any) {
+                console.error(`Failed to charge ${club_account_id} (combined):`, JSON.stringify({
+                    message: err.message,
+                    status: err.response?.status,
+                    data: err.response?.data,
+                }, null, 2));
+                for (const month of months) {
+                    results.push({ club_account_id, year_month: month.year_month, success: false, amount_in_cents: getNumberValue(month.outstanding_amount) });
                 }
             }
         }
