@@ -115,7 +115,7 @@ export class MSC_PayFastNestedStack extends Stack {
           "ses:SendEmail",
         ],
       },
-      timeout: 300,
+      timeout: 900,
       layers: [all_layers.jwt_layer, all_layers.axios_layer],
     });
 
