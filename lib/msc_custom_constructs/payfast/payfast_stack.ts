@@ -118,11 +118,26 @@ export class MSC_PayFastNestedStack extends Stack {
       layers: [all_layers.jwt_layer, all_layers.axios_layer],
     });
 
+    const remove_card = new MSC_Lambda(this, `${id}-RemoveCard`, {
+      code: "payfast/remove_card",
+      envVariables: {
+        CLUB_TABLE_NAME: props.club_table.tableName,
+      },
+      permissions: {
+        [props.club_table.tableArn]: [
+          "dynamodb:UpdateItem"
+        ],
+      },
+      layers: [all_layers.jwt_layer],
+    });
+
     const save_card_resource = payfast_resource.addResource("saveCard");
     const save_card_success_resource = payfast_resource.addResource("saveCardSuccess");
+    const remove_card_resource = payfast_resource.addResource("removeCard");
 
     addCorsEnabledMethod(save_card_resource, save_card_details, methodOptions, undefined, "GET");
     addCorsEnabledMethod(save_card_success_resource, save_card_details_success, { methodResponses: [] }, undefined, "POST");
+    addCorsEnabledMethod(remove_card_resource, remove_card, methodOptions, undefined, "POST");
 
     new Rule(this, `${id}-MonthlyBillingSchedule`, {
       schedule: Schedule.cron({ minute: "0", hour: "0", day: "1", month: "*", year: "*" }),
