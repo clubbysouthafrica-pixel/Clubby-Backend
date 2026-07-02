@@ -186,6 +186,7 @@ export class MSC_MemberNestedStack extends Stack {
       signatures_bucket: props.signatures_bucket,
       kms_key: props.kms_key,
       image_bucket: props.image_bucket,
+      member_user_pool: props.member_user_pool,
     });
 
     new MSC_MemberClubConstruct(this, `${id}-Club`, {

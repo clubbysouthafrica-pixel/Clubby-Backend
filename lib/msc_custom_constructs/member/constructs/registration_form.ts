@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_LambdaLayer, MSC_Kms } from "../../../msc_service_constructs";
+import { MSC_Lambda, MSC_APIGateway, MSC_Table, MSC_Bucket, MSC_LambdaLayer, MSC_Kms, MSC_Cognito } from "../../../msc_service_constructs";
 import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 import { AuthorizationType, MethodOptions, TokenAuthorizer } from "aws-cdk-lib/aws-apigateway";
 
@@ -12,6 +12,7 @@ interface MSC_MemberRegistrationFormConstructProps {
     signatures_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
     image_bucket: MSC_Bucket;
+    member_user_pool: MSC_Cognito;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     };
@@ -31,7 +32,8 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 IMAGE_BUCKET_NAME: props.image_bucket.bucketName,
-                KMS_KEY_ID: props.kms_key.keyId
+                KMS_KEY_ID: props.kms_key.keyId,
+                USER_POOL_ID: props.member_user_pool.userPoolId,
             },
             permissions: {
                 [props.registration_form_table.tableArn]: [
@@ -45,6 +47,9 @@ export class MSC_MemberRegistrationFormConstruct extends Construct {
                 ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
+                ],
+                [props.member_user_pool.userPoolArn]: [
+                    "cognito-idp:AdminGetUser"
                 ],
                 [props.kms_key.keyArn]: [
                     "kms:Decrypt"

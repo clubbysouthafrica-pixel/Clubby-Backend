@@ -2,11 +2,29 @@ import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { createResponse, deconstructEvent, decryptData, getItem, getSignatureUrl, queryItems } from "./function_helpers";
 import { GetObjectCommand, HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { AdminGetUserCommand, CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
 
 export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 const s3_client = new S3Client({ region: process.env.REGION });
+const cognitoClient = new CognitoIdentityProviderClient({ region: process.env.REGION });
+
+async function getUserIdByEmail(email: string): Promise<string | null> {
+    try {
+        const response = await cognitoClient.send(
+            new AdminGetUserCommand({
+                UserPoolId: process.env.USER_POOL_ID!,
+                Username: email,
+            })
+        );
+        const sub = response.UserAttributes?.find(attr => attr.Name === 'sub')?.Value;
+        return sub ?? null;
+    } catch (err: any) {
+        if (err.name === 'UserNotFoundException') return null;
+        throw err;
+    }
+}
 
 async function getClubProfileUrl(club_account_id: string): Promise<string | undefined> {
     const profile_key = `club_profile/${club_account_id}_profile`;
@@ -89,7 +107,17 @@ export const handler = async (event: any) => {
             });
         });
 
-        if (user_id == null || user_id === undefined) {
+        let effective_user_id: string | null = user_id ?? null;
+        let from_email_lookup = false;
+        let looked_up_email: string | null = null;
+
+        if (!effective_user_id && typeof query_string_params?.email === 'string' && query_string_params.email.trim() !== '') {
+            looked_up_email = query_string_params.email.trim().toLowerCase();
+            effective_user_id = await getUserIdByEmail(looked_up_email as string);
+            if (effective_user_id) from_email_lookup = true;
+        }
+
+        if (!effective_user_id) {
             return createResponse(200, { pages, club_name: club.club_name, currency: club.currency }, origin);
         }
 
@@ -97,14 +125,20 @@ export const handler = async (event: any) => {
             process.env.CLUB_MEMBER_TABLE_NAME as string,
             {
                 club_account_id: query_string_params.club_account_id,
-                user_id: user_id as string
+                user_id: effective_user_id
             }
         );
 
+        if (from_email_lookup && club_member != null && club_member?.resubmission_required !== true && club_member?.non_registration !== true) {
+            return createResponse(409, {
+                message: `A member with email ${looked_up_email} already has a pending or active registration with this club.`
+            }, origin);
+        }
+
         if (club_member == null || club_member === undefined) {
-            return createResponse(200, { 
-                pages, 
-                club_name: club.club_name, 
+            return createResponse(200, {
+                pages,
+                club_name: club.club_name,
                 currency: club.currency,
                 club_profile_url: await getClubProfileUrl(query_string_params?.club_account_id)
             }, origin);
@@ -117,7 +151,7 @@ export const handler = async (event: any) => {
         const registration = await getItem(
             process.env.REGISTRATIONS_TABLE_NAME as string,
             {
-                user_id: user_id as string,
+                user_id: effective_user_id,
                 registration_id: club_member?.current_reg_id,
             }
         );
