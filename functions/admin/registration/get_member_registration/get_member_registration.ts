@@ -158,6 +158,33 @@ export const handler = async (event: any) => {
                         break;
                     }
 
+                    else if (key.includes(field.field_id) && reg.type === "STANDARD_IMAGE") {
+                        const cdnUrl = process.env.REGISTRATION_IMAGES_CDN_URL;
+                        const imageKeys: string[] = Array.isArray(reg.image_keys)
+                            ? reg.image_keys
+                            : Array.isArray(reg.value)
+                                ? reg.value
+                                : reg.value
+                                    ? [reg.value]
+                                    : [];
+                        const images = cdnUrl
+                            ? imageKeys
+                                .filter((k: any) => typeof k === "string" && k.length > 0)
+                                .map((k: string) => `${cdnUrl}/${k}`)
+                            : [];
+
+                        new_page.fields.push({
+                            field_id: field.field_id,
+                            type: "STANDARD_IMAGE",
+                            label: field.field_name,
+                            value: images,
+                            position: field.field_order_id,
+                            visible: field?.visible ?? true
+                        });
+                        found = true;
+                        break;
+                    }
+
                     else if (key.includes(field.field_id) && reg.type.includes("STANDARD_")) {
                         let value = reg.value
                         if (reg.type === "STANDARD_CHECKBOX" && reg?.value !== "true") value = "false";
@@ -196,7 +223,16 @@ export const handler = async (event: any) => {
                 }
 
                 if (!found) {
-                    if (field.field_type === "STANDARD" && field.input_type !== "SIGNATURE") {
+                    if (field.field_type === "STANDARD" && field.input_type === "IMAGE") {
+                        new_page.fields.push({
+                            field_id: field.field_id,
+                            type: "STANDARD_IMAGE",
+                            label: field.field_name,
+                            value: [],
+                            position: field.field_order_id,
+                            visible: field?.visible ?? true
+                        });
+                    } else if (field.field_type === "STANDARD" && field.input_type !== "SIGNATURE") {
                         new_page.fields.push({
                             field_id: field.field_id,
                             type: "STANDARD_OTHER",

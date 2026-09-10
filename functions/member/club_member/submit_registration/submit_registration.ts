@@ -20,7 +20,7 @@ import {
 
 const sesClient = new SESClient({ region: process.env.REGION });
 
-export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
+export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO' | 'IMAGE';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 function generateShortReference(
@@ -57,8 +57,13 @@ function validateRequestBody(body: any) {
 
     for (const field of body.standard_fields) {
         if (typeof field !== 'object') return 'All standard_field indexes must be objects.';
-        if (!field.field_id || field.value === undefined || field.value == null || typeof field.field_id !== 'string') {
-            return 'All standard_fields must have STRING keys: field_id and value.';
+        if (!field.field_id || typeof field.field_id !== 'string') {
+            return 'All standard_fields must have a STRING field_id.';
+        }
+        const hasValue = field.value !== undefined && field.value !== null;
+        const hasImages = Array.isArray(field.images);
+        if (!hasValue && !hasImages) {
+            return 'All standard_fields must have a value (or an images array for image fields).';
         }
     }
 

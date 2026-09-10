@@ -1,7 +1,7 @@
 import { createResponse, deconstructEvent, getItem, addItem, removeItem, updateItem } from "./function_helpers";
 import { randomUUID } from 'crypto';
 
-export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO';
+export type StandardInputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO' | 'IMAGE';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
 
 export interface StandardField {
@@ -91,11 +91,12 @@ function isBillingField(obj: any): obj is BillingField {
 }
 
 function isStandardField(obj: any): obj is StandardField {
-    const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE', 'NUMBER', 'CHECKBOX', 'SIGNATURE'];
+    const validTypes = ['TEXT', 'DROPDOWN', 'PHONE', 'DATE', 'NUMBER', 'CHECKBOX', 'SIGNATURE', 'IMAGE'];
 
     return obj.field_type === 'STANDARD' &&
         validTypes.includes(obj.input_type) &&
         (obj.input_type !== 'DROPDOWN' || (Array.isArray(obj.options) && obj.options.every((o: any) => typeof o === 'string'))) &&
+        (obj.input_type !== 'IMAGE' || (typeof obj.field_name === 'string' && obj.field_name.trim().length > 0)) &&
         typeof obj === 'object' &&
         typeof obj.placeholder === 'string' &&
         typeof obj.field_name === 'string' &&
@@ -209,7 +210,7 @@ export const handler = async (event: any) => {
                     item.phone_number_input = field.phone_number_input ?? false;
                 }
 
-                if (['CHECKBOX', 'TEXT', 'NUMBER', 'DROPDOWN'].includes(field.input_type)) {
+                if (['CHECKBOX', 'TEXT', 'NUMBER', 'DROPDOWN', 'IMAGE'].includes(field.input_type)) {
                     item.editable_by_member = field.editable_by_member ?? false;
                 }
             } else if (isBillingField(field)) {

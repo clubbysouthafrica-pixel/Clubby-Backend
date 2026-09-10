@@ -53,6 +53,7 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
+                REGISTRATION_IMAGES_CDN_URL: `https://${process.env.DEPLOYER ? `${process.env.DEPLOYER}-` : ""}registration-images.${process.env.DOMAIN}`,
                 KMS_KEY_ID: props.kms_key.keyId
             },
             permissions: {

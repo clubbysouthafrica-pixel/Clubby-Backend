@@ -14,6 +14,7 @@ interface MSC_ClubMemberClubConstructProps {
     registration_form_table: MSC_Table;
     registrations_table: MSC_Table;
     signatures_bucket: MSC_Bucket;
+    registration_images_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
     mail_queue: MSC_Queue;
     layers: {
@@ -74,6 +75,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 USERS_TABLE_NAME: props.users_table.tableName,
                 USER_TYPE: "MEMBER",
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
+                REGISTRATION_IMAGES_BUCKET_NAME: props.registration_images_bucket.bucketName,
                 REGISTRATION_FORM_TABLE_NAME: props.registration_form_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
@@ -130,6 +132,7 @@ export class MSC_ClubMemberClubConstruct extends Construct {
             retention: RetentionDays.ONE_MONTH
         });
         props.signatures_bucket.grantPut(submit_registration)
+        props.registration_images_bucket.grantPut(submit_registration)
 
         const register_member = new MSC_Lambda(this, `${id}-RegisterMember`, {
             code: "admin/club_member/register_member",

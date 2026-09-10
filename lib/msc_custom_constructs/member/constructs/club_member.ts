@@ -12,6 +12,7 @@ interface MSC_ClubMemberConstructProps {
     club_table: MSC_Table,
     users_table: MSC_Table;
     signatures_bucket: MSC_Bucket;
+    registration_images_bucket: MSC_Bucket;
     registrations_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
@@ -34,6 +35,7 @@ export class MSC_ClubMemberConstruct extends Construct {
                 USERS_TABLE_NAME: props.users_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 SIGNATURES_BUCKET_NAME: props.signatures_bucket.bucketName,
+                REGISTRATION_IMAGES_BUCKET_NAME: props.registration_images_bucket.bucketName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
@@ -80,6 +82,7 @@ export class MSC_ClubMemberConstruct extends Construct {
             layers: [props.layers.jwt_layer]
         });
         props.signatures_bucket.grantPut(submit_registration)
+        props.registration_images_bucket.grantPut(submit_registration)
 
         const get_club_member = new MSC_Lambda(this, `${id}-GetClubMember`, {
             code: "member/club_member/get_club_member",

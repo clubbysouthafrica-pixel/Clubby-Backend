@@ -4,8 +4,94 @@ import { encryptData } from "./kms_encryption";
 
 const s3_client = new S3Client({ region: process.env.REGION });
 
-export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO' | 'CHECKBOX' | 'SIGNATURE';
+export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO' | 'CHECKBOX' | 'SIGNATURE' | 'IMAGE';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP';
+
+const IMAGE_MAX_COUNT = 10;
+const IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10MB per image (decoded)
+const IMAGE_ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/gif'];
+const IMAGE_DATA_URL_REGEX = /^data:(image\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)$/;
+
+const IMAGE_MIME_EXTENSIONS: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/heic': 'heic',
+    'image/heif': 'heif',
+    'image/gif': 'gif',
+};
+
+/**
+ * Resolves the list of base64 image data URLs submitted for an IMAGE field.
+ * Accepts either an `images` array or a `value` that is a JSON stringified array.
+ */
+export function getSubmittedImages(submittedField: any): string[] {
+    if (Array.isArray(submittedField?.images)) {
+        return submittedField.images;
+    }
+
+    if (typeof submittedField?.value === 'string') {
+        try {
+            const parsed = JSON.parse(submittedField.value);
+            if (Array.isArray(parsed)) {
+                return parsed;
+            }
+        } catch {
+        }
+
+        if (submittedField.value.trim().length > 0) {
+            return [submittedField.value];
+        }
+    }
+
+    return [];
+}
+
+/**
+ * Validates the base64 image data URLs submitted for an IMAGE field.
+ * Returns an error message string, or null when the images are valid.
+ */
+export function validateSubmittedImages(fieldId: string, images: string[], required: boolean): string | null {
+    if (images.length === 0) {
+        return required
+            ? `The following required image field is missing an image. Field ID: ${fieldId}.`
+            : null;
+    }
+
+    if (images.length > IMAGE_MAX_COUNT) {
+        return `Too many images for field ${fieldId}. A maximum of ${IMAGE_MAX_COUNT} images is allowed.`;
+    }
+
+    for (const image of images) {
+        if (typeof image !== 'string') {
+            return `Image field ${fieldId} contains an invalid image.`;
+        }
+
+        const match = image.match(IMAGE_DATA_URL_REGEX);
+        if (!match) {
+            return `Image field ${fieldId} contains a value that is not a base64 image data URL.`;
+        }
+
+        const mimeType = match[1].toLowerCase();
+        if (!IMAGE_ALLOWED_MIME_TYPES.includes(mimeType)) {
+            return `Image field ${fieldId} contains an unsupported image type: ${mimeType}.`;
+        }
+
+        const base64Data = match[2].replace(/\s/g, '');
+        if (base64Data.length === 0) {
+            return `Image field ${fieldId} contains an empty image.`;
+        }
+
+        const padding = base64Data.endsWith('==') ? 2 : base64Data.endsWith('=') ? 1 : 0;
+        const byteLength = Math.floor((base64Data.length * 3) / 4) - padding;
+        if (byteLength > IMAGE_MAX_BYTES) {
+            return `Image field ${fieldId} contains an image larger than the ${IMAGE_MAX_BYTES / (1024 * 1024)}MB limit.`;
+        }
+    }
+
+    return null;
+}
 
 export interface StandardField {
     field_type: "STANDARD";
@@ -200,7 +286,7 @@ export function validateBillingField(billingFields: BillingField[], submittedFie
     return Math.round((total_amount + Number.EPSILON) * 100) / 100;
 }
 
-export function validateStandardFields(standardFields: StandardField[], submittedFields: { name: string; value: string; field_id: string }[]): string | null {
+export function validateStandardFields(standardFields: StandardField[], submittedFields: { name?: string; value: string; field_id: string; images?: string[] }[]): string | null {
     const requiredFields = standardFields.filter(f => f.required);
     const field_ids = submittedFields.map(f => f.field_id);
     const allValid = requiredFields.every(req => {
@@ -219,6 +305,18 @@ export function validateStandardFields(standardFields: StandardField[], submitte
     for (const field of submittedFields) {
         if (!known_field_ids.includes(field.field_id)) {
             return `The following provided field does not exist in this club's registration form. Field ID: ${field.field_id}.`;
+        }
+
+        const formField = standardFields.find(f => f.field_id === field.field_id);
+        if (formField?.input_type === 'IMAGE') {
+            const imageValidation = validateSubmittedImages(
+                field.field_id,
+                getSubmittedImages(field),
+                formField.required
+            );
+            if (imageValidation) {
+                return imageValidation;
+            }
         }
     }
 
@@ -285,6 +383,37 @@ async function addSignature(
     return key
 }
 
+async function addRegistrationImage(
+    club_account_id: string,
+    image_id: string,
+    dataUrl: string,
+): Promise<string> {
+    const bucket = process.env.REGISTRATION_IMAGES_BUCKET_NAME;
+    if (!bucket) {
+        throw new Error("REGISTRATION_IMAGES_BUCKET_NAME is not configured for this function.");
+    }
+
+    const mimeMatch = dataUrl.match(/^data:(.+);base64,/);
+    const contentType = mimeMatch ? mimeMatch[1].toLowerCase() : "application/octet-stream";
+    const extension = IMAGE_MIME_EXTENSIONS[contentType] ?? "bin";
+
+    const base64Data = dataUrl.split(",")[1] ?? "";
+    const buffer = Buffer.from(base64Data, "base64");
+
+    const key = `${club_account_id}/${image_id}.${extension}`;
+    const command = new PutObjectCommand({
+        Bucket: bucket,
+        Body: buffer,
+        Key: key,
+        ContentType: contentType,
+    });
+    console.log(`@@@ putObject request (Bucket_Name: ${bucket}): `, key);
+    const response = await s3_client.send(command);
+    console.log(`@@@ putObject response (Bucket_Name: ${bucket}): `, JSON.stringify(response));
+
+    return key;
+}
+
 export async function standardFieldMapping(
     submittedFields: any[],
     form: Record<string, any>[],
@@ -301,7 +430,7 @@ export async function standardFieldMapping(
             type: "STANDARD_TEXT" 
         };
 
-        if (f?.sensitive_information) {
+        if (f?.sensitive_information && f?.input_type !== "IMAGE") {
             standard_fields[`reg_field_${field.field_id}`].sensitive_information = f.sensitive_information;
             standard_fields[`reg_field_${field.field_id}`].value = await encryptData(field.value, process.env.KMS_KEY_ID as string);
         }
@@ -312,6 +441,18 @@ export async function standardFieldMapping(
             standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_CHECKBOX"
         } else if (f?.input_type === "NUMBER") {
             standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_NUMBER"
+        } else if (f?.input_type === "IMAGE") {
+            standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_IMAGE"
+
+            const image_keys: string[] = [];
+            for (const dataUrl of getSubmittedImages(field)) {
+                const image_id = randomUUID();
+                const key = await addRegistrationImage(clubAccountId, image_id, dataUrl);
+                image_keys.push(key);
+            }
+
+            standard_fields[`reg_field_${field.field_id}`].value = image_keys;
+            standard_fields[`reg_field_${field.field_id}`].image_keys = image_keys;
         } else if (f?.input_type === "SIGNATURE") {
             standard_fields[`reg_field_${field.field_id}`].type = "STANDARD_SIGNATURE"
             

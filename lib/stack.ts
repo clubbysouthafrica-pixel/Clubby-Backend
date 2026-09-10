@@ -87,6 +87,7 @@ export class MSC_Stack extends cdk.Stack {
       events_table: tables.events_table,
       storage_requests_table: tables.storage_request_table,
       signatures_bucket: buckets.signatures_bucket,
+      registration_images_bucket: buckets.registration_images_bucket,
       shop_images_bucket: buckets.shop_images_bucket,
       member_user_pool: member_user_pool,
       admin_user_pool: admin_user_pool,
@@ -146,6 +147,7 @@ export class MSC_Stack extends cdk.Stack {
       product_table: tables.products_table,
       orders_table: tables.orders_table,
       signatures_bucket: buckets.signatures_bucket,
+      registration_images_bucket: buckets.registration_images_bucket,
       member_user_pool: member_user_pool,
       registrations_table: tables.registrations_table,
       transactions_table: tables.transactions_table,
@@ -169,21 +171,27 @@ export class MSC_Stack extends cdk.Stack {
 
     const assetsOai = new OriginAccessIdentity(this, `${stackPrefix}AssetsOAI`);
     const shopImagesOai = new OriginAccessIdentity(this, `${stackPrefix}ShopImagesOAI`);
+    const registrationImagesOai = new OriginAccessIdentity(this, `${stackPrefix}RegistrationImagesOAI`);
     buckets.image_bucket.grantRead(assetsOai);
     buckets.shop_images_bucket.grantRead(shopImagesOai);
+    buckets.registration_images_bucket.grantRead(registrationImagesOai);
 
     const assetsSubdomain = `${cdnDeployer}assets.${domain}`;
     const shopImagesSubdomain = `${cdnDeployer}shop-images.${domain}`;
+    const registrationImagesSubdomain = `${cdnDeployer}registration-images.${domain}`;
 
     new MSC_InfraStack(this, `${stackPrefix}InfraStack`, {
       env: props?.env,
       assets_bucket_name: buckets.image_bucket.bucketName,
       shop_images_bucket_name: buckets.shop_images_bucket.bucketName,
+      registration_images_bucket_name: buckets.registration_images_bucket.bucketName,
       cert_arn: process.env.ASSETS_CERT_ARN as string,
       assets_subdomain: assetsSubdomain,
       shop_images_subdomain: shopImagesSubdomain,
+      registration_images_subdomain: registrationImagesSubdomain,
       assets_oai: assetsOai,
       shop_images_oai: shopImagesOai,
+      registration_images_oai: registrationImagesOai,
     });
   }
 }
