@@ -21,9 +21,9 @@ async function sendOrderConfirmationEmail(
   totalAmount: number,
   currency: string,
 ): Promise<void> {
-  const qrValue = `${orderId}|${clubAccountId}`;
   const orderRef = orderId.slice(0, 8).toUpperCase();
   const orderUrl = `https://${process.env.DOMAIN as string}/myclubs/${clubAccountId}/orders/${orderId}`;
+  const qrValue = orderUrl;
 
   let pngBase64: string;
   try {
