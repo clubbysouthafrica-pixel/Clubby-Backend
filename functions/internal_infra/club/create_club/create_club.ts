@@ -115,6 +115,14 @@ export const handler = async (event: any) => {
             }
         );
 
+        await addItem(
+            process.env.REGISTRATION_CONFIGURATION_TABLE_NAME as string,
+            {
+                club_account_id: club_account_id,
+                created_on: joinedEpoch,
+            }
+        );
+
         return createResponse(
             200,
             {

@@ -7,6 +7,7 @@ import {
     MSC_AdminClubConstruct,
     MSC_ClubAdminClubConstruct,
     MSC_AdminRegistrationFormConstruct,
+    MSC_AdminRegistrationConfigurationConstruct,
     MSC_ClubMemberClubConstruct,
     MSC_MailerConstruct,
     MSC_ReportingConstruct,
@@ -31,6 +32,7 @@ export interface MSC_AdminNestedStackProps extends StackProps {
     admin_user_pool: MSC_Cognito;
     member_user_pool: MSC_Cognito;
     registration_form_table: MSC_Table;
+    registration_configuration_table: MSC_Table;
     club_deregistration_queue: MSC_Queue;
     email_rate_limiter_table: MSC_Table;
     club_member_table: MSC_Table;
@@ -184,6 +186,13 @@ export class MSC_AdminNestedStack extends Stack {
             kms_key: props.kms_key
         });
 
+        new MSC_AdminRegistrationConfigurationConstruct(this, `${id}-RegistrationConfiguration`, {
+            api_gateway: api_gateway,
+            registration_configuration_table: props.registration_configuration_table,
+            token_authorizer: jwt_construct.token_authorizer,
+            layers: all_layers
+        });
+
         new MSC_ClubMemberClubConstruct(this, `${id}-ClubMember`, {
             api_gateway: api_gateway,
             signatures_bucket: props.signatures_bucket,
@@ -197,6 +206,7 @@ export class MSC_AdminNestedStack extends Stack {
             registration_form_table: props.registration_form_table,
             billing_table: props.billing_table,
             registrations_table: props.registrations_table,
+            registration_configuration_table: props.registration_configuration_table,
             layers: all_layers,
             mail_queue: props.mail_queue,
             kms_key: props.kms_key

@@ -8,6 +8,7 @@ interface MSC_PayfastConstructProps {
     api_gateway: MSC_APIGateway;
     token_authorizer: TokenAuthorizer;
     registrations_table: MSC_Table;
+    registration_configuration_table: MSC_Table;
     club_member_table: MSC_Table;
     transactions_table: MSC_Table;
     club_table: MSC_Table;
@@ -81,6 +82,8 @@ export class MSC_PayfastConstruct extends Construct {
             code: "member/payfast/handle_registration_payment",
             envVariables: {
                 ENVIRONMENT: process.env.ENVIRONMENT || "Dev",
+                DOMAIN: process.env.DOMAIN as string,
+                REGISTRATION_CONFIGURATION_TABLE_NAME: props.registration_configuration_table.tableName,
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
                 CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
@@ -89,6 +92,12 @@ export class MSC_PayfastConstruct extends Construct {
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
             },
             permissions: {
+                [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
+                    "ses:SendRawEmail"
+                ],
+                [props.registration_configuration_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
                 [props.mail_queue.queueArn]: [
                     "sqs:SendMessage"
                 ],
@@ -111,7 +120,7 @@ export class MSC_PayfastConstruct extends Construct {
                     "dynamodb:GetItem"
                 ]
             },
-            layers: [props.layers.jwt_layer, props.layers.axios_layer]
+            layers: [props.layers.jwt_layer, props.layers.axios_layer, props.layers.qrcode_layer]
         });
 
         const handle_event_registration_payment = new MSC_Lambda(this, `${id}-HandleEventRegistrationPayment`, {

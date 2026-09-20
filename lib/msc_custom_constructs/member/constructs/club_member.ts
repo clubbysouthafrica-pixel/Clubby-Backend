@@ -14,8 +14,10 @@ interface MSC_ClubMemberConstructProps {
     signatures_bucket: MSC_Bucket;
     registration_images_bucket: MSC_Bucket;
     registrations_table: MSC_Table;
+    registration_configuration_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
+        qrcode_layer: MSC_LambdaLayer;
     };
     mail_queue: MSC_Queue;
     billing_table: MSC_Table;
@@ -38,6 +40,7 @@ export class MSC_ClubMemberConstruct extends Construct {
                 REGISTRATION_IMAGES_BUCKET_NAME: props.registration_images_bucket.bucketName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                REGISTRATION_CONFIGURATION_TABLE_NAME: props.registration_configuration_table.tableName,
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 KMS_KEY_ID: props.kms_key.keyId
@@ -47,7 +50,8 @@ export class MSC_ClubMemberConstruct extends Construct {
                     "dynamodb:Query"
                 ],
                 [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
-                    "ses:SendEmail"
+                    "ses:SendEmail",
+                    "ses:SendRawEmail"
                 ],
                 [props.club_member_table.tableArn]: [
                     "dynamodb:PutItem",
@@ -74,12 +78,15 @@ export class MSC_ClubMemberConstruct extends Construct {
                 [props.billing_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
+                [props.registration_configuration_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
                 [props.kms_key.keyArn]: [
                     "kms:Encrypt",
                     "kms:GenerateDataKey"
                 ]
             },
-            layers: [props.layers.jwt_layer]
+            layers: [props.layers.jwt_layer, props.layers.qrcode_layer]
         });
         props.signatures_bucket.grantPut(submit_registration)
         props.registration_images_bucket.grantPut(submit_registration)

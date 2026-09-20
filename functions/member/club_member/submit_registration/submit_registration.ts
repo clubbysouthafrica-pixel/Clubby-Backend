@@ -15,7 +15,8 @@ import {
     BillingField,
     billingFieldMapping,
     standardFieldMapping,
-    getClubEmailSendingLimit
+    getClubEmailSendingLimit,
+    sendMemberVerificationQrEmail
 } from "./function_helpers";
 
 const sesClient = new SESClient({ region: process.env.REGION });
@@ -410,6 +411,27 @@ export const handler = async (event: any) => {
             process.env.CLUB_MEMBER_TABLE_NAME as string,
             item
         );
+
+        if (club.eft_enabled !== false) {
+            try {
+                const registration_configuration = await getItem(
+                    process.env.REGISTRATION_CONFIGURATION_TABLE_NAME as string,
+                    { club_account_id: body.club_account_id }
+                );
+
+                if (registration_configuration?.send_qr_code_email_on_registration === true) {
+                    await sendMemberVerificationQrEmail(
+                        user.email,
+                        user.first_name,
+                        club.club_name,
+                        body.club_account_id,
+                        user_id as string
+                    );
+                }
+            } catch (error) {
+                console.error("Error sending member verification QR code email:", error);
+            }
+        }
 
         if (club.notify_on_member_registration !== false) {
             await sendEmailToAdmin(

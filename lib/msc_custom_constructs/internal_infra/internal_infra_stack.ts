@@ -12,6 +12,7 @@ export interface MSC_InternalInfraStackProps extends StackProps {
     club_table: MSC_Table;
     users_table: MSC_Table;
     club_admin_table: MSC_Table;
+    registration_configuration_table: MSC_Table;
     admin_pool: MSC_Cognito;
 }
 
@@ -41,6 +42,7 @@ export class MSC_InternalInfraStack extends Stack {
         new MSC_InternalInfraClubConstruct(this, `${id}-Club`, {
             api_gateway: api_gateway,
             club_table: props.club_table,
+            registration_configuration_table: props.registration_configuration_table,
             layers: {
                 jwt_layer: jwt_layer
             }

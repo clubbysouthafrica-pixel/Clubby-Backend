@@ -100,6 +100,7 @@ export class MSC_Stack extends cdk.Stack {
       club_table: tables.club_table,
       club_admin_table: tables.club_admin_table,
       registration_form_table: tables.registration_form_table,
+      registration_configuration_table: tables.registration_configuration_table,
       registrations_table: tables.registrations_table,
       club_member_table: tables.club_member_table,
       image_bucket: buckets.image_bucket,
@@ -116,6 +117,7 @@ export class MSC_Stack extends cdk.Stack {
       club_admin_table: tables.club_admin_table,
       users_table: tables.users_table,
       club_table: tables.club_table,
+      registration_configuration_table: tables.registration_configuration_table,
     });
 
     new MSC_SnapScanNestedStack(this, `${process.env.ENVIRONMENT === "Dev" ? `${process.env.DEPLOYER}-` : ""}SnapscanStack`, {
@@ -130,6 +132,7 @@ export class MSC_Stack extends cdk.Stack {
       monthly_billing_table: tables.billing_table,
       club_member_table: tables.club_member_table,
       registrations_table: tables.registrations_table,
+      registration_configuration_table: tables.registration_configuration_table,
       mail_queue: mail_queue,
       users_table: tables.users_table,
       storage_table: tables.storage_table,
@@ -150,6 +153,7 @@ export class MSC_Stack extends cdk.Stack {
       registration_images_bucket: buckets.registration_images_bucket,
       member_user_pool: member_user_pool,
       registrations_table: tables.registrations_table,
+      registration_configuration_table: tables.registration_configuration_table,
       transactions_table: tables.transactions_table,
       billing_table: tables.billing_table,
       users_table: tables.users_table,
