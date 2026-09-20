@@ -1,4 +1,4 @@
-import { getItem, sendSqsMessage, updateItem, getClubEmailSendingLimit } from "./function_helpers";
+import { getItem, sendSqsMessage, updateItem, getClubEmailSendingLimit, sendMemberVerificationQrEmail } from "./function_helpers";
 import { validatePayFastPayment } from "./payfast_validation";
 
 async function updateClubsRegistrationBilling(club_account_id: string, fee: number) {
@@ -231,6 +231,27 @@ export const handler = async (event: any) => {
             club_account_id,
             registration.total_fee * (club.member_registration_fee_to_club / 100)
         );
+
+        if (removeTtl) {
+            try {
+                const registration_configuration = await getItem(
+                    process.env.REGISTRATION_CONFIGURATION_TABLE_NAME as string,
+                    { club_account_id }
+                );
+
+                if (registration_configuration?.send_qr_code_email_on_registration === true && club_member.member_email) {
+                    await sendMemberVerificationQrEmail(
+                        club_member.member_email,
+                        club_member.member_first_name,
+                        club.club_name,
+                        club_account_id,
+                        user_id
+                    );
+                }
+            } catch (error) {
+                console.error("Error sending member verification QR code email:", error);
+            }
+        }
 
         if (club.use_success_email_template && shouldAutoRegisterMember) {
 

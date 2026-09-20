@@ -17,6 +17,7 @@ export interface MSC_SnapScanNestedStackProps extends StackProps {
   monthly_billing_table: MSC_Table;
   club_member_table: MSC_Table;
   registrations_table: MSC_Table;
+  registration_configuration_table: MSC_Table;
   mail_queue: MSC_Queue;
   users_table: MSC_Table;
   storage_table: MSC_Table;
@@ -100,6 +101,7 @@ export class MSC_SnapScanNestedStack extends Stack {
         MONTHLY_BILLING_TABLE_NAME: props.monthly_billing_table.tableName,
         CLUB_MEMBER_TABLE_NAME: props.club_member_table.tableName,
         REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+        REGISTRATION_CONFIGURATION_TABLE_NAME: props.registration_configuration_table.tableName,
         SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
         STORAGE_REQUESTS_TABLE_NAME: props.storage_request_table.tableName,
         STORAGE_TABLE_NAME: props.storage_table.tableName,
@@ -122,6 +124,7 @@ export class MSC_SnapScanNestedStack extends Stack {
         [props.monthly_billing_table.tableArn]: ["dynamodb:UpdateItem"],
         [props.club_member_table.tableArn]: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
         [props.registrations_table.tableArn]: ["dynamodb:UpdateItem"],
+        [props.registration_configuration_table.tableArn]: ["dynamodb:GetItem"],
         [props.mail_queue.queueArn]: ["sqs:SendMessage"],
         [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: ["ses:SendRawEmail"],
       },

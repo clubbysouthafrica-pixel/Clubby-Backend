@@ -11,6 +11,7 @@ export class MSC_TablesConstruct extends Construct {
   public readonly club_table: MSC_Table;
   public readonly billing_table: MSC_Table;
   public readonly registration_form_table: MSC_Table;
+  public readonly registration_configuration_table: MSC_Table;
   public readonly transactions_table: MSC_Table;
   public readonly registrations_table: MSC_Table;
   public readonly products_table: MSC_Table;
@@ -143,6 +144,14 @@ export class MSC_TablesConstruct extends Construct {
       {
         partitionKey: { club_account_id: "STRING" },
         sortKey: { field_id: "STRING" },
+      },
+    );
+
+    this.registration_configuration_table = new MSC_Table(
+      this,
+      `${id}-RegistrationConfiguration`,
+      {
+        partitionKey: { club_account_id: "STRING" },
       },
     );
 

@@ -16,7 +16,8 @@ import {
     standardFieldMapping,
     StandardField,
     BillingField,
-    getClubEmailSendingLimit
+    getClubEmailSendingLimit,
+    sendMemberVerificationQrEmail
 } from "./function_helpers";
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO' | 'IMAGE';
@@ -541,6 +542,8 @@ export const handler = async (event: any) => {
         const ttl = club.eft_enabled === false
             ? Math.floor(Date.now() / 1000) + 3600
             : undefined;
+        
+            
 
         const current_reg_id = await addToRegistrationsTable(
             body.club_account_id,
@@ -588,6 +591,27 @@ export const handler = async (event: any) => {
             process.env.CLUB_MEMBER_TABLE_NAME as string,
             item
         );
+
+        if (club.eft_enabled !== false) {
+            try {
+                const registration_configuration = await getItem(
+                    process.env.REGISTRATION_CONFIGURATION_TABLE_NAME as string,
+                    { club_account_id: body.club_account_id }
+                );
+
+                if (registration_configuration?.send_qr_code_email_on_registration === true) {
+                    await sendMemberVerificationQrEmail(
+                        memberEmail,
+                        body.first_name,
+                        club.club_name,
+                        body.club_account_id,
+                        member_user_id
+                    );
+                }
+            } catch (error) {
+                console.error("Error sending member verification QR code email:", error);
+            }
+        }
 
         if (club.notify_on_member_registration !== false && body.send_club_email !== false) {
             await sendEmailToAdmin(

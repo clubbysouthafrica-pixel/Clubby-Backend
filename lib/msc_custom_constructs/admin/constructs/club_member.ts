@@ -13,12 +13,14 @@ interface MSC_ClubMemberClubConstructProps {
     club_table: MSC_Table;
     registration_form_table: MSC_Table;
     registrations_table: MSC_Table;
+    registration_configuration_table: MSC_Table;
     signatures_bucket: MSC_Bucket;
     registration_images_bucket: MSC_Bucket;
     token_authorizer: TokenAuthorizer;
     mail_queue: MSC_Queue;
     layers: {
         jwt_layer: MSC_LambdaLayer;
+        qrcode_layer: MSC_LambdaLayer;
     };
     billing_table: MSC_Table;
     kms_key: MSC_Kms;
@@ -81,13 +83,15 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 CLUB_TABLE_NAME: props.club_table.tableName,
                 TRANSACTIONS_TABLE_NAME: props.transactions_table.tableName,
                 REGISTRATIONS_TABLE_NAME: props.registrations_table.tableName,
+                REGISTRATION_CONFIGURATION_TABLE_NAME: props.registration_configuration_table.tableName,
                 MONTHLY_BILLING_TABLE_NAME: props.billing_table.tableName,
                 SEND_EMAIL_QUEUE_URL: props.mail_queue.queueUrl,
                 KMS_KEY_ID: props.kms_key.keyId
             },
             permissions: {
                 [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
-                    "ses:SendEmail"
+                    "ses:SendEmail",
+                    "ses:SendRawEmail"
                 ],
                 [props.member_user_pool.userPoolArn]: [
                     "cognito-idp:AdminCreateUser",
@@ -123,12 +127,15 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 [props.billing_table.tableArn]: [
                     "dynamodb:GetItem"
                 ],
+                [props.registration_configuration_table.tableArn]: [
+                    "dynamodb:GetItem"
+                ],
                 [props.kms_key.keyArn]: [
                     "kms:Encrypt",
                     "kms:GenerateDataKey"
                 ]
             },
-            layers: [props.layers.jwt_layer],
+            layers: [props.layers.jwt_layer, props.layers.qrcode_layer],
             retention: RetentionDays.ONE_MONTH
         });
         props.signatures_bucket.grantPut(submit_registration)

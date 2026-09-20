@@ -5,6 +5,7 @@ import { addCorsEnabledMethod } from "../../../msc_custom_functions";
 interface MSC_InternalInfraClubConstructProps {
     api_gateway: MSC_APIGateway;
     club_table: MSC_Table;
+    registration_configuration_table: MSC_Table;
     layers: {
         jwt_layer: MSC_LambdaLayer;
     }
@@ -18,6 +19,7 @@ export class MSC_InternalInfraClubConstruct extends Construct {
             code: "internal_infra/club/create_club",
             envVariables: {
                 CLUB_TABLE_NAME: props.club_table.tableName,
+                REGISTRATION_CONFIGURATION_TABLE_NAME: props.registration_configuration_table.tableName,
                 DOMAIN: process.env.DOMAIN as string,
                 CLUB_FROM_EMAIL_INDEX: "ClubFromEmailIndex",
                 CLUB_NAME_INDEX: "ClubNameIndex",
@@ -32,6 +34,9 @@ export class MSC_InternalInfraClubConstruct extends Construct {
                 ],
                 [`${props.club_table.tableArn}/index/ClubNameIndex`]: [
                     "dynamodb:Query"
+                ],
+                [props.registration_configuration_table.tableArn]: [
+                    "dynamodb:PutItem"
                 ]
             },
             layers: [props.layers.jwt_layer]
