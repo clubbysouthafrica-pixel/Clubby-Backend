@@ -13,11 +13,11 @@ import {
     MSC_ReportingConstruct,
     MSC_DeregistrationConstruct,
     MSC_TransactionsConstruct,
-    MSC_PayFastConstruct
+    MSC_PayFastConstruct,
+    MSC_MemberUserConstruct
 } from "./constructs";
 import { MSC_JWTConstruct } from "../authorization";
 import { MSC_Table } from "../../msc_service_constructs";
-import { MSC_MemberUserConstruct } from './constructs/member_user';
 import { MSC_Layers } from '../lambda_layers';
 
 export interface MSC_AdminNestedStackProps extends StackProps {

@@ -13,3 +13,4 @@
 cdk.out
 *.2.ts
 **/.env
+dist/

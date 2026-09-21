@@ -342,6 +342,7 @@ export async function createClubbyUser(email: string, first_name: string, surnam
                 first_name,
                 surname,
                 onboarded: false,
+                registration_user: true,
             }
         );
 
@@ -373,6 +374,23 @@ export async function createClubbyUser(email: string, first_name: string, surnam
             }
 
             console.log(`User ID successfully retrieved: ${subAttr.Value!}`)
+
+            try {
+                await updateItem(
+                    process.env.USERS_TABLE_NAME as string,
+                    {
+                        user_type: process.env.USER_TYPE as string,
+                        user_id: subAttr.Value!,
+                    },
+                    "SET #registration_user = :registration_user",
+                    { "#registration_user": "registration_user" },
+                    { ":registration_user": true },
+                    "attribute_exists(user_type) AND attribute_exists(user_id)"
+                );
+            } catch (updateError) {
+                console.error("Error setting registration_user on existing user:", updateError);
+            }
+
             return subAttr.Value!;
         } else {
             return "Issue registering user.";
