@@ -189,6 +189,7 @@ async function ensureUserRecord(
       surname,
       email_opt_in: emailOptIn,
       onboarded: false,
+      shop_user: true,
     });
     return {
       first_name: firstName,
@@ -202,14 +203,16 @@ async function ensureUserRecord(
       user_type: process.env.USER_TYPE as string,
       user_id: userId,
     },
-    "SET #email = :email, #email_opt_in = :email_opt_in",
+    "SET #email = :email, #email_opt_in = :email_opt_in, #shop_user = :shop_user",
     {
       "#email": "email",
       "#email_opt_in": "email_opt_in",
+      "#shop_user": "shop_user",
     },
     {
       ":email": email,
       ":email_opt_in": emailOptIn,
+      ":shop_user": true,
     },
   );
 

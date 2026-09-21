@@ -1,5 +1,5 @@
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
-import { randomUUID, createHash } from "crypto";
+import { randomUUID } from "crypto";
 import {
     createResponse,
     deconstructEvent,
@@ -23,18 +23,6 @@ const sesClient = new SESClient({ region: process.env.REGION });
 
 export type InputTypes = 'TEXT' | 'DROPDOWN' | 'PHONE' | 'DATE' | 'NUMBER' | 'RADIO' | 'IMAGE';
 export type CurrencyType = 'ZAR' | 'USD' | 'GBP'
-
-function generateShortReference(
-    userId: string
-): string {
-    const now = new Date();
-    const mmdd = now.toISOString().slice(5, 10).replace('-', '');
-
-    const hash = createHash('sha1').update(userId).digest('hex').toUpperCase();
-    const shortHash = hash.substring(0, 6);
-
-    return `REF-${mmdd}-${shortHash}`;
-}
 
 function validateRequestBody(body: any) {
     if (!body?.club_account_id || !body?.billing_fields || !body?.standard_fields) {

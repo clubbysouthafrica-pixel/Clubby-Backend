@@ -107,7 +107,8 @@ export class MSC_ClubMemberClubConstruct extends Construct {
                 ],
                 [props.users_table.tableArn]: [
                     "dynamodb:GetItem",
-                    "dynamodb:PutItem"
+                    "dynamodb:PutItem",
+                    "dynamodb:UpdateItem"
                 ],
                 [props.club_table.tableArn]: [
                     "dynamodb:GetItem"
