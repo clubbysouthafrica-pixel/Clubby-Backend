@@ -1,5 +1,24 @@
-import { getItem, updateItem, autoDeliverOrderItems, sendOrderConfirmationEmail } from "./function_helpers";
+import { getItem, updateItem, autoDeliverOrderItems, sendOrderConfirmationEmail, decryptData } from "./function_helpers";
 import { validatePayFastPayment } from "./payfast_validation";
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
+
+const ssm_client = new SSMClient({ region: process.env.REGION });
+
+async function getPayFastPassphrase(club_account_id: string): Promise<string | undefined> {
+    try {
+        const param = await ssm_client.send(new GetParameterCommand({
+            Name: `payfast_details_${club_account_id}`,
+            WithDecryption: true,
+        }));
+        const raw = param.Parameter?.Value;
+        if (!raw) return undefined;
+        const parsedCfg = JSON.parse(await decryptData(raw));
+        return parsedCfg.passphrase ?? undefined;
+    } catch (error) {
+        console.error("Error fetching PayFast config from SSM:", error);
+        return undefined;
+    }
+}
 
 async function updateTransactionsTable(
     club_account_id: string,
@@ -69,9 +88,9 @@ async function removeClubMemberTtl(club_account_id: string, member_id: string) {
     await updateItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
         { user_id: member_id, club_account_id },
-        "SET #reg = if_not_exists(#reg, :false) REMOVE #ttl",
-        { "#reg": "registered", "#ttl": "ttl" },
-        { ":false": false }
+        "SET #reg = if_not_exists(#reg, :false), #shop_user = :true REMOVE #ttl",
+        { "#reg": "registered", "#shop_user": "shop_user", "#ttl": "ttl" },
+        { ":false": false, ":true": true }
     );
 }
 
@@ -107,7 +126,6 @@ async function updateClubsOrderBilling(club_account_id: string, fee: number) {
 
 export const handler = async (event: any) => {
     console.log('Received event:', JSON.stringify(event));
-    const passPhrase = process.env.PAYFAST_PASSPHRASE;
 
     const bodyString = event.body || "";
     console.log('Event Body:', bodyString);
@@ -127,7 +145,7 @@ export const handler = async (event: any) => {
         return { statusCode: 400, body: "Invalid payment" };
     }
 
-    const [order, club] = await Promise.all([
+    const [order, club, passPhrase] = await Promise.all([
         getItem(
             process.env.ORDERS_TABLE_NAME as string,
             { club_account_id: club_account_id, order_id: order_id }
@@ -136,6 +154,7 @@ export const handler = async (event: any) => {
             process.env.CLUB_TABLE_NAME as string,
             { club_account_id: club_account_id }
         ),
+        getPayFastPassphrase(club_account_id),
     ]);
     if (order == null) {
         return { statusCode: 400, body: "Invalid payment" };

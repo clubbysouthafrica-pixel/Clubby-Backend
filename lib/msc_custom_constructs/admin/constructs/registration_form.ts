@@ -181,7 +181,7 @@ export class MSC_AdminRegistrationFormConstruct extends Construct {
 
         addCorsEnabledMethod(create_registration_form_resource, create_registration_form, methodOptions);
         addCorsEnabledMethod(get_form_resource, get_form, methodOptions, undefined, "GET");
-        addCorsEnabledMethod(get_member_registration_resource, get_member_registration, methodOptions, undefined, "GET");
+        addCorsEnabledMethod(get_member_registration_resource, get_member_registration, { methodResponses: [] }, undefined, "GET");
         addCorsEnabledMethod(update_admin_notes_resource, update_admin_notes, methodOptions);
         addCorsEnabledMethod(remove_admin_notes_resource, remove_admin_notes, methodOptions);
         addCorsEnabledMethod(archive_registration_resource, archive_registration, methodOptions);

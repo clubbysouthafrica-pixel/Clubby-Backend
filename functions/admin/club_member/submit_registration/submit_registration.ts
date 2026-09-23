@@ -98,7 +98,7 @@ function validateRequestBody(body: any) {
     return null;
 }
 
-async function alreadyRegistered(club_account_id: string, user_id: string): Promise<boolean> {
+async function alreadyRegistered(club_account_id: string, user_id: string): Promise<{ registered: boolean; shop_user?: boolean; exists: boolean; ttl?: number }> {
     const club_member = await getItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
         {
@@ -107,10 +107,16 @@ async function alreadyRegistered(club_account_id: string, user_id: string): Prom
         }
     )
 
-    if (club_member == null || club_member?.resubmission_required === true || club_member?.non_registration === true) {
-        return false;
+    const exists = club_member != null;
+
+    if (club_member?.non_registration === true) {
+        return { registered: false, shop_user: club_member?.shop_user, exists, ttl: club_member?.ttl };
     }
-    return true;
+
+    if (club_member == null || club_member?.resubmission_required === true) {
+        return { registered: false, shop_user: club_member?.shop_user, exists, ttl: club_member?.ttl };
+    }
+    return { registered: true, shop_user: club_member?.shop_user, exists, ttl: club_member?.ttl };
 }
 
 async function addToRegistrationsTable(
@@ -304,7 +310,7 @@ export async function sendAccountCreatedEmail(
     }
 }
 
-export async function createClubbyUser(email: string, first_name: string, surname: string, club_name: string, sendEmail: boolean = true): Promise<string> {
+export async function createClubbyUser(email: string, first_name: string, surname: string, club_name: string, sendEmail: boolean = true): Promise<{ user_id: string; user_existed: boolean } | null> {
     const password = generateCognitoPassword();
 
     try {
@@ -341,8 +347,7 @@ export async function createClubbyUser(email: string, first_name: string, surnam
                 email,
                 first_name,
                 surname,
-                onboarded: false,
-                registration_user: true,
+                onboarded: false
             }
         );
 
@@ -355,7 +360,7 @@ export async function createClubbyUser(email: string, first_name: string, surnam
             );
         }
 
-        return userSub;
+        return { user_id: userSub, user_existed: false };
 
     } catch (error: any) {
         if (error.name === 'UsernameExistsException') {
@@ -370,30 +375,14 @@ export async function createClubbyUser(email: string, first_name: string, surnam
 
             const subAttr = existingUser.UserAttributes?.find(attr => attr.Name === 'sub');
             if (!subAttr || !subAttr.Value) {
-                return "Issue registering user.";
+                return null;
             }
 
             console.log(`User ID successfully retrieved: ${subAttr.Value!}`)
 
-            try {
-                await updateItem(
-                    process.env.USERS_TABLE_NAME as string,
-                    {
-                        user_type: process.env.USER_TYPE as string,
-                        user_id: subAttr.Value!,
-                    },
-                    "SET #registration_user = :registration_user",
-                    { "#registration_user": "registration_user" },
-                    { ":registration_user": true },
-                    "attribute_exists(user_type) AND attribute_exists(user_id)"
-                );
-            } catch (updateError) {
-                console.error("Error setting registration_user on existing user:", updateError);
-            }
-
-            return subAttr.Value!;
+            return { user_id: subAttr.Value!, user_existed: true };
         } else {
-            return "Issue registering user.";
+            return null;
         }
     }
 }
@@ -511,12 +500,14 @@ export const handler = async (event: any) => {
 
         const memberEmail = body.member_email.trim().toLowerCase();
 
-        const member_user_id = await createClubbyUser(memberEmail, body.first_name, body.surname, club.club_name, body.send_account_email !== false)
-        if (member_user_id === "Issue registering user.") {
+        const clubby_user = await createClubbyUser(memberEmail, body.first_name, body.surname, club.club_name, body.send_account_email !== false)
+        if (clubby_user === null) {
             return createResponse(500, { message: "Issue registering user" }, origin);
         }
+        const { user_id: member_user_id, user_existed } = clubby_user;
 
-        if (await alreadyRegistered(body.club_account_id, member_user_id as string)) {
+        const { registered, shop_user, exists: clubMemberExists, ttl: existingTtl } = await alreadyRegistered(body.club_account_id, member_user_id);
+        if (registered) {
             return createResponse(500, { message: `A member with email ${memberEmail} is already registered or has a pending registration with the club. Please login as a member with this email to continue handling your registration.` }, origin);
         }
 
@@ -557,11 +548,11 @@ export const handler = async (event: any) => {
 
         const current_reg_transaction_id = randomUUID();
 
-        const ttl = club.eft_enabled === false
+        const ttl = club.eft_enabled === false && !shop_user
             ? Math.floor(Date.now() / 1000) + 3600
             : undefined;
-        
-            
+
+        const shouldSetTtl = ttl !== undefined && (!clubMemberExists || existingTtl !== undefined);
 
         const current_reg_id = await addToRegistrationsTable(
             body.club_account_id,
@@ -589,7 +580,8 @@ export const handler = async (event: any) => {
             currency: club.currency,
             club_name: club.club_name,
             season_cycle: club.season_cycle,
-            ...(ttl !== undefined ? { ttl } : {}),
+            shop_user,
+            ...(shouldSetTtl ? { ttl } : { registration_user: true }),
         };
 
         if (membership_amount > 0) {

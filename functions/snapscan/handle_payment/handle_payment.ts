@@ -348,7 +348,10 @@ async function updateClubMembersTable(
     removeTtl: boolean = false,
 ) {
     const expressionNames: Record<string, string> = { "#reg": "registered" };
-    if (removeTtl) expressionNames["#ttl"] = "ttl";
+    if (removeTtl) {
+        expressionNames["#ttl"] = "ttl";
+        expressionNames["#registration_user"] = "registration_user";
+    }
 
     await updateItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
@@ -356,11 +359,9 @@ async function updateClubMembersTable(
             user_id: member_id,
             club_account_id: club_account_id,
         },
-        removeTtl ? "SET #reg = :registered REMOVE #ttl" : "SET #reg = :registered",
+        removeTtl ? "SET #reg = :registered, #registration_user = :true REMOVE #ttl" : "SET #reg = :registered",
         expressionNames,
-        {
-            ":registered": true
-        }
+        removeTtl ? { ":registered": true, ":true": true } : { ":registered": true }
     );
 }
 
@@ -368,9 +369,9 @@ async function removeClubMemberTtl(club_account_id: string, member_id: string) {
     await updateItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
         { user_id: member_id, club_account_id },
-        "SET #reg = if_not_exists(#reg, :false) REMOVE #ttl",
-        { "#reg": "registered", "#ttl": "ttl" },
-        { ":false": false }
+        "SET #reg = if_not_exists(#reg, :false), #shop_user = :true REMOVE #ttl",
+        { "#reg": "registered", "#shop_user": "shop_user", "#ttl": "ttl" },
+        { ":false": false, ":true": true }
     );
 }
 

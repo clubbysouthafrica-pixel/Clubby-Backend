@@ -104,8 +104,7 @@ export class MSC_MemberOrdersConstruct extends Construct {
                 ],
                 [props.users_table.tableArn]: [
                     "dynamodb:GetItem",
-                    "dynamodb:PutItem",
-                    "dynamodb:UpdateItem"
+                    "dynamodb:PutItem"
                 ],
                 [props.transactions_table.tableArn]: [
                     "dynamodb:PutItem"

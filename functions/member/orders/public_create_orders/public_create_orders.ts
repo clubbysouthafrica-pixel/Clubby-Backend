@@ -189,32 +189,12 @@ async function ensureUserRecord(
       surname,
       email_opt_in: emailOptIn,
       onboarded: false,
-      shop_user: true,
     });
     return {
       first_name: firstName,
       surname,
     };
   }
-
-  await updateItem(
-    process.env.USERS_TABLE_NAME as string,
-    {
-      user_type: process.env.USER_TYPE as string,
-      user_id: userId,
-    },
-    "SET #email = :email, #email_opt_in = :email_opt_in, #shop_user = :shop_user",
-    {
-      "#email": "email",
-      "#email_opt_in": "email_opt_in",
-      "#shop_user": "shop_user",
-    },
-    {
-      ":email": email,
-      ":email_opt_in": emailOptIn,
-      ":shop_user": true,
-    },
-  );
 
   return {
     first_name: existingUser.first_name ?? firstName,
@@ -321,6 +301,7 @@ async function upsertClubMember(
       member_surname: surname,
       email_opt_in: emailOptIn,
       registered: false,
+      shop_user: ttl ? false : true,
       registration_payment_reference: `${firstName} ${surname}`,
       currency: club.currency,
       club_name: club.club_name,
@@ -329,6 +310,39 @@ async function upsertClubMember(
     });
     return;
   }
+
+  if (ttl === undefined) {
+    await updateItem(
+      process.env.CLUB_MEMBER_TABLE_NAME as string,
+      {
+        club_account_id: clubAccountId,
+        user_id: userId,
+      },
+      "SET #shop_user = :shop_user",
+      { "#shop_user": "shop_user" },
+      { ":shop_user": true },
+      "attribute_exists(club_account_id) AND attribute_exists(user_id)"
+    );
+    return;
+  }
+
+  const shouldUpdateTtl = existingClubMember.ttl !== undefined;
+
+  if (!shouldUpdateTtl) {
+    return;
+  }
+
+  await updateItem(
+    process.env.CLUB_MEMBER_TABLE_NAME as string,
+    {
+      club_account_id: clubAccountId,
+      user_id: userId,
+    },
+    "SET #ttl = :ttl",
+    { "#ttl": "ttl" },
+    { ":ttl": ttl },
+    "attribute_exists(club_account_id) AND attribute_exists(user_id)"
+  );
 }
 
 async function addToTransactionsTable(

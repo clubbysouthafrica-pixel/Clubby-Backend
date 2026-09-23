@@ -1,5 +1,24 @@
-import { getItem, sendSqsMessage, updateItem, getClubEmailSendingLimit, sendMemberVerificationQrEmail } from "./function_helpers";
+import { getItem, sendSqsMessage, updateItem, getClubEmailSendingLimit, sendMemberVerificationQrEmail, decryptData } from "./function_helpers";
 import { validatePayFastPayment } from "./payfast_validation";
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
+
+const ssm_client = new SSMClient({ region: process.env.REGION });
+
+async function getPayFastPassphrase(club_account_id: string): Promise<string | undefined> {
+    try {
+        const param = await ssm_client.send(new GetParameterCommand({
+            Name: `payfast_details_${club_account_id}`,
+            WithDecryption: true,
+        }));
+        const raw = param.Parameter?.Value;
+        if (!raw) return undefined;
+        const parsedCfg = JSON.parse(await decryptData(raw));
+        return parsedCfg.passphrase ?? undefined;
+    } catch (error) {
+        console.error("Error fetching PayFast config from SSM:", error);
+        return undefined;
+    }
+}
 
 async function updateClubsRegistrationBilling(club_account_id: string, fee: number) {
     const now = new Date();
@@ -127,7 +146,10 @@ async function updateClubMembersTable(
     removeTtl: boolean = false,
 ) {
     const expressionNames: Record<string, string> = { "#reg": "registered" };
-    if (removeTtl) expressionNames["#ttl"] = "ttl";
+    if (removeTtl) {
+        expressionNames["#ttl"] = "ttl";
+        expressionNames["#registration_user"] = "registration_user";
+    }
 
     await updateItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
@@ -135,17 +157,13 @@ async function updateClubMembersTable(
             user_id: member_id,
             club_account_id: club_account_id,
         },
-        removeTtl ? "SET #reg = :registered REMOVE #ttl" : "SET #reg = :registered",
+        removeTtl ? "SET #reg = :registered, #registration_user = :true REMOVE #ttl" : "SET #reg = :registered",
         expressionNames,
-        {
-            ":registered": true
-        }
+        removeTtl ? { ":registered": true, ":true": true } : { ":registered": true }
     );
 }
 
 export const handler = async (event: any) => {
-    const passPhrase = process.env.PAYFAST_PASSPHRASE;
-
     const bodyString = event.body || "";
     const params = new URLSearchParams(bodyString);
 
@@ -159,10 +177,13 @@ export const handler = async (event: any) => {
         return { statusCode: 400, body: "Invalid payment" };
     }
 
-    const club = await getItem(
-        process.env.CLUB_TABLE_NAME as string,
-        { club_account_id: club_account_id }
-    );
+    const [club, passPhrase] = await Promise.all([
+        getItem(
+            process.env.CLUB_TABLE_NAME as string,
+            { club_account_id: club_account_id }
+        ),
+        getPayFastPassphrase(club_account_id),
+    ]);
     if (club == null) {
         return { statusCode: 400, body: "Invalid payment" };
     }

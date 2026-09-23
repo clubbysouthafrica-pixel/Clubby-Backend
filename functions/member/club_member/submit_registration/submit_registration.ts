@@ -59,7 +59,7 @@ function validateRequestBody(body: any) {
     return null;
 }
 
-async function registrationSubmitted(club_account_id: string, user_id: string): Promise<boolean> {
+async function registrationSubmitted(club_account_id: string, user_id: string): Promise<{ submitted: boolean; shop_user?: boolean; exists: boolean; ttl?: number }> {
     const club_member = await getItem(
         process.env.CLUB_MEMBER_TABLE_NAME as string,
         {
@@ -68,15 +68,17 @@ async function registrationSubmitted(club_account_id: string, user_id: string): 
         }
     )
 
+    const exists = club_member != null;
+
     if (club_member == null) {
-        return false;
+        return { submitted: false, exists };
     } else if (club_member.resubmission_required) {
-        return false;
+        return { submitted: false, exists, ttl: club_member?.ttl };
     } else if (club_member?.non_registration === true) {
-        return false;
+        return { submitted: false, shop_user: club_member?.shop_user, exists, ttl: club_member?.ttl };
     }
 
-    return true;
+    return { submitted: true, exists, ttl: club_member?.ttl };
 }
 
 async function addToRegistrationsTable(
@@ -279,7 +281,8 @@ export const handler = async (event: any) => {
             return createResponse(400, { message: validationMessage }, origin);
         }
 
-        if (await registrationSubmitted(body.club_account_id, user_id as string)) {
+        const { submitted, shop_user, exists: clubMemberExists, ttl: existingTtl } = await registrationSubmitted(body.club_account_id, user_id as string);
+        if (submitted) {
             return createResponse(400, { message: "Registration form has already been submitted." }, origin);
         }
 
@@ -349,9 +352,11 @@ export const handler = async (event: any) => {
 
         const current_reg_transaction_id = randomUUID();
 
-        const ttl = club.eft_enabled === false
+        const ttl = club.eft_enabled === false && !shop_user
             ? Math.floor(Date.now() / 1000) + 3600
             : undefined;
+
+        const shouldSetTtl = ttl !== undefined && (!clubMemberExists || existingTtl !== undefined);
 
         const current_reg_id = await addToRegistrationsTable(
             body.club_account_id,
@@ -379,7 +384,8 @@ export const handler = async (event: any) => {
             currency: club.currency,
             club_name: club.club_name,
             season_cycle: club.season_cycle,
-            ...(ttl !== undefined ? { ttl } : {}),
+            shop_user,
+            ...(shouldSetTtl ? { ttl } : { registration_user: true }),
         };
 
         if (membership_amount > 0) {

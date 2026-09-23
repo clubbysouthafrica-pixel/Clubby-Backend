@@ -129,10 +129,22 @@ export const handler = async (event: any) => {
             }
         );
 
-        if (from_email_lookup && club_member != null && club_member?.resubmission_required !== true && club_member?.non_registration !== true) {
-            return createResponse(409, {
-                message: `A member with email ${looked_up_email} already has a pending or active registration with this club.`
-            }, origin);
+        const registration = club_member?.current_reg_id
+            ? await getItem(
+                process.env.REGISTRATIONS_TABLE_NAME as string,
+                {
+                    registration_id: club_member.current_reg_id,
+                    user_id: club_member.user_id
+                }
+            )
+            : null;
+
+        if (from_email_lookup && club_member != null && club_member?.resubmission_required !== true && club_member?.non_registration !== true && club_member?.current_reg_id) {
+            if (registration && !registration.ttl) {
+                return createResponse(409, {
+                    message: `A member with email ${looked_up_email} already has a pending or active registration with this club.`
+                }, origin);
+            }
         }
 
         if (club_member == null || club_member === undefined) {
@@ -147,14 +159,6 @@ export const handler = async (event: any) => {
         if (!club_member.current_reg_id) {
             return createResponse(200, { pages, club_name: club.club_name, currency: club.currency }, origin);
         }
-
-        const registration = await getItem(
-            process.env.REGISTRATIONS_TABLE_NAME as string,
-            {
-                user_id: effective_user_id,
-                registration_id: club_member?.current_reg_id,
-            }
-        );
 
         const sorted = pages
             .sort((a, b) => a.page_index - b.page_index)
@@ -229,9 +233,9 @@ export const handler = async (event: any) => {
                 ),
             }))
         );
-        return createResponse(200, { 
-            pages: updatedPages, 
-            club_name: club.club_name, 
+        return createResponse(200, {
+            pages: updatedPages,
+            club_name: club.club_name,
             currency: club.currency,
             club_profile_url: await getClubProfileUrl(query_string_params?.club_account_id)
         }, origin);

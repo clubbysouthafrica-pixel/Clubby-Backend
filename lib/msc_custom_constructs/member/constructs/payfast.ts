@@ -118,6 +118,12 @@ export class MSC_PayfastConstruct extends Construct {
                 [props.billing_table.tableArn]: [
                     "dynamodb:UpdateItem",
                     "dynamodb:GetItem"
+                ],
+                [ssmParamArn]: [
+                    "ssm:GetParameter"
+                ],
+                [props.kms_key.keyArn]: [
+                    "kms:Decrypt"
                 ]
             },
             layers: [props.layers.jwt_layer, props.layers.axios_layer, props.layers.qrcode_layer]
@@ -186,6 +192,12 @@ export class MSC_PayfastConstruct extends Construct {
                 ],
                 [`arn:aws:ses:${process.env.REGION}:${process.env.ACCOUNT}:identity/*`]: [
                     "ses:SendRawEmail"
+                ],
+                [ssmParamArn]: [
+                    "ssm:GetParameter"
+                ],
+                [props.kms_key.keyArn]: [
+                    "kms:Decrypt"
                 ]
             },
             layers: [props.layers.jwt_layer, props.layers.axios_layer, props.layers.qrcode_layer]
