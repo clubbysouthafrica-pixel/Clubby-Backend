@@ -5,6 +5,7 @@ type ConfigValidator = (value: any) => boolean;
 // The backend owns which configuration keys exist. Add new keys here.
 const CONFIGURATION_FIELDS: Record<string, ConfigValidator> = {
     send_qr_code_email_on_registration: (value) => typeof value === "boolean",
+    send_login_credentials_email_on_registration: (value) => typeof value === "boolean",
 };
 
 export const handler = async (event: any) => {

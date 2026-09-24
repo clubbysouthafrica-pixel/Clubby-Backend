@@ -500,7 +500,20 @@ export const handler = async (event: any) => {
 
         const memberEmail = body.member_email.trim().toLowerCase();
 
-        const clubby_user = await createClubbyUser(memberEmail, body.first_name, body.surname, club.club_name, body.send_account_email !== false)
+        let registration_configuration: Record<string, any> | null = null;
+        try {
+            registration_configuration = await getItem(
+                process.env.REGISTRATION_CONFIGURATION_TABLE_NAME as string,
+                { club_account_id: body.club_account_id }
+            );
+        } catch (error) {
+            console.error("Error fetching registration configuration:", error);
+        }
+
+        const sendAccountEmail = registration_configuration?.send_login_credentials_email_on_registration === true
+            && body.send_account_email !== false;
+
+        const clubby_user = await createClubbyUser(memberEmail, body.first_name, body.surname, club.club_name, sendAccountEmail)
         if (clubby_user === null) {
             return createResponse(500, { message: "Issue registering user" }, origin);
         }
@@ -604,11 +617,6 @@ export const handler = async (event: any) => {
 
         if (club.eft_enabled !== false) {
             try {
-                const registration_configuration = await getItem(
-                    process.env.REGISTRATION_CONFIGURATION_TABLE_NAME as string,
-                    { club_account_id: body.club_account_id }
-                );
-
                 if (registration_configuration?.send_qr_code_email_on_registration === true) {
                     await sendMemberVerificationQrEmail(
                         memberEmail,
